@@ -80,3 +80,150 @@ body.week-focus .panel{overflow:hidden}
 @media(max-width:760px){.extra-class-picks{grid-template-columns:1fr}.week-view-tabs{justify-content:flex-start}.week-tab{flex:1;padding:9px 6px}}
 @media(max-width:800px) and (orientation:portrait){body.week-focus .timetable{min-width:760px}body.week-focus .week-scroller{overflow-x:auto}body.week-focus .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media print{.week-view-tabs{display:none!important}}
+
+/* SMART TKB V1.4 — modern compact schedule + a single left-hand filter drawer. */
+:root{--tkb-navy:#102d47;--tkb-teal:#087b72}
+body{background:#f1f6fa}
+.topbar{background:linear-gradient(110deg,#102d47,#175576)}
+.brandmark{background:linear-gradient(145deg,#aff7e3,#4fe5cc);color:#063e45}
+.top-menu-toggle,.menu-toggle{border:1px solid #d9e9ed;border-radius:11px;background:#f1fafb;color:#16666b;font-weight:800;cursor:pointer;min-width:36px;min-height:36px}
+.top-menu-toggle{display:none;background:#255674;color:#fff;border-color:#3d728a}
+.menu-toggle{display:none;align-items:center;justify-content:center;flex-direction:column;gap:1px;padding:5px 7px;font-size:18px;box-shadow:0 2px 8px #0e43531a}
+.menu-toggle small{font-size:7px;letter-spacing:-.1px;line-height:1}
+.side-mobilehead{display:none;align-items:center;justify-content:space-between;margin-bottom:15px;gap:6px;color:#163d51}
+.side-mobilehead strong{font-size:11px}
+.side-filter-section{padding:16px 10px 12px;border-top:1px solid #e5eef1;margin-top:15px;display:grid;gap:5px}
+.side-filter-section .navtitle{padding:0 0 8px}
+.side-filter-section label{font-size:10px;font-weight:700;color:#647d90;margin:8px 0 1px}
+.side-filter-section select{display:block;width:100%;min-width:0;font-size:12px;border:1px solid #dce8ed;border-radius:9px;padding:10px;background:#f7fbfd;color:#25485f;min-height:37px}
+.side-filter-section .btn{margin-top:6px}
+.side-legend{padding:12px 5px 4px;display:grid;gap:7px;border-top:1px solid #edf2f5;margin-top:12px;color:#456176}
+.side-legend>strong{font-size:11px;margin-bottom:2px}
+.side-legend>div{display:flex;gap:7px;align-items:center;font-size:11px}
+.side-legend i{width:11px;height:11px;border-radius:4px;display:inline-block;flex:none}
+.side-legend small{color:#94a7b3}
+.drawer-scrim{position:fixed;inset:0;z-index:79;background:rgba(10,29,43,.44);border:0;width:100vw;height:100dvh}
+.lesson.math,.lesson.ict,.lesson.tutor{background:var(--lesson-bg,#e5f0f8);border-left:3px solid var(--lesson-accent,#3379af);color:#244356}
+.lesson.math .lesson-name,.lesson.ict .lesson-name,.lesson.tutor .lesson-name{color:var(--lesson-accent,#244356)}
+.lesson.math .lesson-sub,.lesson.ict .lesson-sub,.lesson.tutor .lesson-sub{color:#425a69}
+.lesson.off{background:#eceff2;border-left-color:#9eaebb;opacity:.7}
+.lesson{box-shadow:0 1px 2px #2548630a;transition:box-shadow .13s,transform .13s}
+.cell:hover .lesson{box-shadow:0 3px 12px #23445c20}
+.lesson-short,.lesson-sub-mobile,.day-short{display:none}
+.extra-rule{background:#f3f9fb;border:1px solid #d8e8ec;border-radius:12px;padding:12px}
+.extra-rule strong{font-size:12px;color:#174862}
+.extra-rule p{font-size:10px;color:#718795;margin:6px 0 11px}
+.extra-rule select{width:100%;margin-top:5px}
+.extra-editor .formgrid input[type=number]{width:100%;background:#f8fbfd;border:1px solid #dce8ed;color:#204660;border-radius:8px;padding:9px;min-height:38px}
+/* In focus mode the sidebar is an OVERLAY, not a width-consuming column. */
+body.week-focus .menu-toggle{display:flex}
+body.week-focus .sidebar,body.week-focus .sidebar.drawer-open{display:block!important;position:fixed;top:0;bottom:0;left:0;width:min(292px,86vw);height:100dvh;overflow-y:auto;overflow-x:hidden;transform:translateX(-105%);z-index:100;background:#fff;padding:20px 14px;box-shadow:8px 0 40px #16364d21;transition:transform .22s}
+body.week-focus .sidebar.drawer-open{transform:translateX(0)}
+body.week-focus .sidebar .side-mobilehead,body.week-focus .sidebar .navtitle,body.week-focus .sidebar .sidefooter{display:flex!important}
+body.week-focus .sidebar .navtitle{display:block!important}
+body.week-focus .sidebar .navitem{display:flex!important}
+body.week-focus .sidebar .sidefooter{display:block!important}
+body.week-focus .week-view-tabs{display:none!important}
+body.week-focus .filters{display:none!important}
+body.week-focus .weekbar{justify-content:space-between;gap:4px}
+body.week-focus .weekchange{min-width:0;flex:1;justify-content:center;gap:4px}
+body.week-focus .weekchange strong{font-size:clamp(10px,1.65vw,13px);white-space:nowrap}
+body.week-focus .weektools{flex:none;gap:3px}
+body.week-focus .weektools .btn{padding:6px;font-size:9px}
+body.week-focus .week-scroller{border-radius:10px;border:1px solid #dce8ec}
+body.week-focus .timetable thead th{background:linear-gradient(180deg,#e8f4f6,#f3f8fb);color:#345b6e}
+body.week-focus .timetable td{background:#fff}
+body.week-focus .timetable tr:nth-child(2n) td{background:#fafcfd}
+body.week-focus .lesson-name{font-weight:800;line-height:1.13}
+body.week-focus .lesson-sub{display:block!important;white-space:nowrap;line-height:1.1}
+body.week-focus .lesson-sub-mobile{display:none!important}
+body.week-focus .sidebar select{display:block}
+@media(max-width:760px){
+ .top-menu-toggle{display:block;flex:none}
+ .sidebar,.sidebar.drawer-open{display:block!important;position:fixed;top:0;bottom:0;left:0;width:min(300px,88vw);height:100dvh;overflow-y:auto;overflow-x:hidden;transform:translateX(-105%);z-index:100;background:#fff;padding:20px 14px;box-shadow:8px 0 40px #16364d21;transition:transform .22s}
+ .sidebar.drawer-open{transform:translateX(0)}
+ .sidebar .navtitle,.sidebar .sidefooter{display:block!important}
+ .sidebar .navitem{display:flex!important;justify-content:flex-start;white-space:normal;font-size:12px;margin-bottom:5px}
+ .sidebar .side-mobilehead{display:flex!important}
+ .shell{display:block}
+ .sidebar .side-filter-section{display:grid}
+ .day-long{display:none}
+ .day-short{display:inline}
+ body.week-focus .week-view-tabs{display:none}
+ body.week-focus .weekbar{min-height:38px;flex-wrap:nowrap;gap:3px;align-items:center}
+ body.week-focus .weekchange{flex:1;min-width:0;gap:2px}
+ body.week-focus .weekchange strong{font-size:clamp(9px,2.5vw,12px);letter-spacing:-.3px}
+ body.week-focus .weekchange .arrow{width:24px;height:30px;flex:none;font-size:16px;padding:0}
+ body.week-focus .weektools .btn[data-action="today"],body.week-focus .weektools .fit-toggle{display:none}
+ body.week-focus .weektools .btn[data-action="fullscreen-week"]{width:32px;overflow:hidden;font-size:0;padding:0;height:31px}
+ body.week-focus .weektools .btn[data-action="fullscreen-week"]::before{content:'⛶';font-size:17px}
+ body.week-focus .content{padding:3px 2px;width:100%;max-width:none}
+ body.week-focus .panel{padding:2px}
+ body.week-focus .week-scroller{overflow:hidden!important;width:100%;height:auto}
+ body.week-focus .timetable{width:100%;min-width:0!important;table-layout:fixed}
+ body.week-focus .timetable thead th{padding:2px 0;font-size:clamp(8px,2vw,11px);height:31px}
+ body.week-focus .timetable thead th small{font-size:clamp(6px,1.45vw,8px)}
+ body.week-focus .timetable thead .sidecol,body.week-focus .timetable .period-label{width:35px!important}
+ body.week-focus .period-label strong{font-size:clamp(7px,1.8vw,9px);line-height:1}
+ body.week-focus .period-label span{font-size:clamp(7px,1.6vw,8px)}
+ body.week-focus .timetable td{padding:1px}
+ body.week-focus .cell{min-height:0;gap:1px}
+ body.week-focus .lesson{padding:1px 2px;min-height:0;border-left-width:2px;border-radius:3px}
+ body.week-focus .lesson-name.lesson-full{display:none!important}
+ body.week-focus .lesson-name.lesson-short{display:block!important;font-size:clamp(7px,1.95vw,10px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ body.week-focus .lesson-sub-full{display:none!important}
+ body.week-focus .lesson-sub-mobile{display:block!important;font-size:clamp(6px,1.63vw,9px);white-space:nowrap;overflow:hidden;text-overflow:clip}
+ body.week-focus .week-scroller{border-radius:6px}
+ body.week-focus .compact-warning{font-size:9px;line-height:1.3}
+ body.week-focus .lesson-title{display:none}
+}
+@media(max-width:420px){
+ body.week-focus .weekbar{padding:0 1px}
+ body.week-focus .menu-toggle{min-width:27px;width:28px;padding:3px;font-size:15px}
+ body.week-focus .menu-toggle small{font-size:6px}
+ body.week-focus .weekchange strong{font-size:9px}
+ body.week-focus .weekchange .arrow{width:21px}
+ body.week-focus .timetable thead .sidecol,body.week-focus .timetable .period-label{width:31px!important}
+ body.week-focus .timetable thead th{font-size:8px}
+}
+@media(max-width:760px) and (orientation:landscape){
+ body.week-focus .lesson-name.lesson-full{display:block!important;font-size:10px}
+ body.week-focus .lesson-name.lesson-short{display:none!important}
+ body.week-focus .lesson-sub-full{display:block!important}
+ body.week-focus .lesson-sub-mobile{display:none!important}
+}
+@media print{.drawer-scrim,.top-menu-toggle,.menu-toggle,.side-filter-section{display:none!important}.lesson-sub-mobile,.lesson-short{display:none!important}.lesson-full{display:block!important}}
+.teacher-byline{font-size:9px;display:block;font-style:normal;color:#147f82;font-weight:750;margin-top:3px}
+body.week-focus .teacher-byline{display:block;font-size:8px;margin-top:1px}
+
+/* Smart TKB V1.5 — official default + clearly distinguishable full and extra views */
+.compact-full-toggle{display:inline-flex;align-items:center;margin:0 0 8px;border-color:#a7d9cf;color:#076f63;background:linear-gradient(135deg,#eafff7,#f3fbff)}
+.extra-only-toggle{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:10px 12px;border:1px solid #d8e8f0;border-radius:10px;font-size:11px;font-weight:700;color:#31516c;background:#f5fafc;width:max-content;max-width:100%}
+.extra-only-toggle input{width:16px;height:16px;accent-color:#0c8c78}
+.lesson.official-muted{filter:saturate(.45);opacity:.48}
+.lesson.official-muted:hover{opacity:1;filter:none}
+.stats-toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:17px}
+.stats-toolbar label{font-size:11px;font-weight:700;color:#517089;display:block;margin-bottom:6px}
+.stats-toolbar input,.stats-toolbar select{border:1px solid #d7e6ee;background:#f7fbfe;border-radius:10px;padding:12px;width:100%;min-width:0;color:#24495e;min-height:42px}
+.statistics-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.statistics-summary>div{background:linear-gradient(135deg,#eaf7f5,#f4fafd);border:1px solid #d8ebe7;border-radius:12px;padding:16px}
+.statistics-summary small{display:block;font-size:11px;color:#577382}
+.statistics-summary strong{display:block;margin-top:8px;font-size:21px;color:#116e68}
+.stats-warning{border-left:4px solid #eab651;padding:12px 14px;border-radius:10px;background:#fff8eb;margin-bottom:13px;font-size:12px;color:#7c581b;line-height:1.6}
+.pace{border-radius:999px;padding:5px 9px;font-weight:800;font-size:10px;white-space:nowrap}
+.pace.ahead{background:#e8f8ef;color:#096d3c}.pace.behind{background:#fff0ed;color:#b33c32}.pace.ontime{background:#eaf3ff;color:#226bb7}
+.pending-stat{color:#a86922;font-size:10px;font-weight:700}
+.stats-table td{font-size:11px;vertical-align:middle}.stats-table td:last-child{max-width:290px;font-size:10px;line-height:1.5}
+.stats-table td small{color:#97aab6;font-weight:400}
+.math-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sum-card{background:#f7fafc;border:1px solid #e2ebf2;border-radius:12px;padding:15px;display:grid;gap:8px}
+.sum-card strong{color:#25495d;font-size:12px}.sum-card span{font-size:19px;font-weight:800;color:#0a7b6d}.sum-card small{color:#688295;font-size:10px}
+.formgrid input:not([type=checkbox]),.formgrid select,.formgrid textarea{min-width:0;max-width:100%}
+body.week-focus .compact-full-toggle,body.week-focus .extra-only-toggle{font-size:9px;padding:3px 8px;margin:0 0 4px}
+body.week-focus .compact-full-toggle{min-height:20px}
+body.week-focus .extra-only-toggle{min-height:20px}
+@media(max-width:760px){.stats-toolbar{grid-template-columns:1fr 1fr}.statistics-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.statistics-summary>div{padding:11px 8px}.statistics-summary strong{font-size:17px}.statistics-summary small{font-size:9px}.math-summary{grid-template-columns:1fr}.stats-table{min-width:740px}}
+@media(max-width:420px){.stats-toolbar{grid-template-columns:1fr}.compact-full-toggle{width:100%;justify-content:center}}
+@media print{.compact-full-toggle,.extra-only-toggle{display:none!important}}
+
+.progress-meter{height:5px;border-radius:99px;background:#e4edf1;margin-top:7px;overflow:hidden;min-width:48px}.progress-meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#179e88,#4acdb1)}

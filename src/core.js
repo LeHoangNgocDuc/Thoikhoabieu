@@ -19,7 +19,7 @@ export function classById(state,id){return (state.classes||[]).find(c=>c.id===id
 // Google Sheets/App Script can serialize date and numeric cells differently from seed.json.
 // Normalize at the data boundary AND tolerate old deployments that return numeric fields as strings.
 export function normalizeSheetData(raw){
- const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes','extra_sessions'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
+ const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes','extra_sessions','extra_patterns','ppct_overrides','audit_log'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
  const toIso=v=>{if(!v)return '';const str=String(v).trim();const iso=str.match(/^(\d{4}-\d{2}-\d{2})/);if(iso)return iso[1];const d=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return d?`${d[3]}-${d[2]}-${d[1]}`:str;};
  out.classes.forEach(x=>{
   // Some existing Sheets cells like 7/2 were auto-detected as dates by Google Sheets.
@@ -31,22 +31,50 @@ export function normalizeSheetData(raw){
  out.slots.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.versionId=String(x.versionId||'').trim();x.stream=String(x.stream||'');});
  out.ppct.forEach(x=>{x.grade=Number(x.grade);x.week=Number(x.week);x.period=Number(x.period);});
  out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
- out.changes.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';});
- out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';});
+ out.changes.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.scope=String(x.scope||'one');x.titleOverride=String(x.titleOverride||'');});
+ out.ppct_overrides.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.pattern=parseStreamPattern(x.pattern);});
+ out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');});
+ out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';});
  return out;
 }
+export function parseStreamPattern(value){if(Array.isArray(value))return value.map(x=>String(x).trim().toUpperCase()).filter(x=>x==='ĐS'||x==='HH');if(!value)return [];try{const x=JSON.parse(value);if(Array.isArray(x))return parseStreamPattern(x)}catch{}return String(value).split(/[,;\s]+/).map(x=>x.toUpperCase()).filter(x=>x==='ĐS'||x==='HH');}
 export function parseGroups(value){
  if(Array.isArray(value))return [...new Set(value.map(x=>String(x||'').trim()).filter(Boolean))];
  if(!value)return [];
  try{const parsed=JSON.parse(value);if(Array.isArray(parsed))return parseGroups(parsed);}catch{}
  return [...new Set(String(value).split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean))];
 }
-// A tutoring session has one event, with many students/classes in its groups array.
-// It is deliberately not part of scheduleForDate or the official PPCT pointer.
+// V1.4: tutoring recurrence is independent of official TKB versions and PPCT.
+// Old extra_sessions without a patternId remain one-time entries, so upgrades never lose them.
+export function dayNumber(date){const x=parseDate(date).getDay();return x===0?8:x+1;}
+export function recurringDateInWeek(pattern,week){return addDays(monday(week),Number(pattern.day)-2);}
 export function tutoringForWeek(state,week){
  const start=monday(week),end=addDays(start,6);
- return (state.extra_sessions||[]).filter(x=>x.date>=start&&x.date<=end)
-  .map(x=>({...x,kind:'EXTRA',groups:parseGroups(x.groups),classId:'',status:x.completed?'DONE':'PLANNED',ppct:null}));
+ const overrides=state.extra_sessions||[];
+ const all=[];
+ for(const pattern of state.extra_patterns||[]){
+  if(pattern.active===false||String(pattern.active).toLowerCase()==='false')continue;
+  const date=recurringDateInWeek(pattern,start);
+  if(!pattern.fromDate||date<pattern.fromDate||(pattern.toDate&&date>pattern.toDate))continue;
+  const override=overrides.find(x=>x.patternId===pattern.id&&x.date===date);
+  if(override?.action==='CANCEL')continue;
+  // Count delivered/planned occurrences, excluding explicitly cancelled weeks.
+  let lessonNumber=Number(pattern.startLesson)||1;
+  let probe=recurringDateInWeek(pattern,monday(pattern.fromDate));
+  if(probe<pattern.fromDate)probe=addDays(probe,7);
+  for(;probe<date;probe=addDays(probe,7)){
+   if(pattern.toDate&&probe>pattern.toDate)break;
+   if(!overrides.some(x=>x.patternId===pattern.id&&x.date===probe&&x.action==='CANCEL'))lessonNumber++;
+  }
+  const resolved={...pattern,...(override&&override.action==='EDIT'?override:{}),id:override?.action==='EDIT'?override.id:`${pattern.id}@${date}`,patternId:pattern.id,day:Number(pattern.day),date,recurring:true,kind:'EXTRA',groups:parseGroups(override?.action==='EDIT'?override.groups:pattern.groups),lessonNumber:override?.lessonNumber>0?Number(override.lessonNumber):lessonNumber,completed:override?.action==='EDIT'?Boolean(override.completed):false};
+  resolved.status=resolved.completed?'DONE':'PLANNED';resolved.ppct=null;resolved.classId='';
+  all.push(resolved);
+ }
+ for(const item of overrides){
+  if(item.patternId||item.action==='CANCEL'||item.date<start||item.date>end)continue;
+  all.push({...item,kind:'EXTRA',recurring:false,groups:parseGroups(item.groups),classId:'',status:item.completed?'DONE':'PLANNED',lessonNumber:Number(item.lessonNumber)||1,ppct:null});
+ }
+ return all.sort((a,b)=>a.date.localeCompare(b.date)||'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
 }
 export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort((a,b)=>String(b.fromDate).localeCompare(String(a.fromDate))||String(b.id).localeCompare(String(a.id)))[0]||null}
 export function scheduleForDate(state,date){
@@ -57,9 +85,9 @@ export function scheduleForDate(state,date){
   const index=base.findIndex(x=>x.shift===ch.shift&&x.period===Number(ch.period));
   if(ch.action==='CLEAR')continue;
   if(ch.action==='OFF'||ch.action==='DONE'||ch.action==='EDIT'){
-   if(index>=0){const was=base[index];base[index]={...was,...(ch.action==='EDIT'?{classId:ch.classId||was.classId,subject:ch.subject||was.subject,stream:ch.stream||was.stream}:{}),status:ch.action==='OFF'?'OFF':ch.action==='DONE'?'DONE':'PLANNED',notes:ch.notes||was.notes,ppctId:ch.ppctId||'',changeId:ch.id};}
+   if(index>=0){const was=base[index];base[index]={...was,...(ch.action==='EDIT'?{classId:ch.classId||was.classId,subject:ch.subject||was.subject,stream:ch.stream||was.stream}:{}),status:ch.action==='OFF'?'OFF':(ch.action==='DONE'||ch.completed)?'DONE':'PLANNED',notes:ch.notes||was.notes,ppctId:ch.ppctId||'',scope:ch.scope||'following',titleOverride:ch.titleOverride||'',changeId:ch.id};}
   }else if(ch.action==='ADD'){
-   const event={id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:ch.kind||'EXTRA',notes:ch.notes||'',status:ch.completed?'DONE':'PLANNED',ppctId:ch.ppctId||'',changeId:ch.id};
+   const event={id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:ch.kind||'EXTRA',notes:ch.notes||'',status:ch.completed?'DONE':'PLANNED',ppctId:ch.ppctId||'',scope:ch.scope||'following',titleOverride:ch.titleOverride||'',changeId:ch.id};
    // keep conflicts visible for audit instead of silently overwriting
    base.push(event);
   }
@@ -100,7 +128,13 @@ export function applyStreamAssignments(state,weekEvents){
   const dsCount=ppctSequence(state,c.grade,'Toán','ĐS').filter(x=>x.week===Number(wk)).length;
   const hhCount=ppctSequence(state,c.grade,'Toán','HH').filter(x=>x.week===Number(wk)).length;
   events.sort((a,b)=>a.date.localeCompare(b.date)||'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
-  const pattern=mathStreamPattern(dsCount,hhCount,events.length);
+  const weekStart=monday(events[0].date);
+  const rule=[...(state.ppct_overrides||[])].filter(r=>r.classId===classId&&r.subject==='Toán'&&r.fromDate<=weekStart&&(!r.toDate||r.toDate>=weekStart)).sort((a,b)=>b.fromDate.localeCompare(a.fromDate))[0];
+  // A rule is applied only when it still matches this week's official PPCT stream totals.
+  const expected=mathStreamPattern(dsCount,hhCount,events.length);
+  const rulePattern=parseStreamPattern(rule?.pattern);
+  const validRule=rulePattern.length===events.length&&rulePattern.filter(x=>x==='ĐS').length===expected.filter(x=>x==='ĐS').length&&rulePattern.filter(x=>x==='HH').length===expected.filter(x=>x==='HH').length;
+  const pattern=validRule?rulePattern:expected;
   // Preserve explicit stream overrides on individual lessons; assign only blank entries.
   const remaining={'ĐS':pattern.filter(x=>x==='ĐS').length,'HH':pattern.filter(x=>x==='HH').length};
   for(const e of events)if(e.stream==='ĐS'||e.stream==='HH')remaining[e.stream]=Math.max(0,remaining[e.stream]-1);
@@ -129,11 +163,12 @@ export function project(state,untilDate){
   const seq=ppctSequence(state,cls.grade,e.subject,e.stream);
   let i=pointer.get(key);
   if(i===undefined){continue;}
-  const match=e.ppctId?seq.findIndex(x=>x.id===e.ppctId):-1;
+  const initial=i;const match=e.ppctId?seq.findIndex(x=>x.id===e.ppctId):-1;
   if(match>=0)i=match;
   e.ppct=seq[i]||null;
   if(e.kind==='EXTRA'&&!e.ppctId){e.ppct=null;} // extra tutoring is independent of official PPCT
-  if(e.status!=='OFF'&&e.ppct){pointer.set(key,Math.max(pointer.get(key),i+1));}
+  if(e.titleOverride&&e.ppct)e.ppct={...e.ppct,title:e.titleOverride};
+  if(e.status!=='OFF'&&e.ppct){const newPointer=e.scope==='one'&&e.status!=='DONE'&&match>=0?initial+1:i+1;pointer.set(key,Math.max(pointer.get(key),newPointer));}
  }
  return {events:all,pointers:pointer};
 }
@@ -142,4 +177,32 @@ export function seedSanity(state){
  const names=new Set((state.classes||[]).map(c=>c.id));
  const badSlots=(state.slots||[]).filter(e=>!names.has(e.classId)||!DAYS.some(d=>d.n===Number(e.day))||!SHIFTS.some(s=>s.id===e.shift&&e.period>=1&&e.period<=s.count));
  return {badSlots,conflicts:conflicts(eventsForWeek(state,monday('2026-11-09')))};
+}
+
+
+// V1.5: Actual progress must never infer completed lessons from timetable projections.
+// Unconfirmed baselines return no pace comparison instead of fabricated results.
+export function progressAt(state,classId,subject,stream,throughDate){
+ const cls=classById(state,classId);
+ if(!cls)return {status:'missing-class'};
+ const baseline=(state.baselines||[]).find(b=>b.classId===classId&&b.subject===subject&&b.stream===stream);
+ const seq=ppctSequence(state,cls.grade,subject,stream);
+ const wk=schoolWeek(throughDate);
+ const planned=seq.filter(p=>p.week>0&&p.week<=wk).length;
+ if(!baseline||!baseline.confirmed||throughDate<baseline.fromDate){return {status:'unconfirmed',classId,subject,stream,planned,actual:null,delta:null,next:null};}
+ const next=Math.min(seq.length,Math.max(0,Number(baseline.nextIndex)||0));
+ const completed=new Set(seq.slice(0,next).map(p=>p.id));
+ let unlinked=0;
+ for(const ch of state.changes||[]){
+  if(ch.classId!==classId||ch.subject!==subject||ch.stream!==stream)continue;
+  if(ch.date<baseline.fromDate||ch.date>throughDate||!ch.completed||ch.action==='OFF')continue;
+  if(ch.ppctId&&seq.some(p=>p.id===ch.ppctId))completed.add(ch.ppctId);
+  else unlinked++;
+ }
+ const actual=completed.size;
+ return {status:'ready',classId,subject,stream,planned,actual,delta:actual-planned,unlinked,
+    next:seq.find(p=>!completed.has(p.id))||null,baselineDate:baseline.fromDate};
+}
+export function progressSummary(state,throughDate){
+ return (state.baselines||[]).map(b=>progressAt(state,b.classId,b.subject,b.stream,throughDate));
 }
