@@ -2,6 +2,8 @@
  * Script properties: SMART_TKB_API_KEY (must match GAS_API_KEY in Vercel).
  * Deploy > New deployment > Web app > Execute as me > Anyone.
  */
+const SMART_TKB_SERVER_VERSION='1.6.1';
+const EXTRA_OPS=['CREATE','EDIT_ONCE','EDIT_FUTURE','EDIT_ALL','CONVERT_ONCE','CANCEL_ONCE','STOP_FUTURE','DELETE_SERIES','DELETE_ONE'];
 const TABLES={
   classes:['id','name','grade','subjects'],
   versions:['id','name','fromDate','toDate','notes'],
@@ -16,7 +18,7 @@ const TABLES={
   audit_log:['id','at','actor','action','entityType','entityId','oldValue','newValue','reason']
 };
 const NUMERIC={classes:['grade'],slots:['day','period'],ppct:['grade','week','period'],baselines:['nextIndex'],changes:['period'],extra_sessions:['period','lessonNumber'],extra_patterns:['day','period','startLesson']};
-function doGet(){return json_({ok:true,message:'Smart TKB Apps Script đã triển khai. Dùng API qua Vercel.'});}
+function doGet(){return json_({ok:true,message:'Smart TKB Apps Script đã triển khai. Dùng API qua Vercel.',apiVersion:SMART_TKB_SERVER_VERSION});}
 function doPost(e){
  try{
   if(!e.postData||!e.postData.contents)throw Error('Thiếu dữ liệu');
@@ -27,7 +29,9 @@ function doPost(e){
   const lock=LockService.getScriptLock();if(!lock.tryLock(15000))throw Error('Hệ thống bận, thử lại');
   try{
    initSheets_();
-   if(body.op==='load')return json_({ok:true,data:readAll_()});
+   if(body.op==='load')return json_({ok:true,data:readAll_(),apiVersion:SMART_TKB_SERVER_VERSION});
+   if(body.op==='probeExtra')return json_({ok:true,apiVersion:SMART_TKB_SERVER_VERSION,extraWrites:true,
+    supportedActions:EXTRA_OPS, tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},message:'Apps Script V1.6.1 sẵn sàng lưu dạy thêm'});
    if(body.op==='mutateExtra')return json_(mutateExtra_(body));
    if(body.op==='diagnoseExtra')return json_({ok:true,patternCount:read_('extra_patterns').length,sessionCount:read_('extra_sessions').length,requestCount:read_('extra_requests').length,lastSaved:read_('extra_requests').slice(-1).map(x=>({at:x.createdAt,action:x.action,entityId:x.entityId}))});
    if(body.op==='bootstrap')return json_(bootstrap_(body.seed));
@@ -38,7 +42,7 @@ function doPost(e){
    if(body.op==='endExtraPattern')return json_(endExtraPattern_(body.id,body.fromDate));
    if(body.op==='saveOfficialChange')return json_(saveOfficialChange_(body));
    if(body.op==='undoOfficialChange')return json_(undoOfficialChange_(body));
-   throw Error('Thao tác không được hỗ trợ');
+   throw Error('Thao tác không được hỗ trợ tại Apps Script V1.6.1: '+String(body.op||'không rõ'));
   }finally{lock.releaseLock();}
  }catch(err){return json_({ok:false,error:String(err.message||err)});}
 }
@@ -63,7 +67,10 @@ function read_(table){
  }).filter(r=>r[0]).map(r=>decode_(table,r));
 }
 function readAll_(){const r={};for(const k in TABLES)if(k!=='extra_requests')r[k]=read_(k);return r;}
-function appendBatch_(table,records){if(!records.length)return;const s=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(table);const data=records.map(o=>encode_(table,o));const dest=s.getRange(s.getLastRow()+1,1,data.length,TABLES[table].length);if(table==='classes')s.getRange(s.getLastRow()+1,2,data.length,1).setNumberFormat('@');dest.setValues(data);}
+function appendBatch_(table,records){if(!records.length)return;const s=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(table);const data=records.map(o=>encode_(table,o));const dest=s.getRange(s.getLastRow()+1,1,data.length,TABLES[table].length);if(table==='classes')s.getRange(s.getLastRow()+1,2,data.length,1).setNumberFormat('@');
+ if(table==='extra_sessions')s.getRange(s.getLastRow()+1,2,data.length,1).setNumberFormat('@');
+ if(table==='extra_patterns')s.getRange(s.getLastRow()+1,8,data.length,2).setNumberFormat('@');
+ dest.setValues(data);}
 function bootstrap_(seed){if(!seed||!Array.isArray(seed.ppct)||!Array.isArray(seed.classes))throw Error('Dữ liệu khởi tạo không hợp lệ');const data=readAll_();if(Object.values(data).some(a=>a.length))throw Error('Google Sheets đã có dữ liệu. Không khởi tạo lại để tránh ghi đè.');for(const k in TABLES){const records=Array.isArray(seed[k])?seed[k]:[];validateBatch_(k,records);appendBatch_(k,records);}return {ok:true,message:'Đã khởi tạo dữ liệu mẫu',summary:Object.fromEntries(Object.entries(TABLES).map(([k])=>[k,(seed[k]||[]).length]))};}
 function assert_(v,message){if(!v)throw Error(message)}
 function validateBatch_(table,records){assert_(TABLES[table], 'Bảng không hợp lệ');assert_(records.length<1500,'Quá nhiều dòng');records.forEach(r=>{assert_(r&&typeof r.id==='string'&&r.id.length<160,'Thiếu mã ID');if(table==='slots'||table==='changes'||table==='extra_sessions'||table==='extra_patterns'){assert_(['S','C','T'].includes(r.shift),'Buổi không hợp lệ');assert_(Number(r.period)>=1&&Number(r.period)<=(r.shift==='T'?2:5),'Số tiết/suất không hợp lệ');}if(table==='slots'||table==='extra_patterns')assert_(Number(r.day)>=2&&Number(r.day)<=8,'Ngày không hợp lệ');if(table==='ppct_overrides'){assert_(r.subject==='Toán','Quy tắc mạch chỉ áp dụng môn Toán');assert_(/^\d{4}-\d{2}-\d{2}$/.test(r.fromDate),'Ngày áp dụng quy tắc không hợp lệ');assert_(typeof r.classId==='string'&&r.classId.length<80,'Lớp không hợp lệ');assert_(Array.isArray(r.pattern)&&r.pattern.length>=1&&r.pattern.length<=6&&r.pattern.every(x=>['ĐS','HH'].includes(x)),'Mẫu ĐS/HH không hợp lệ');}
@@ -272,7 +279,7 @@ function mutateExtra_(body){
  const requestId=String(body.requestId||'');
  assert_(/^[A-Za-z0-9._:-]{12,120}$/.test(requestId),'Thiếu mã yêu cầu lưu an toàn');
  const action=String(body.action||'');
- assert_(['CREATE','EDIT_ONCE','EDIT_FUTURE','EDIT_ALL','CONVERT_ONCE','CANCEL_ONCE','STOP_FUTURE','DELETE_SERIES','DELETE_ONE'].includes(action),'Thao tác dạy thêm không hợp lệ');
+ assert_(EXTRA_OPS.includes(action),'Thao tác dạy thêm không hợp lệ');
  const already=read_('extra_requests').find(x=>x.id===requestId);
  if(already){const parsed=JSON.parse(already.resultJson||'{}');return {...parsed,duplicateRequest:true};}
  // Recover if Sheets stored the record but a network timeout interrupted the response/log.
