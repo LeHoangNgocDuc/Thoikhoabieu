@@ -340,3 +340,53 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
  .v16-modal .extra-class-picks{grid-template-columns:1fr}
 }
 @media print{.layout-choice,.view-layout-toolbar,.day-switch{display:none!important}body.week-focus .week-scroller{height:auto!important;overflow:visible!important}}
+
+/* V1.6.1: consistent controls on desktop/phone; extra-only switch lives in the left drawer. */
+.backend-health{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 18px;background:#f8fcfc;border:1px solid #cce5e0;min-height:72px}
+.backend-health strong{display:block;color:#0d5c57;font-size:14px;margin-bottom:5px}
+.backend-health small{display:block;color:#526e79;font-size:12px;overflow-wrap:anywhere;line-height:1.5}
+.backend-health .btn{flex:none;min-height:44px}
+.extra-only-side{display:flex!important;align-items:center;gap:10px;padding:12px 10px;margin:9px 0;background:#e6f5f2;border:1px solid #beded7;border-radius:11px;color:#125e57;font-size:12px;font-weight:700;line-height:1.4}
+.extra-only-side input{accent-color:#00927e;width:20px;height:20px;flex:none}
+.extra-hint{display:block;color:#44717a;font-size:11px;line-height:1.5;background:#f2f9f8;padding:7px 10px;border-radius:8px;margin-bottom:7px;max-width:100%}
+.week-view-tabs{display:flex!important;gap:7px;flex-wrap:nowrap;margin:6px 0 9px}
+.week-tab{display:inline-flex;align-items:center;justify-content:center;min-height:39px;flex:1;background:#eff7f8;border:1px solid #d7e9ec;border-radius:10px;color:#2b5b6b;font-size:12px;font-weight:700;padding:7px 10px}
+.week-tab.active{background:#d8f4eb;border-color:#91d8c3;color:#006b5b}
+body.week-focus .week-view-tabs{display:flex!important;justify-content:center;gap:6px;margin:4px 0 6px}
+body.week-focus .week-tab{padding:5px 11px;min-height:32px;font-size:11px}
+body.week-focus .compact-full-toggle{display:none!important}
+.v16-modal{scrollbar-gutter:stable;border:1px solid #dceae9}
+.v16-modal .modalhead{position:sticky;top:-1px;background:#fff;z-index:4;padding:7px 0 12px;border-bottom:1px solid #edf3f5;gap:12px}
+.v16-modal .modalhead .icon-btn{width:44px;min-width:44px;height:44px;flex:none}
+.v16-modal .formgrid input,.v16-modal .formgrid select,.v16-modal .formgrid textarea{font-size:14px;min-height:44px}
+.v16-modal .extra-class-option{min-height:44px}
+.v16-modal .modalactions button{min-height:44px}
+.weekchange strong,.weekchange span,.teacher-byline{overflow-wrap:normal}
+@media(max-width:760px){
+  body.week-focus .weekbar{display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px;gap:5px;max-width:100%;min-height:52px}
+  body.week-focus .week-view-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:5px 0}
+  body.week-focus .week-tab{display:flex!important;min-width:0;min-height:38px;font-size:11px;padding:5px 2px}
+  body.week-focus .weekchange strong{font-size:clamp(10px,3.1vw,13px)}
+  body.week-focus .view-layout-toolbar{margin:5px 0 7px!important}
+  body.week-focus .layout-choice .layout-button{min-height:42px;font-size:12px}
+  body.week-focus .panel{padding:4px!important;border-radius:10px}
+  .extra-hint{font-size:10px;margin:4px 1px 7px}
+  .backend-health{flex-direction:column;align-items:stretch;padding:12px}
+  .backend-health button{width:100%}
+  .v16-modal{padding:16px 16px calc(14px + env(safe-area-inset-bottom));max-height:92dvh}
+  .v16-modal .modalhead h3{font-size:18px}
+  .v16-modal .modalactions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;position:sticky;bottom:-14px;background:#fff}
+  .v16-modal .modalactions .extra-save{grid-column:1/-1;grid-row:1;background:#079f87}
+  .v16-modal .extra-class-picks{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v16-modal .extra-class-option{min-height:46px}
+  .v16-modal .formgrid{gap:10px}
+}
+@media(max-width:360px){
+  body.week-focus .week-tab{font-size:10px}
+  .v16-modal .extra-class-picks{grid-template-columns:1fr}
+}
+@media print{body.week-focus .week-view-tabs,.extra-only-side,.backend-health{display:none!important}}
+
+.extra-server-alert{padding:9px 12px;background:#fff4e5;border:1px solid #f4d1a5;color:#8b4914;border-radius:10px;font-size:11px;line-height:1.6;margin:4px 0 8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.extra-server-alert strong{font-weight:800}
+.extra-server-alert .btn{padding:7px 11px;min-height:38px;margin-left:auto}
