@@ -16,11 +16,24 @@ export function schoolWeek(date){
  return week;
 }
 export function classById(state,id){return (state.classes||[]).find(c=>c.id===id)}
-export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>v.fromDate<=date).sort((a,b)=>b.fromDate.localeCompare(a.fromDate)||String(b.id).localeCompare(String(a.id)))[0]||null}
+// Google Sheets/App Script can serialize date and numeric cells differently from seed.json.
+// Normalize at the data boundary AND tolerate old deployments that return numeric fields as strings.
+export function normalizeSheetData(raw){
+ const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
+ const toIso=v=>{if(!v)return '';const str=String(v).trim();const iso=str.match(/^(\d{4}-\d{2}-\d{2})/);if(iso)return iso[1];const d=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return d?`${d[3]}-${d[2]}-${d[1]}`:str;};
+ out.classes.forEach(x=>{x.grade=Number(x.grade);if(typeof x.subjects==='string'){try{x.subjects=JSON.parse(x.subjects)}catch{x.subjects=[];}}if(!Array.isArray(x.subjects))x.subjects=[];});
+ out.versions.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);});
+ out.slots.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.versionId=String(x.versionId||'').trim();x.stream=String(x.stream||'');});
+ out.ppct.forEach(x=>{x.grade=Number(x.grade);x.week=Number(x.week);x.period=Number(x.period);});
+ out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
+ out.changes.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';});
+ return out;
+}
+export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort((a,b)=>String(b.fromDate).localeCompare(String(a.fromDate))||String(b.id).localeCompare(String(a.id)))[0]||null}
 export function scheduleForDate(state,date){
  const ver=activeVersion(state,date);
  const day=parseDate(date).getDay()===0?8:parseDate(date).getDay()+1;
- const base=ver&&schoolWeek(date)!==0?(state.slots||[]).filter(x=>x.versionId===ver.id&&x.day===day).map(s=>({...s,date,changeId:'',status:'PLANNED'})):[];
+ const base=ver&&schoolWeek(date)!==0?(state.slots||[]).filter(x=>String(x.versionId).trim()===String(ver.id).trim()&&Number(x.day)===day).map(s=>({...s,date,changeId:'',status:'PLANNED'})):[];
  for(const ch of (state.changes||[]).filter(x=>x.date===date)){
   const index=base.findIndex(x=>x.shift===ch.shift&&x.period===Number(ch.period));
   if(ch.action==='CLEAR')continue;

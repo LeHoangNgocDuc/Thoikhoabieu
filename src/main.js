@@ -1,5 +1,5 @@
 
-import {DAYS,SHIFTS,addDays,monday,schoolWeek,classById,activeVersion,eventsForWeek,conflicts,ppctSequence,parseDate} from './core.js';
+import {DAYS,SHIFTS,addDays,monday,schoolWeek,classById,activeVersion,eventsForWeek,conflicts,ppctSequence,parseDate,normalizeSheetData} from './core.js';
 import {extractTeacherSchedule} from './importExcel.js';
 
 const $=s=>document.querySelector(s);
@@ -22,14 +22,14 @@ async function persist(table,row){
  }
 }
 function cacheDemo(){localStorage.setItem('smart-tkb-demo-v1',JSON.stringify($state.data));}
-async function pullGoogle(){const r=await fetch('/api/tkb');const j=await r.json();if(!r.ok||!j.ok)throw Error(j.error||'Không thể đọc dữ liệu Google');$state.data=j.data;$state.mode='google';$state.loggedIn=true;}
+async function pullGoogle(){const r=await fetch('/api/tkb');const j=await r.json();if(!r.ok||!j.ok)throw Error(j.error||'Không thể đọc dữ liệu Google');$state.data=normalizeSheetData(j.data);$state.mode='google';$state.loggedIn=true;}
 async function init(){
- try{const sess=await fetch('/api/tkb?action=session').then(r=>r.json());if(sess.authenticated&&sess.backendConfigured)await pullGoogle();}catch(e){console.info('Đang dùng chế độ demo:',e.message);}
- if(!$state.data){const seed=await fetch('/seed.json').then(r=>r.json());const saved=localStorage.getItem('smart-tkb-demo-v1');try{$state.data=saved?JSON.parse(saved):seed;}catch{$state.data=seed;} $state.mode='demo';}
+ try{const sess=await fetch('/api/tkb?action=session').then(r=>r.json());if(sess.authenticated&&sess.backendConfigured)await pullGoogle();}catch(e){console.info('Chưa tải được Google Sheets:',e.message);$state.notice='Không tải được Google Sheets: '+e.message;}
+ if(!$state.data){const seed=await fetch('/seed.json').then(r=>r.json());const saved=localStorage.getItem('smart-tkb-demo-v1');try{$state.data=normalizeSheetData(saved?JSON.parse(saved):seed);}catch{$state.data=normalizeSheetData(seed);} $state.mode='demo';}
  render();
 }
 function showTop(){const d=$state.data;const events=eventsForWeek(d,$state.week),err=conflicts(events);
- return `<header class="topbar"><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Giáo viên</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':'○ Chế độ dùng thử'}</span><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
+ return `<header class="topbar"><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Giáo viên</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':'○ Chế độ dùng thử'}</span><button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
  <div class="shell"><aside class="sidebar"><div class="navtitle">QUẢN LÝ GIẢNG DẠY</div>
  ${[['calendar','▦','Thời khóa biểu'],['progress','◷','PPCT & tiến độ'],['versions','⇄','Phiên bản TKB'],['settings','⚙','Cấu hình & dữ liệu']].map(([k,icon,label])=>`<button class="navitem ${$state.view===k?'selected':''}" data-view="${k}"><span class="navicon">${icon}</span>${label}</button>`).join('')}
  <div class="sidefooter"><div class="stat-label">Năm học 2026 – 2027</div><div class="stat-desc">7 lớp · 4 PPCT · 7 ngày/tuần<br>Sáng 5 tiết · Chiều 5 tiết · Tối 2 suất</div></div></aside><main class="content">${$state.notice?`<div class="notice">${esc($state.notice)}<button data-action="clear-notice">×</button></div>`:''}
@@ -43,7 +43,7 @@ function calendarPage(events,error){
  const conflictKeys=new Set(conflicts(events).map(c=>c.key));
  const occupied=events.filter(e=>e.status!=='OFF').length,completed=events.filter(e=>e.status==='DONE').length;
  const renderCell=(day,s,p)=>{
-  const date=addDays($state.week,day-2);const all=filtered.filter(e=>e.date===date&&e.shift===s&&e.period===p);
+  const date=addDays($state.week,day-2);const all=filtered.filter(e=>e.date===date&&e.shift===s&&Number(e.period)===p);
   const hasConflict=conflictKeys.has(`${date}|${s}|${p}`);
   return `<td><button class="cell ${all.length?'filled':''} ${hasConflict?'conflict':''}" title="${esc(dayLabel(day)+' '+shiftLabel(s)+' '+p)}" data-action="edit" data-date="${date}" data-shift="${s}" data-period="${p}">
     ${all.map(e=>`<span class="lesson ${e.subject==='Toán'?'math':'ict'} ${e.status==='OFF'?'off':''}">
@@ -57,6 +57,7 @@ function calendarPage(events,error){
  <div class="metrics"><div class="metric"><span>Tiết có lịch</span><strong>${occupied}</strong><small>Trong tuần đang xem</small></div><div class="metric"><span>Đã xác nhận dạy</span><strong>${completed}</strong><small>Cần thầy xác nhận từng tiết</small></div><div class="metric"><span>Phiên bản áp dụng</span><strong class="metric-version">${esc(version?.name||'Chưa có TKB')}</strong><small>Tuần ${schoolWeek($state.week)}</small></div><div class="metric ${error.length?'metric-warn':''}"><span>Trùng tiết</span><strong>${error.length}</strong><small>${error.length?'Cần kiểm tra trước khi chốt':'Lịch hiện không bị trùng'}</small></div></div>
  <section class="panel"><div class="weekbar"><div class="weekchange"><button class="arrow" data-action="prev-week" aria-label="Tuần trước">‹</button><div><strong>Tuần ${schoolWeek($state.week)} · ${fmt($state.week)} – ${fmt(weekEnd())}</strong><span>Năm học 2026–2027 · từ Thứ 2 đến Chủ nhật</span></div><button class="arrow" data-action="next-week" aria-label="Tuần sau">›</button></div><button class="btn soft" data-action="today">Tuần hiện tại</button></div>
  <div class="filters"><div><label>Lớp</label><select id="f-class">${options(CLASS_OPTS(),$state.filterClass)}</select></div><div><label>Buổi</label><select id="f-shift">${options([['all','Cả ngày'],['S','Buổi sáng'],['C','Buổi chiều'],['T','Buổi tối']],$state.filterShift)}</select></div><div><label>Môn</label><select id="f-subject">${options([['all','Cả hai môn'],['Toán','Toán'],['Tin','Tin']],$state.filterSubject)}</select></div><div><label>Loại lịch</label><select id="f-kind">${options([['all','Tất cả'],['MAIN','Chính khóa'],['OTHER','Dạy thêm / bù']],$state.filterKind)}</select></div><div><label>Mạch Toán</label><select id="f-stream">${options([['all','ĐS + HH'],['ĐS','Đại số'],['HH','Hình học'],['TIN','Tin học']],$state.filterStream)}</select></div></div>
+ ${events.length===0?`<div class="warning"><b>Chưa hiển thị được tiết học tuần này.</b> Nguồn: ${$state.mode==='google'?'Google Sheets':'Dữ liệu dùng thử'} · ${($state.data.slots||[]).length} tiết gốc · ${($state.data.versions||[]).length} phiên bản · Phiên bản hiện tại: ${esc(version?.id||'không tìm thấy')} · Tuần từ ${esc($state.week)}. Hãy nhấn <b>↻ Tải lại Google Sheets</b>. Nếu vẫn trống, kiểm tra trạng thái Google Sheets ở đầu trang và ngày hiệu lực phiên bản.</div>`:''}
  ${error.length?`<div class="warning">⚠ Phát hiện ${error.length} ô trùng tiết: ${error.map(c=>{const e=c.items[0];return `${fmt(e.date)} ${shiftLabel(e.shift)} ${e.period} (${c.items.map(x=>`${x.subject} ${className(x.classId)}`).join(' / ')})`}).join('; ')}. Ứng dụng không tự ý đổi lịch.</div>`:''}
  <div class="table-scroller"><table class="timetable"><thead><tr><th class="sidecol">Ca</th>${DAYS.map(d=>`<th>${d.label}<small>${fmt(addDays($state.week,d.n-2))}</small></th>`).join('')}</tr></thead><tbody>
  ${activeShifts.map(sh=>Array.from({length:sh.count},(_,i)=>`<tr><th class="period-label"><span>${sh.label}</span><strong>${sh.id==='T'?'Suất':'Tiết'} ${i+1}</strong></th>${DAYS.map(d=>renderCell(d.n,sh.id,i+1)).join('')}</tr>`).join('')).join('')}
@@ -141,6 +142,12 @@ async function clearEdit(){const {date,shift,period}=$state.edit;const existing=
 }
 async function doAction(target){const a=target.dataset.action;if(!a)return;
  try{
+ if(a==='refresh-google'){
+  if($state.mode!=='google')throw Error('Ứng dụng đang ở chế độ dùng thử, không phải Google Sheets. Vào Cấu hình & dữ liệu để đăng nhập máy chủ Production.');
+  await pullGoogle();$state.week=monday('2026-11-09');$state.filterClass='all';$state.filterShift='all';$state.filterSubject='all';$state.filterKind='all';$state.filterStream='all';
+  const count=eventsForWeek($state.data,$state.week).length;
+  return notify(`Đồng bộ thành công: ${$state.data.slots.length} tiết gốc, tuần 10 hiển thị ${count} tiết. ${count===0?'Cần kiểm tra phiên bản hoặc định dạng dữ liệu.':''}`);
+ }
  if(a==='clear-notice'){$state.notice='';return render();}
  if(a==='open-settings'){$state.view='settings';return render();}
  if(a==='prev-week'||a==='next-week'){$state.week=addDays($state.week,a==='prev-week'?-7:7);return render();}
