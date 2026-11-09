@@ -40,3 +40,43 @@ body.week-focus .cell.conflict .lesson-sub{display:none}
 /* Make week toolbar usable without losing the full-week matrix on mid-size screens. */
 @media(max-width:1000px){body.week-focus .weektools .btn{font-size:9px;padding:6px 7px}body.week-focus .weekchange strong{font-size:11px}}
 @media(max-width:540px) and (orientation:portrait){body.week-focus .weekbar{align-items:flex-start}body.week-focus .weektools{width:100%;justify-content:space-between}body.week-focus .filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* SMART TKB V1.3: curriculum and tutoring are separate workspaces. */
+.week-view-tabs{display:flex;align-items:center;gap:6px;margin:10px 0 11px;flex-wrap:wrap}
+.week-tab{border:1px solid #dce8ef;background:#f4f8fb;color:#435e73;border-radius:9px;padding:9px 15px;font-weight:750;font-size:12px;transition:background .15s}
+.week-tab.active{background:#164a75;border-color:#164a75;color:#fff}
+.week-tab:focus-visible,.cell:focus-visible,.btn:focus-visible{outline:3px solid #2c91d1;outline-offset:2px}
+.lesson.tutor{background:#f1e9ff;border-left:3px solid #8656c6;color:#543879}
+.lesson.tutor .lesson-name{color:#53387d}
+.lesson.tutor .lesson-sub{color:#7b59a4}
+.extra-class-picks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
+.extra-class-option{display:flex;align-items:center;gap:9px;border:1px solid #dfebf2;border-radius:9px;background:#f8fbfe;padding:10px 11px;font-size:12px;cursor:pointer}
+.extra-class-option:has(input:checked){border-color:#8860bb;background:#f2eaff}
+.extra-class-option input{width:16px;height:16px;accent-color:#8153ba}
+.extra-class-option small{color:#7f94a3}
+.extra-editor textarea{width:100%;border:1px solid #dfe9ef;border-radius:8px;padding:10px;font-size:12px;resize:vertical;color:#244254;background:#f8fbfd}
+.compact-warning{border:1px solid #f4d5a8;background:#fffaf0;border-radius:9px;margin:6px 0 9px;padding:9px 13px;font-size:11px;color:#945c16}
+.compact-warning summary{cursor:pointer;font-weight:750}
+.compact-warning p{margin-top:8px;font-size:11px}
+/* Focus layout is intentionally independent from the regular sidebar layout. */
+body.week-focus .week-view-tabs{justify-content:center;gap:5px;margin:2px 0 5px}
+body.week-focus .week-tab{padding:5px 14px;font-size:10px;border-radius:6px}
+body.week-focus .filters{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:4px}
+body.week-focus .filters>div{min-width:0}
+body.week-focus .weekbar{min-height:34px}
+body.week-focus .content{width:100%;height:100dvh;max-width:none;padding:3px 5px}
+body.week-focus .week-scroller{width:100%;max-width:100%;border:1px solid #e4edf3}
+body.week-focus .timetable{table-layout:fixed;width:100%;min-width:0;border-spacing:0}
+body.week-focus .timetable thead th{height:36px}
+body.week-focus .timetable tbody tr{max-height:var(--tkb-row-height,35px)}
+body.week-focus .timetable td{max-height:var(--tkb-row-height,35px)}
+body.week-focus .cell{border-radius:4px}
+body.week-focus .lesson{border-radius:3px}
+body.week-focus .lesson-name{font-size:clamp(8px,.78vw,11px);font-weight:800;line-height:1.08}
+body.week-focus .lesson-sub{font-size:clamp(7px,.68vw,9px)}
+body.week-focus .compact-warning{padding:3px 8px;font-size:10px;margin:2px 0 4px}
+body.week-focus .compact-warning p{font-size:9px;margin:2px 0}
+body.week-focus .panel{overflow:hidden}
+@media(max-width:760px){.extra-class-picks{grid-template-columns:1fr}.week-view-tabs{justify-content:flex-start}.week-tab{flex:1;padding:9px 6px}}
+@media(max-width:800px) and (orientation:portrait){body.week-focus .timetable{min-width:760px}body.week-focus .week-scroller{overflow-x:auto}body.week-focus .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{.week-view-tabs{display:none!important}}

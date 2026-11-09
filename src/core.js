@@ -19,15 +19,34 @@ export function classById(state,id){return (state.classes||[]).find(c=>c.id===id
 // Google Sheets/App Script can serialize date and numeric cells differently from seed.json.
 // Normalize at the data boundary AND tolerate old deployments that return numeric fields as strings.
 export function normalizeSheetData(raw){
- const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
+ const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes','extra_sessions'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
  const toIso=v=>{if(!v)return '';const str=String(v).trim();const iso=str.match(/^(\d{4}-\d{2}-\d{2})/);if(iso)return iso[1];const d=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return d?`${d[3]}-${d[2]}-${d[1]}`:str;};
- out.classes.forEach(x=>{x.grade=Number(x.grade);if(typeof x.subjects==='string'){try{x.subjects=JSON.parse(x.subjects)}catch{x.subjects=[];}}if(!Array.isArray(x.subjects))x.subjects=[];});
+ out.classes.forEach(x=>{
+  // Some existing Sheets cells like 7/2 were auto-detected as dates by Google Sheets.
+  // Old Apps Script deployments sent their JS Date serialized as ISO timestamps.
+  const knownNames={'7F38':'7/2','7F39':'7/3','9F43':'9/1','9F44':'9/2','9F46':'9/4','9F47':'9/5','9F48':'9/6'};
+  if(x.name instanceof Date||/^\d{4}-\d{2}-\d{2}T\d{2}:/.test(String(x.name||''))){x.name=knownNames[x.id]||x.id;}
+  x.grade=Number(x.grade);if(typeof x.subjects==='string'){try{x.subjects=JSON.parse(x.subjects)}catch{x.subjects=[];}}if(!Array.isArray(x.subjects))x.subjects=[];});
  out.versions.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);});
  out.slots.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.versionId=String(x.versionId||'').trim();x.stream=String(x.stream||'');});
  out.ppct.forEach(x=>{x.grade=Number(x.grade);x.week=Number(x.week);x.period=Number(x.period);});
  out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
  out.changes.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';});
+ out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';});
  return out;
+}
+export function parseGroups(value){
+ if(Array.isArray(value))return [...new Set(value.map(x=>String(x||'').trim()).filter(Boolean))];
+ if(!value)return [];
+ try{const parsed=JSON.parse(value);if(Array.isArray(parsed))return parseGroups(parsed);}catch{}
+ return [...new Set(String(value).split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean))];
+}
+// A tutoring session has one event, with many students/classes in its groups array.
+// It is deliberately not part of scheduleForDate or the official PPCT pointer.
+export function tutoringForWeek(state,week){
+ const start=monday(week),end=addDays(start,6);
+ return (state.extra_sessions||[]).filter(x=>x.date>=start&&x.date<=end)
+  .map(x=>({...x,kind:'EXTRA',groups:parseGroups(x.groups),classId:'',status:x.completed?'DONE':'PLANNED',ppct:null}));
 }
 export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort((a,b)=>String(b.fromDate).localeCompare(String(a.fromDate))||String(b.id).localeCompare(String(a.id)))[0]||null}
 export function scheduleForDate(state,date){
