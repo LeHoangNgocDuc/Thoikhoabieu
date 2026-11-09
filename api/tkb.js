@@ -7,7 +7,7 @@ export default async function handler(req,res){
  if(!['POST','GET'].includes(req.method))return json(res,405,{error:'Phương thức không hỗ trợ'});
  if(!process.env.GAS_URL||!process.env.GAS_API_KEY)return json(res,503,{error:'Chưa cấu hình kết nối Google Apps Script'});
  const body=req.method==='GET'?{op:'load'}:req.body;
- if(!body||!['load','bootstrap','save','delete','replaceVersion','splitExtraPattern','endExtraPattern','saveOfficialChange','undoOfficialChange'].includes(body.op))return json(res,400,{error:'Thao tác không được hỗ trợ'});
+ if(!body||!['load','bootstrap','save','delete','replaceVersion','splitExtraPattern','endExtraPattern','saveOfficialChange','undoOfficialChange','mutateExtra','diagnoseExtra'].includes(body.op))return json(res,400,{error:'Thao tác không được hỗ trợ'});
  const payload=JSON.stringify({...body,apiKey:process.env.GAS_API_KEY});
  if(payload.length>1_200_000)return json(res,413,{error:'Dữ liệu quá lớn'});
  try{
