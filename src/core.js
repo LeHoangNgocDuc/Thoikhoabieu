@@ -33,8 +33,8 @@ export function normalizeSheetData(raw){
  out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
  out.changes.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.scope=String(x.scope||'one');x.titleOverride=String(x.titleOverride||'');});
  out.ppct_overrides.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.pattern=parseStreamPattern(x.pattern);});
- out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');});
- out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';});
+ out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'once';x.revision=Number(x.revision)||0;});
+ out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'weekly';x.revision=Number(x.revision)||0;});
  return out;
 }
 export function parseStreamPattern(value){if(Array.isArray(value))return value.map(x=>String(x).trim().toUpperCase()).filter(x=>x==='ĐS'||x==='HH');if(!value)return [];try{const x=JSON.parse(value);if(Array.isArray(x))return parseStreamPattern(x)}catch{}return String(value).split(/[,;\s]+/).map(x=>x.toUpperCase()).filter(x=>x==='ĐS'||x==='HH');}
@@ -66,13 +66,13 @@ export function tutoringForWeek(state,week){
    if(pattern.toDate&&probe>pattern.toDate)break;
    if(!overrides.some(x=>x.patternId===pattern.id&&x.date===probe&&x.action==='CANCEL'))lessonNumber++;
   }
-  const resolved={...pattern,...(override&&override.action==='EDIT'?override:{}),id:override?.action==='EDIT'?override.id:`${pattern.id}@${date}`,patternId:pattern.id,day:Number(pattern.day),date,recurring:true,kind:'EXTRA',groups:parseGroups(override?.action==='EDIT'?override.groups:pattern.groups),lessonNumber:override?.lessonNumber>0?Number(override.lessonNumber):lessonNumber,completed:override?.action==='EDIT'?Boolean(override.completed):false};
+  const resolved={...pattern,...(override&&override.action==='EDIT'?override:{}),id:override?.action==='EDIT'?override.id:`${pattern.id}@${date}`,patternId:pattern.id,day:Number(pattern.day),date,recurring:true,kind:'EXTRA',groups:parseGroups(override?.action==='EDIT'?override.groups:pattern.groups),lessonNumber:override?.lessonNumber>0?Number(override.lessonNumber):lessonNumber,revision:Number(pattern.revision||0),occurrenceRevision:Number(override?.revision||0),completed:override?.action==='EDIT'?Boolean(override.completed):false};
   resolved.status=resolved.completed?'DONE':'PLANNED';resolved.ppct=null;resolved.classId='';
   all.push(resolved);
  }
  for(const item of overrides){
   if(item.patternId||item.action==='CANCEL'||item.date<start||item.date>end)continue;
-  all.push({...item,kind:'EXTRA',recurring:false,groups:parseGroups(item.groups),classId:'',status:item.completed?'DONE':'PLANNED',lessonNumber:Number(item.lessonNumber)||1,ppct:null});
+  all.push({...item,kind:'EXTRA',recurring:false,groups:parseGroups(item.groups),classIds:parseGroups(item.classIds),customGroups:parseGroups(item.customGroups),revision:Number(item.revision)||0,classId:'',status:item.completed?'DONE':'PLANNED',lessonNumber:Number(item.lessonNumber)||1,ppct:null});
  }
  return all.sort((a,b)=>a.date.localeCompare(b.date)||'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
 }
@@ -205,4 +205,16 @@ export function progressAt(state,classId,subject,stream,throughDate){
 }
 export function progressSummary(state,throughDate){
  return (state.baselines||[]).map(b=>progressAt(state,b.classId,b.subject,b.stream,throughDate));
+}
+
+// V1.6: independent tutoring sessions can share one slot with multiple groups,
+// but two distinct sessions at the same slot are a genuine collision.
+export function extraSlotOverlap(a,b){
+ if(a.date!==b.date||a.shift!==b.shift)return false;
+ if(a.startTime&&a.endTime&&b.startTime&&b.endTime)return a.startTime<b.endTime&&b.startTime<a.endTime;
+ return Number(a.period)===Number(b.period);
+}
+export function extraGroupLabels(item,state){
+ const names=new Map((state?.classes||[]).map(c=>[c.id,c.name]));
+ return parseGroups(item.groups).map(id=>names.get(id)||id);
 }

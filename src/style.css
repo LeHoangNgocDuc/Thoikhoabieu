@@ -227,3 +227,116 @@ body.week-focus .extra-only-toggle{min-height:20px}
 @media print{.compact-full-toggle,.extra-only-toggle{display:none!important}}
 
 .progress-meter{height:5px;border-radius:99px;background:#e4edf1;margin-top:7px;overflow:hidden;min-width:48px}.progress-meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#179e88,#4acdb1)}
+
+/* SMART TKB V1.6: accessible adaptive layout, durable tutoring editor. */
+:root{--v16-ink:#17324c;--v16-accent:#087b73;--v16-line:#dfeaf1;--v16-shadow:0 14px 40px rgba(15,47,75,.09)}
+html{overflow-x:hidden}body{overflow-x:hidden;background:#f2f7fb}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #38b7a2;outline-offset:2px}
+.topbar{background:linear-gradient(115deg,#0d2e49,#175b73);box-shadow:0 5px 20px rgba(16,44,69,.18)}
+.sidebar{box-shadow:4px 0 18px rgba(14,40,67,.02)}
+.navitem{border-radius:12px;transition:background .16s,color .16s}
+.navitem.selected{background:#e2f5f1;color:#087d70}
+.panel{border-radius:17px;box-shadow:var(--v16-shadow)}
+.lesson{border-radius:7px;box-shadow:inset 0 0 0 1px rgba(33,69,97,.035)}
+.lesson.tutor:after{content:'↻';position:absolute;right:3px;top:2px;font-size:9px;opacity:.7}
+.lesson.tutor{position:relative}
+.view-layout-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.layout-choice{display:inline-flex;align-items:center;background:#edf5f7;border-radius:11px;padding:3px;gap:3px}
+.layout-button{background:transparent;color:#466275;border:0;border-radius:9px;padding:9px 12px;min-height:38px;font-size:11px;font-weight:800;white-space:nowrap}
+.layout-button.on{background:white;color:#087c70;box-shadow:0 2px 7px rgba(19,56,77,.12)}
+.layout-info{font-size:11px;color:#768b9a}
+.day-board{display:grid;gap:14px}
+.day-switch{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.day-switch strong{color:#1c4660;font-size:16px}
+.day-switch button{width:44px;height:44px;border-radius:13px;border:1px solid #cce3e6;background:#ecf9f5;font-size:26px;color:#08796e}
+.day-chips{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day-chips button{min-width:0;border:1px solid #e2edf2;border-radius:11px;background:#f8fbfd;min-height:49px;color:#45687c;font-weight:800;padding:6px 2px}
+.day-chips button.selected{border-color:#38a995;background:#dff5ec;color:#08695c}
+.day-chips small{display:block;font-size:9px;margin-top:3px;font-weight:500}
+.day-events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.day-event{border:1px solid #e2ebf1;background:#fff;display:flex;align-items:stretch;min-height:76px;text-align:left;border-radius:12px;padding:8px;gap:9px;min-width:0}
+.day-event.has-events{border-color:#c5dadf;background:#f9fcfd}
+.day-event.day-conflict{border:2px solid #df6667}
+.day-time{flex:0 0 86px;color:#42627c;font-size:11px;font-weight:800;padding-top:6px}
+.day-contents{flex:1;min-width:0;display:grid;gap:5px}
+.day-entry{display:flex;flex-direction:column;justify-content:center;gap:4px;border-left:4px solid var(--lesson-accent);background:var(--lesson-bg);color:#203e56;border-radius:8px;padding:8px;min-width:0}
+.day-entry b{font-size:12px;color:var(--lesson-accent);overflow-wrap:anywhere}
+.day-entry small{font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.day-empty{font-size:11px;color:#9fb0bf;align-self:center}
+.v16-modal .modalhead{align-items:flex-start}
+.v16-modal .modalhead h3{font-size:19px;line-height:1.35;color:#153d51;margin-top:3px}
+.v16-modal .modalhead p{font-size:11px;color:#718998;margin-top:6px}
+.v16-modal .extra-class-picks{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.v16-modal .extra-class-option{border-radius:10px;min-height:45px;padding:9px;border:1px solid #dce8eb;background:#f9fcfe;display:flex;align-items:center}
+.v16-modal .formgrid label{font-size:12px;color:#4a687b;line-height:1.4;margin-bottom:7px}
+.v16-modal .formgrid input:not([type=checkbox]),.v16-modal .formgrid select,.v16-modal .formgrid textarea{font-size:13px;min-height:44px;border:1px solid #d8e7ee;padding:10px 12px;border-radius:11px;background:#fbfdfe;outline-color:#19ad90}
+.v16-modal .extra-rule{border-radius:12px;padding:13px;background:#eaf8f3;border:1px solid #c7eadd}
+.v16-modal .extra-rule p{margin:4px 0 10px;color:#537a75;font-size:11px}
+.v16-modal .inline-check{display:flex!important;align-items:center;gap:11px;min-height:42px;margin:0}
+.v16-modal .inline-check input{accent-color:#0b9c80;width:19px;height:19px}
+.v16-modal .group-preview{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.v16-modal .group-preview b{font-size:11px;color:#688194;width:100%}
+.v16-modal .group-preview span{font-size:11px;color:#136d62;background:#e2f7ee;border-radius:999px;padding:6px 10px;max-width:100%;overflow-wrap:anywhere}
+.editor-warning{background:#fff5e9;border:1px solid #f0d8ad;border-radius:10px;padding:10px 12px;margin:12px 0;font-size:11px;color:#8a621c;line-height:1.7}
+.editor-error{margin-top:14px;padding:12px;background:#fff0ef;border:1px solid #eeb6b1;border-radius:9px;color:#a12727;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.editor-error[hidden],.extra-end-wrap[hidden]{display:none!important}
+.editor-status{font-size:11px;color:#4b7685;margin-top:10px;min-height:12px}
+.v16-modal .modalactions{gap:8px;flex-wrap:wrap}
+.v16-modal .modalactions button{min-height:44px}
+@media(min-width:1024px){body.week-focus .weekbar{min-height:50px}body.week-focus .view-layout-toolbar{margin-bottom:6px}body.week-focus .layout-button{min-height:34px;padding:6px 13px}}
+@media(max-width:760px){
+ body:not(.week-focus) .content{padding:14px 9px}
+ body:not(.week-focus) .topbar{padding:0 10px;height:64px}
+ .layout-info{display:none}
+ .view-layout-toolbar{margin:8px 0}
+ .layout-choice{width:100%;display:flex}
+ .layout-choice .layout-button{flex:1;min-height:44px;font-size:12px}
+ .day-chips{gap:3px}.day-chips button{font-size:11px;min-height:47px;border-radius:9px}
+ .day-events{grid-template-columns:1fr;gap:7px}
+ .day-event{min-height:62px}
+ .day-time{flex-basis:91px;font-size:12px}
+ .day-entry b{font-size:13px}
+ .v16-modal{width:100%;max-width:100%;max-height:94dvh;border-radius:20px 20px 0 0!important;position:absolute;bottom:0;left:0;margin:0!important;padding:19px 16px calc(18px + env(safe-area-inset-bottom));overflow:auto;-webkit-overflow-scrolling:touch}
+ .backdrop{align-items:flex-end!important;padding:0!important}
+ .v16-modal .formgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .v16-modal .extra-class-picks{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .v16-modal .modalactions{position:sticky;bottom:-18px;background:linear-gradient(to top,#fff 88%,#ffffffd9);padding:12px 0 4px;z-index:3}
+ .v16-modal .modalactions button{flex:1;font-size:12px;min-width:0;white-space:normal}
+ body.week-focus .weekbar{display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:4px;margin:0 0 4px;min-height:52px;padding:4px 6px}
+ body.week-focus .menu-toggle{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;border-radius:12px;padding:0;font-size:23px;line-height:1}
+ body.week-focus .menu-toggle small{font-size:7px}
+ body.week-focus .weekchange{display:flex;min-width:0;width:100%;gap:3px;justify-content:space-between}
+ body.week-focus .weekchange>div{min-width:0;text-align:center;flex:1}
+ body.week-focus .weekchange>div strong{display:block;max-width:100%;font-size:clamp(9px,3.0vw,13px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.15px}
+ body.week-focus .weekchange>div span{display:none!important}
+ body.week-focus .teacher-byline{display:block!important;font-size:8px!important;line-height:1.2;color:#178075!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+ body.week-focus .weekchange .arrow{min-width:34px;width:34px!important;min-height:44px;height:44px!important;border-radius:10px;font-size:23px!important;padding:0}
+ body.week-focus .weektools{width:44px;min-width:44px;flex:none;justify-content:flex-end}
+ body.week-focus .weektools .btn[data-action="fullscreen-week"]{width:44px!important;height:44px!important;min-width:44px;border-radius:10px}
+ body.week-focus .content{overflow-y:auto;overflow-x:hidden;height:100dvh;padding:0 4px 4px!important}
+ body.week-focus .panel{padding:3px 3px 8px!important;overflow:visible!important}
+ body.week-focus .view-layout-toolbar{display:flex!important;margin:3px 2px 6px!important}
+ body.week-focus .layout-choice .layout-button{font-size:11px;min-height:35px;padding:4px 8px}
+ body.week-focus .compact-warning{margin:3px 0 5px;font-size:10px;line-height:1.35}
+ body.week-focus .warning p{font-size:10px}
+ body.week-focus .week-scroller{width:100%;max-width:100%;overflow-y:auto!important;overflow-x:auto!important;overscroll-behavior:contain}
+ body.week-focus .timetable{table-layout:fixed;width:100%;min-width:0!important}
+ body.week-focus .timetable thead th{height:36px;font-size:9px}
+ body.week-focus .timetable thead .sidecol,body.week-focus .timetable .period-label{width:39px!important}
+ body.week-focus .period-label strong{font-size:8px}
+ body.week-focus .period-label span{font-size:8px}
+ body.week-focus .timetable td{padding:1px}
+ body.week-focus .lesson-name.lesson-short{font-size:clamp(8px,2.4vw,11px)!important}
+ body.week-focus .lesson-sub-mobile{font-size:clamp(7px,2vw,10px)!important}
+ body.week-focus .day-board{padding:7px 4px 40px;overflow:auto}
+ body.week-focus .day-events{padding-bottom:34px}
+ body.week-focus .day-chips{gap:3px}
+ body.week-focus .day-chips button{padding:5px 0;min-height:45px}
+ .notice{overflow-wrap:anywhere}
+}
+@media(max-width:350px){
+ body.week-focus .weekchange .arrow{width:29px!important;min-width:29px}
+ body.week-focus .weekchange>div strong{font-size:9px}
+ .v16-modal .extra-class-picks{grid-template-columns:1fr}
+}
+@media print{.layout-choice,.view-layout-toolbar,.day-switch{display:none!important}body.week-focus .week-scroller{height:auto!important;overflow:visible!important}}
