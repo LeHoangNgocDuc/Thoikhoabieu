@@ -49,15 +49,45 @@ export function scheduleForDate(state,date){
 }
 export function conflicts(events){const map=new Map();for(const e of events){const k=scheduleKey(e.date,e.shift,e.period);if(e.status==='OFF')continue;map.set(k,[...(map.get(k)||[]),e]);}return [...map].filter(([,list])=>list.length>1).map(([key,items])=>({key,items}));}
 export function ppctSequence(state,grade,subject,stream){return (state.ppct||[]).filter(p=>p.grade===grade&&p.subject===subject&&p.stream===stream).sort((a,b)=>(a.week||99)-(b.week||99)||a.period-b.period)}
+// Distribute math streams in lesson order, not by placing all Algebra before Geometry.
+// School plan: 3 Algebra + 1 Geometry = Algebra, Algebra, Geometry, Algebra.
+export function mathStreamPattern(algebraCount,geometryCount,total=algebraCount+geometryCount){
+ let ds=Math.max(0,Number(algebraCount)||0),hh=Math.max(0,Number(geometryCount)||0);
+ total=Math.max(0,Number(total)||0);
+ if(ds+hh!==total){
+  if(ds+hh===0){ds=total;hh=0;}
+  else {const proposed=Math.round(total*ds/(ds+hh));ds=Math.min(total,Math.max(0,proposed));hh=total-ds;}
+ }
+ if(total===4&&ds===3&&hh===1)return ['ĐS','ĐS','HH','ĐS'];
+ if(total===4&&ds===2&&hh===2)return ['ĐS','HH','ĐS','HH'];
+ if(total===4&&ds===1&&hh===3)return ['HH','HH','ĐS','HH'];
+ const result=[];let next=ds>=hh?'ĐS':'HH';
+ while(ds>0||hh>0){
+  if((next==='ĐS'&&ds===0)||(next==='HH'&&hh===0))next=next==='ĐS'?'HH':'ĐS';
+  result.push(next);if(next==='ĐS')ds--;else hh--;
+  next=next==='ĐS'?'HH':'ĐS';
+ }
+ return result;
+}
 export function applyStreamAssignments(state,weekEvents){
- const weeks={};for(const e of weekEvents){if(e.subject!=='Toán'||e.stream)continue;const wk=schoolWeek(e.date), key=`${e.classId}|${wk}`;(weeks[key]||=([])).push(e);}
- for(const [key,events] of Object.entries(weeks)){
+ const groups=new Map();
+ for(const e of weekEvents){
+  if(e.subject!=='Toán'||e.kind!=='MAIN')continue;
+  const wk=schoolWeek(e.date),key=`${e.classId}|${wk}`;
+  if(!groups.has(key))groups.set(key,[]);groups.get(key).push(e);
+ }
+ for(const [key,events] of groups){
   const [classId,wk]=key.split('|'),c=classById(state,classId);if(!c)continue;
   const dsCount=ppctSequence(state,c.grade,'Toán','ĐS').filter(x=>x.week===Number(wk)).length;
-  const assigned=weekEvents.filter(e=>e.classId===classId&&schoolWeek(e.date)===Number(wk)&&e.subject==='Toán'&&e.stream==='ĐS').length;
-  const remain=Math.max(0,dsCount-assigned);
+  const hhCount=ppctSequence(state,c.grade,'Toán','HH').filter(x=>x.week===Number(wk)).length;
   events.sort((a,b)=>a.date.localeCompare(b.date)||'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
-  events.forEach((e,i)=>{e.stream=i<remain?'ĐS':'HH';e.streamInferred=true;});
+  const pattern=mathStreamPattern(dsCount,hhCount,events.length);
+  // Preserve explicit stream overrides on individual lessons; assign only blank entries.
+  const remaining={'ĐS':pattern.filter(x=>x==='ĐS').length,'HH':pattern.filter(x=>x==='HH').length};
+  for(const e of events)if(e.stream==='ĐS'||e.stream==='HH')remaining[e.stream]=Math.max(0,remaining[e.stream]-1);
+  const blanks=events.filter(e=>e.stream!=='ĐS'&&e.stream!=='HH');
+  const leftover=pattern.filter(x=>remaining[x]>0&&remaining[x]-- >0);
+  blanks.forEach((e,i)=>{e.stream=leftover[i]||pattern[i]||'ĐS';e.streamInferred=true;});
  }
  return weekEvents;
 }
@@ -72,6 +102,8 @@ export function project(state,untilDate){
  }
  const pointer=new Map();for(const b of baselines)pointer.set(`${b.classId}|${b.subject}|${b.stream}`,Number(b.nextIndex)||0);
  for(const e of all){
+  // Extra tutoring groups are not official curriculum lessons, even if a name matches a formal class.
+  if(e.kind==='EXTRA'){e.ppct=null;continue;}
   if(e.date<(baselines.find(b=>b.classId===e.classId&&b.subject===e.subject&&b.stream===e.stream)?.fromDate||'9999'))continue;
   const cls=classById(state,e.classId);if(!cls)continue;
   const key=`${e.classId}|${e.subject}|${e.stream}`;
