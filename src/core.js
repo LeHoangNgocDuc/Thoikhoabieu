@@ -99,13 +99,22 @@ export function compareVersions(a,b){
  return stamp(b)-stamp(a)||String(b.id||'').localeCompare(String(a.id||''));
 }
 export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort(compareVersions)[0]||null}
+/** A newer official revision supersedes older one-week MAIN overrides in its start week. */
+export function isMainOnceSuperseded(change,version,week){
+ if(!version||String(version.fromDate||'').slice(0,10)!==week)return false;
+ const match=String(version.id||'').match(/\d{13}/);
+ if(!match)return false;
+ const versionTime=Number(match[0]);
+ const changedTime=Date.parse(String(change.updatedAt||''));
+ return Number.isFinite(changedTime)?changedTime<versionTime: true;
+}
 export function scheduleForDate(state,date){
  const ver=activeVersion(state,date);
  const day=dayNumber(date);
  const base=ver&&schoolWeek(date)!==0?(state.slots||[]).filter(x=>String(x.versionId).trim()===String(ver.id).trim()&&Number(x.day)===day).map(s=>({...s,date,changeId:'',status:'PLANNED'})):[];
  // One-week manual revisions are keyed by exact source ID so overlapping lessons remain independent.
  // They must not modify the immutable weekly base template or subsequent weeks.
- const once=(state.changes||[]).filter(ch=>ch.scope==='one'&&String(ch.date||'')>=monday(date)&&String(ch.date||'')<=addDays(monday(date),6)&&String(ch.action||'').startsWith('MAIN_'));
+ const once=(state.changes||[]).filter(ch=>ch.scope==='one'&&String(ch.date||'')>=monday(date)&&String(ch.date||'')<=addDays(monday(date),6)&&String(ch.action||'').startsWith('MAIN_')&&!isMainOnceSuperseded(ch,ver,monday(date)));
  for(const ch of once){
   if(ch.action==='MAIN_ADD_ONCE'){
    if(ch.date===date)base.push({id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:'MAIN',status:'PLANNED',notes:ch.notes||'',changeId:ch.id,oneTimeMain:true,scope:'one'});
@@ -384,7 +393,7 @@ export function previewMainOnce(state,{action,sourceSlotId='',fromDate,day,shift
  const targetDate=addDays(fromDate,Number(day)-2);
  const op=action||(!sourceSlotId?'ADD':'EDIT');
  if(!['ADD','EDIT','COPY','DELETE'].includes(op))throw Error('Hành động không hợp lệ');
- const origin=(state.slots||[]).find(x=>x.versionId===version.id&&x.id===sourceSlotId)||(state.changes||[]).find(x=>x.id===sourceSlotId&&x.action==='MAIN_ADD_ONCE'&&monday(x.date)===fromDate);
+ const origin=(state.slots||[]).find(x=>x.versionId===version.id&&x.id===sourceSlotId)||(state.changes||[]).find(x=>x.id===sourceSlotId&&x.action==='MAIN_ADD_ONCE'&&monday(x.date)===fromDate&&!isMainOnceSuperseded(x,version,fromDate));
  if(['EDIT','DELETE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết cần sửa/xóa/sao chép');
  if(op!=='DELETE'){
   if(!Number.isInteger(Number(day))||day<2||day>8||!['S','C','T'].includes(shift)||!Number.isInteger(Number(period))||period<1||period>(shift==='T'?2:5))throw Error('Ô đích không hợp lệ');

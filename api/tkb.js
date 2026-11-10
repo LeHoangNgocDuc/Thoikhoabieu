@@ -3,7 +3,7 @@ export default async function handler(req,res){
  const session=sessionState(req);
  const deploymentCommit=String(process.env.VERCEL_GIT_COMMIT_SHA||'local').slice(0,8);
  if(req.method==='GET'&&req.query?.action==='version')
-  return json(res,200,{ok:true,apiVersion:API_VERSION,release:'v1.7.0',commit:deploymentCommit,
+  return json(res,200,{ok:true,apiVersion:API_VERSION,release:'v1.7.1',commit:deploymentCommit,
    note:'Thông tin phiên bản Vercel API; không chứa khóa hoặc dữ liệu cá nhân.'});
  if(req.method==='GET'&&req.query?.action==='session')
   return json(res,200,{ok:true,authenticated:session.authenticated,code:session.authenticated?'AUTHENTICATED':session.code,
