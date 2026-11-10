@@ -2,7 +2,7 @@
  * Script properties: SMART_TKB_API_KEY (must match GAS_API_KEY in Vercel).
  * Deploy > New deployment > Web app > Execute as me > Anyone.
  */
-const SMART_TKB_SERVER_VERSION='1.6.1';
+const SMART_TKB_SERVER_VERSION='1.6.2';
 const EXTRA_OPS=['CREATE','EDIT_ONCE','EDIT_FUTURE','EDIT_ALL','CONVERT_ONCE','CANCEL_ONCE','STOP_FUTURE','DELETE_SERIES','DELETE_ONE'];
 const TABLES={
   classes:['id','name','grade','subjects'],
@@ -13,7 +13,7 @@ const TABLES={
   changes:['id','date','shift','period','action','classId','subject','stream','kind','notes','ppctId','completed','updatedAt','scope','titleOverride'],
   extra_sessions:['id','date','shift','period','subject','groups','notes','completed','updatedAt','patternId','action','lessonNumber','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId'],
   extra_patterns:['id','day','shift','period','subject','groups','notes','fromDate','toDate','startLesson','active','updatedAt','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId'],
-  extra_requests:['id','action','entityId','createdAt','resultJson'],
+  extra_requests:['id','action','entityId','createdAt','resultJson','payloadHash'],
   ppct_overrides:['id','classId','subject','fromDate','toDate','pattern','notes','updatedAt'],
   audit_log:['id','at','actor','action','entityType','entityId','oldValue','newValue','reason']
 };
@@ -31,8 +31,10 @@ function doPost(e){
    initSheets_();
    if(body.op==='load')return json_({ok:true,data:readAll_(),apiVersion:SMART_TKB_SERVER_VERSION});
    if(body.op==='probeExtra')return json_({ok:true,apiVersion:SMART_TKB_SERVER_VERSION,extraWrites:true,
-    supportedActions:EXTRA_OPS, tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},message:'Apps Script V1.6.1 sẵn sàng lưu dạy thêm'});
+    supportedActions:EXTRA_OPS, tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},message:'Apps Script V1.6.2 có xác minh dữ liệu và lịch lặp',verifiedWrites:true});
    if(body.op==='mutateExtra')return json_(mutateExtra_(body));
+   if(body.op==='extraStatus')return json_(extraStatus_(body.requestId));
+   if(body.op==='listExtra')return json_(extraList_(body.week));
    if(body.op==='diagnoseExtra')return json_({ok:true,patternCount:read_('extra_patterns').length,sessionCount:read_('extra_sessions').length,requestCount:read_('extra_requests').length,lastSaved:read_('extra_requests').slice(-1).map(x=>({at:x.createdAt,action:x.action,entityId:x.entityId}))});
    if(body.op==='bootstrap')return json_(bootstrap_(body.seed));
    if(body.op==='save')return json_(save_(body.table,body.row));
@@ -42,7 +44,7 @@ function doPost(e){
    if(body.op==='endExtraPattern')return json_(endExtraPattern_(body.id,body.fromDate));
    if(body.op==='saveOfficialChange')return json_(saveOfficialChange_(body));
    if(body.op==='undoOfficialChange')return json_(undoOfficialChange_(body));
-   throw Error('Thao tác không được hỗ trợ tại Apps Script V1.6.1: '+String(body.op||'không rõ'));
+   throw Error('UNSUPPORTED_ACTION: '+String(body.op||'không rõ'));
   }finally{lock.releaseLock();}
  }catch(err){return json_({ok:false,error:String(err.message||err)});}
 }
@@ -255,8 +257,10 @@ function extraUpsert_(table,row){
  const sheet=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(table);
  const encoded=encode_(table,row);
  if(idx<0)appendBatch_(table,[row]);else sheet.getRange(idx+2,1,1,encoded.length).setValues([encoded]);
+ SpreadsheetApp.flush();
  const found=read_(table).find(x=>x.id===row.id);
- assert_(found,'Không đọc lại được bản ghi sau khi lưu vào Google Sheets');
+ assert_(found,'READ_AFTER_WRITE_FAILED: Không đọc lại được bản ghi sau khi lưu');
+ assert_(extraCompare_(table,found,row),'WRITE_VERIFY_MISMATCH: Dữ liệu đọc lại khác dữ liệu đã ghi');
  return found;
 }
 function extraAssertNoClash_(base,ignorePattern,ignoreSession,toDate){
@@ -275,20 +279,61 @@ function extraAssertRevision_(row,expected){
  if(expected===undefined||expected===null||expected==='')return;
  assert_(Number(row.revision||0)===Number(expected),'Suất dạy thêm vừa được cập nhật trên thiết bị khác. Hãy tải lại trước khi sửa.');
 }
+/** Compare business fields, not Apps Script object identity; preserve legacy groups JSON. */
+function extraCompare_(table,stored,expected){
+ if(!stored||stored.id!==expected.id||String(stored.subject||'')!==String(expected.subject||''))return false;
+ if(String(stored.shift||'')!==String(expected.shift||'')||Number(stored.period)!==Number(expected.period))return false;
+ if(JSON.stringify(extraGroups_(stored.groups))!==JSON.stringify(extraGroups_(expected.groups)))return false;
+ const fields=table==='extra_patterns'?['day','fromDate','toDate','active','repeatRule','revision','requestId','startLesson','lessonTitle','startTime','endTime']:
+  ['date','patternId','action','repeatRule','revision','requestId','lessonNumber','lessonTitle','startTime','endTime','completed'];
+ return fields.every(k=>{
+  const a=stored[k]??'',b=expected[k]??'';
+  if(k==='active'||k==='completed')return String(a).toLowerCase()===String(b).toLowerCase();
+  if(['day','revision','startLesson','lessonNumber'].includes(k))return Number(a||0)===Number(b||0);
+  return String(a)===String(b);
+ });
+}
+function extraPayloadHash_(body){
+ const text=JSON.stringify({action:body.action,entityId:body.entityId||'',date:body.date||body.row?.date||'',row:body.row||null,
+  expectedRevision:body.expectedRevision??null,expectedOccurrenceRevision:body.expectedOccurrenceRevision??null});
+ return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,text).map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
+}
+function extraStatus_(requestId){
+ assert_(/^[A-Za-z0-9._:-]{12,120}$/.test(String(requestId||'')),'Mã yêu cầu không hợp lệ');
+ const req=read_('extra_requests').find(x=>x.id===requestId);
+ const patterns=read_('extra_patterns'),sessions=read_('extra_sessions');
+ if(!req){const recovered=[...patterns,...sessions].find(x=>x.requestId===requestId);
+  return {ok:true,found:!!recovered,verified:!!recovered,requestId,entityId:recovered?.id||'',state:recovered?'RECOVERED':'NOT_FOUND'};}
+ let recorded={};try{recorded=JSON.parse(req.resultJson||'{}')}catch(e){}
+ const entity=[...patterns,...sessions].find(x=>x.id===req.entityId);
+ const superseded=!!entity&&Number(entity.revision||0)>Number(recorded.revision||0);
+ return {ok:true,found:true,verified:!!entity,requestId,entityId:req.entityId,action:req.action,
+  state:!entity?'MISSING_ENTITY':superseded?'SUPERSEDED':'COMMITTED',table:recorded.table||'',revision:entity?.revision||0,
+  savedAt:req.createdAt||'',payloadHash:req.payloadHash||'',superseded};
+}
+function extraList_(week){
+ const patterns=read_('extra_patterns'),sessions=read_('extra_sessions'),requests=read_('extra_requests');
+ return {ok:true,apiVersion:SMART_TKB_SERVER_VERSION,patterns,sessions,
+  counts:{patterns:patterns.length,exceptions:sessions.length,requests:requests.length},
+  lastRequest:requests.length?{id:requests[requests.length-1].id,at:requests[requests.length-1].createdAt,action:requests[requests.length-1].action}:null};
+}
 function mutateExtra_(body){
  const requestId=String(body.requestId||'');
+ const payloadHash=extraPayloadHash_(body);
  assert_(/^[A-Za-z0-9._:-]{12,120}$/.test(requestId),'Thiếu mã yêu cầu lưu an toàn');
  const action=String(body.action||'');
  assert_(EXTRA_OPS.includes(action),'Thao tác dạy thêm không hợp lệ');
  const already=read_('extra_requests').find(x=>x.id===requestId);
- if(already){const parsed=JSON.parse(already.resultJson||'{}');return {...parsed,duplicateRequest:true};}
+ if(already){assert_(!already.payloadHash||already.payloadHash===payloadHash,'IDEMPOTENCY_CONFLICT: requestId đã được sử dụng với dữ liệu khác');
+  const parsed=JSON.parse(already.resultJson||'{}');const check=extraStatus_(requestId);
+  return {...parsed,verified:check.verified===true,verificationState:check.state,duplicateRequest:true};}
  // Recover if Sheets stored the record but a network timeout interrupted the response/log.
  const recoveredPattern=read_('extra_patterns').find(x=>x.requestId===requestId||x.id==='EX16-P-'+requestId);
  const recoveredSession=read_('extra_sessions').find(x=>x.requestId===requestId||x.id==='EX16-S-'+requestId);
  if(recoveredPattern||recoveredSession){
   const found=recoveredPattern||recoveredSession,table=recoveredPattern?'extra_patterns':'extra_sessions';
-  const result={ok:true,action,entityId:found.id,table,revision:Number(found.revision||1),savedAt:found.updatedAt||new Date().toISOString(),recovered:true,message:'Đã tìm thấy bản ghi đã lưu trước đó'};
-  appendBatch_('extra_requests',[{id:requestId,action,entityId:found.id,createdAt:result.savedAt,resultJson:JSON.stringify(result)}]);
+  const result={ok:true,action,entityId:found.id,table,revision:Number(found.revision||1),savedAt:found.updatedAt||new Date().toISOString(),recovered:true,verified:true,requestId,payloadHash,message:'Đã tìm thấy bản ghi đã lưu trước đó'};
+  appendBatch_('extra_requests',[{id:requestId,action,entityId:found.id,createdAt:result.savedAt,resultJson:JSON.stringify(result),payloadHash}]);
   return result;
  }
  const patterns=read_('extra_patterns'),sessions=read_('extra_sessions');
@@ -382,10 +427,12 @@ function mutateExtra_(body){
  }else throw Error('Yêu cầu không hợp lệ');
  assert_(resultRow,'Không ghi được lịch dạy thêm');
  const reply={ok:true,action,entityId:resultRow.id,table:resultTable,revision:Number(resultRow.revision||1),
-  savedAt:new Date().toISOString(),message:'Đã lưu và đọc lại dữ liệu từ Google Sheets'};
+  savedAt:new Date().toISOString(),verified:true,requestId,payloadHash,message:'Đã xác minh ghi và đọc lại từ Google Sheets'};
  // History and deduplication records are append-only. No official PPCT data is written.
  if(!read_('audit_log').some(x=>x.id==='EX16-A-'+requestId))appendBatch_('audit_log',[{id:'EX16-A-'+requestId,at:reply.savedAt,actor:'Lê Hoàng Ngọc Đức',action,entityType:resultTable,entityId:resultRow.id,
   oldValue:JSON.stringify(oldRows),newValue:JSON.stringify(resultRow),reason:'Thao tác dạy thêm V1.6'}]);
- appendBatch_('extra_requests',[{id:requestId,action,entityId:resultRow.id,createdAt:reply.savedAt,resultJson:JSON.stringify(reply)}]);
- return reply;
+ appendBatch_('extra_requests',[{id:requestId,action,entityId:resultRow.id,createdAt:reply.savedAt,resultJson:JSON.stringify(reply),payloadHash}]);
+ const check=extraStatus_(requestId);
+ assert_(check.verified&&check.entityId===reply.entityId,'REQUEST_VERIFY_FAILED: Không xác nhận được yêu cầu đã lưu');
+ return {...reply,verified:true,verificationState:check.state};
 }
