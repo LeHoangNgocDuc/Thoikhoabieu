@@ -427,3 +427,24 @@ body.week-focus .compact-full-toggle{display:none!important}
   .stats-toolbar input,.stats-toolbar select{min-height:44px;font-size:13px}
 }
 @media(max-width:420px){.stats-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Smart TKB 1.6.3: device-specific authentication recovery and diagnostics. */
+.auth-page{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:radial-gradient(circle at 15% 12%,#d5f5f0 0,transparent 32%),linear-gradient(155deg,#eaf3fb,#f6f9fc 56%,#dcecf2);color:#163246}
+.auth-card{width:min(100%,480px);background:#fff;border:1px solid #d7e6eb;border-radius:24px;padding:clamp(24px,4vw,38px);box-shadow:0 22px 65px #14395520;display:grid;gap:13px;line-height:1.48}
+.auth-logo{width:54px;height:54px;border-radius:17px;background:linear-gradient(140deg,#0b5b75,#12a991);display:grid;place-items:center;font-size:22px;font-weight:850;color:white;letter-spacing:-1px}
+.auth-card h1{font-size:clamp(23px,5vw,31px);line-height:1.15;margin:0;letter-spacing:-.7px;color:#143550}
+.auth-card .eyebrow{font-size:10px;letter-spacing:1.2px;color:#088674;margin:0;font-weight:850}
+.auth-description{color:#627e91;font-size:13px;margin:0}
+.auth-details{padding:12px 14px;border:1px solid #f2d1ad;background:#fff8ed;color:#8a5d19;font-size:12px;border-radius:12px;overflow-wrap:anywhere}
+.auth-details small{display:block;margin-top:5px;color:#a07b43;font-size:11px}
+.auth-card label{font-size:12px;font-weight:800;color:#234e66}
+.auth-card input{display:block;width:100%;min-width:0;border:1px solid #cbdce4;border-radius:12px;padding:14px;font-size:16px;background:#f7fafc;color:#123147;min-height:48px;outline-offset:2px}
+.auth-card input:focus{outline:2px solid #078f84;border-color:#078f84}
+.auth-card .auth-main{display:block;width:100%;min-height:48px;border-radius:12px;font-size:14px;font-weight:800;margin-top:2px}
+.auth-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.auth-actions button{min-height:42px}
+.auth-footer{border-top:1px solid #e7eef2;padding-top:14px;font-size:11px;color:#8497a5;margin:4px 0 0;line-height:1.65}
+.system-status{padding:16px;border:1px solid #d7e8ec;border-radius:14px;margin-bottom:15px;background:#f6fafb;color:#234c61}
+.system-status strong{font-size:14px}
+.system-status p{font-size:12px;margin:7px 0;overflow-wrap:anywhere}
+@media(max-width:600px){.auth-page{padding:18px 12px;align-items:center}.auth-card{border-radius:20px;padding:24px 20px}.auth-actions .btn{flex:1}.auth-details{font-size:12px}}

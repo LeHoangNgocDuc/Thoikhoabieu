@@ -5,9 +5,9 @@ import {extractTeacherSchedule} from './importExcel.js';
 const $=s=>document.querySelector(s);
 const newRequestId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FRONTEND_VERSION='1.6.2';
+const FRONTEND_VERSION='1.6.3';
 const PENDING_EXTRA_KEY='smart-tkb-extra-pending-v162';
-const $state={data:null,mode:'demo',view:'calendar',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',syncDiagnostics:null,extraPending:null,refreshing:false};
+const $state={data:null,mode:'checking',view:'calendar',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',syncDiagnostics:null,extraPending:null,refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false};
 const shiftLabel=s=>({S:'Sáng',C:'Chiều',T:'Tối'})[s]||s;
 const dayLabel=n=>DAYS.find(d=>d.n===n)?.label||n;
 const className=id=>classById($state.data,id)?.name||id;
@@ -29,7 +29,30 @@ const colorFor=id=>{const found=($state.data?.classes||[]).findIndex(c=>c.id===i
 const styleFor=id=>{const [bg,accent]=colorFor(id);return `--lesson-bg:${bg};--lesson-accent:${accent}`;};
 const courses=()=>($state.data?.classes||[]).flatMap(c=>c.subjects.map(subject=>({id:`${c.id}|${subject}`,label:`${c.name} - ${subject}`,classId:c.id,subject})));
 function notify(msg){$state.notice=msg;render();}
-async function callApi(body){const url='/api/tkb';const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({error:'Máy chủ trả dữ liệu không hợp lệ'}));if(!r.ok||j.ok===false)throw Error(j.error||'Không thể lưu');return j;}
+function apiError(response,j){
+ const code=j?.code||((response.status===401)?'UNAUTHENTICATED':'UPSTREAM_ERROR');
+ const err=new Error(j?.error||`Lỗi máy chủ HTTP ${response.status}`);
+ err.code=code;err.status=response.status;
+ $state.lastHttpStatus=response.status;$state.lastApiError=code;
+ if(response.status===401){$state.mode='unauthenticated';$state.sessionStatus='expired';$state.sessionCode=code;$state.loggedIn=false;$state.extraList=null;$state.authError=err.message;}
+ return err;
+}
+async function serverRequest(path,opts={}){
+ let r;
+ try{r=await fetch(path,{credentials:'same-origin',cache:'no-store',...opts});}
+ catch(e){const err=new Error('Không thể kết nối máy chủ. Kiểm tra mạng rồi thử lại.');err.code='NETWORK_ERROR';$state.lastApiError=err.code;throw err;}
+ const j=await r.json().catch(()=>({ok:false,code:'INVALID_RESPONSE',error:'Máy chủ trả về dữ liệu không hợp lệ'}));
+ if(!r.ok||j.ok===false)throw apiError(r,j);
+ $state.lastHttpStatus=r.status;$state.lastApiError='';return j;
+}
+async function callApi(body){return serverRequest('/api/tkb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+async function getSession(){
+ const j=await serverRequest('/api/tkb?action=session');
+ $state.backendConfigured=Boolean(j.backendConfigured);
+ $state.apiVersion=String(j.apiVersion||'');$state.updateAvailable=Boolean($state.apiVersion&&$state.apiVersion!==FRONTEND_VERSION);
+ $state.sessionStatus=j.authenticated?'authenticated':'unauthenticated';$state.sessionCode=j.code||'';
+ return j;
+}
 async function persist(table,row){
  if($state.mode==='google'){
   await callApi({op:'save',table,row});await pullGoogle();
@@ -49,11 +72,18 @@ async function probeExtraServer(){
    $state.extraServerReady=false;$state.extraServerError=message;throw Error(message);
  }
 }
-async function pullGoogle(){const r=await fetch('/api/tkb',{cache:'no-store'});const j=await r.json();if(!r.ok||!j.ok)throw Error(j.error||'Không thể đọc dữ liệu Google');$state.data=normalizeSheetData(j.data);$state.mode='google';$state.loggedIn=true;$state.remoteError='';
- try{await probeExtraServer();}catch(e){console.warn('Apps Script chưa hỗ trợ đầy đủ thao tác dạy thêm:',e.message);}
+async function pullGoogle(){
+ const j=await serverRequest('/api/tkb');
+ if(!j.data||!Array.isArray(j.data.classes)||!Array.isArray(j.data.extra_patterns)){
+   const err=new Error('Phản hồi Google Sheets thiếu cấu trúc dữ liệu. Không thể thay thế bằng dữ liệu mẫu.');err.code='SHEETS_READ_FAILED';throw err;
+ }
+ $state.data=normalizeSheetData(j.data);$state.mode='google';$state.loggedIn=true;$state.sessionStatus='authenticated';
+ $state.remoteError='';$state.authError='';$state.extraList=null;$state.lastSyncedAt=new Date().toISOString();
+ try{await probeExtraServer();}catch(e){console.warn('Lưu dạy thêm chưa sẵn sàng:',e.code||'BACKEND_NOT_READY');}
+ return $state.data;
 }
 async function refreshExtraList(){
- if($state.mode!=='google')throw Error('Chức năng danh sách chỉ đọc dữ liệu thật từ Google Sheets.');
+ if($state.mode!=='google')throw Object.assign(new Error('Vui lòng đăng nhập trên thiết bị này để đọc lịch đã lưu.'),{code:'UNAUTHENTICATED'});
  $state.extraListLoading=true;render();
  try{
   const r=await callApi({op:'listExtra',week:$state.week});
@@ -85,9 +115,41 @@ async function checkPendingExtra(){
  }catch(err){$state.extraPending={...pending,error:err.message};return null;}
 }
 async function init(){
- try{const sess=await fetch('/api/tkb?action=session').then(r=>r.json());{ $state.backendConfigured=Boolean(sess.backendConfigured);if(sess.authenticated&&sess.backendConfigured){await pullGoogle();await checkPendingExtra();} }}catch(e){console.info('Chưa tải được Google Sheets:',e.message);$state.remoteError=e.message;$state.notice='Không tải được Google Sheets: '+e.message;}
- if(!$state.data){const seed=await fetch('/seed.json').then(r=>r.json());const saved=localStorage.getItem('smart-tkb-demo-v1');try{$state.data=normalizeSheetData(saved?JSON.parse(saved):seed);}catch{$state.data=normalizeSheetData(seed);} $state.mode='demo';}
+ // Không thay thế dữ liệu máy chủ bằng seed/demo khi thiếu cookie hoặc lỗi mạng.
+ $state.mode='checking';$state.sessionStatus='checking';render();
+ try{
+   const sess=await getSession();
+   if(!sess.backendConfigured){$state.mode='unconfigured';$state.authError='Vercel chưa có GAS_URL/GAS_API_KEY cho môi trường đang dùng.';}
+   else if(!sess.authenticated){$state.mode='unauthenticated';$state.authError=sess.code==='SESSION_EXPIRED'?'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.':'Thiết bị này chưa có phiên đăng nhập hợp lệ.';}
+   else{
+     try{await pullGoogle();await checkPendingExtra();if($state.view==='extraList')await refreshExtraList();}
+     catch(e){if(e.status===401){$state.mode='unauthenticated';$state.authError='Phiên đã hết hạn hoặc chưa hợp lệ, vui lòng đăng nhập lại.';}
+       else{$state.mode='connection-error';$state.remoteError=e.message;$state.authError=`Không đọc được Google Sheets: ${e.message}`;}}
+   }
+ }catch(e){$state.mode=e.status===401?'unauthenticated':'connection-error';$state.authError=e.message;$state.remoteError=e.message;}
  render();
+}
+function connectionPage(){
+ const expired=$state.mode==='unauthenticated';
+ const loading=$state.mode==='checking';
+ const noServer=$state.mode==='unconfigured';
+ const code=$state.sessionCode||$state.lastApiError||(expired?'UNAUTHENTICATED':noServer?'BACKEND_NOT_CONFIGURED':'NETWORK_ERROR');
+ return `<div class="auth-page"><div class="auth-card"><div class="auth-logo">TK</div><p class="eyebrow">SMART TKB · NAM NHA TRANG</p>
+  <h1>${loading?'Đang kiểm tra phiên đăng nhập':expired?'Đăng nhập Smart TKB':noServer?'Máy chủ chưa được cấu hình':'Không thể tải dữ liệu Google Sheets'}</h1>
+  <p class="auth-description">${loading?'Ứng dụng đang xác minh phiên trên thiết bị này…':expired?'Máy tính và điện thoại đăng nhập độc lập. Dữ liệu vẫn được giữ trên cùng Google Sheets.':noServer?'Kiểm tra các biến môi trường Production trong Vercel.':'Phiên có thể vẫn hợp lệ nhưng máy chủ chưa phản hồi. Dữ liệu Google Sheets không bị xóa.'}</p>
+  ${!loading?`<div class="auth-details" role="status">${esc($state.authError||'')}<small>Mã: ${esc(code)}${$state.lastHttpStatus>=400?' · HTTP '+$state.lastHttpStatus:''}</small></div>`:''}
+  ${expired?`<label for="login-pass">Mật khẩu Smart TKB</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="Nhập APP_PASSWORD"/><button class="btn primary auth-main" data-action="login">Đăng nhập và đồng bộ</button>`:''}
+  ${!loading?`<div class="auth-actions"><button class="btn soft" data-action="recheck-session">↻ Kiểm tra lại kết nối</button>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}</div>`:''}
+  <p class="auth-footer">Giáo viên: Lê Hoàng Ngọc Đức · Frontend ${FRONTEND_VERSION}${$state.apiVersion?' · API '+esc($state.apiVersion):''}<br>Không sử dụng dữ liệu mẫu khi chưa đăng nhập vào hệ thống thật.</p>
+ </div></div>`;
+}
+async function loginAndSync(){
+ const password=$('#login-pass')?.value;
+ if(!password)throw Error('Vui lòng nhập mật khẩu.');
+ await serverRequest('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+ $state.sessionStatus='authenticated';
+ try{await pullGoogle();if($state.view==='extraList')await refreshExtraList();$state.notice='Đã đăng nhập và đọc dữ liệu thật từ Google Sheets.';render();}
+ catch(e){$state.mode=e.status===401?'unauthenticated':'connection-error';$state.authError='Đã đăng nhập nhưng chưa đọc được Google Sheets: '+e.message;render();}
 }
 function sideFilters(){
  if(!['calendar','extra','overview'].includes($state.view))return '';
@@ -108,7 +170,7 @@ function showTop(){
  const combined=conflicts(all);
  const err=['extra','overview'].includes($state.view)?combined:conflicts(official);
  const events=['extra','overview'].includes($state.view)?all:official;
- return `<header class="topbar"><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':'○ Chế độ dùng thử'}</span><button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
+ return `<header class="topbar"><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':'○ Chế độ dùng thử'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
  <div class="shell">${$state.drawerOpen?'<button class="drawer-scrim" data-action="close-drawer" aria-label="Đóng bộ lọc"></button>':''}<aside class="sidebar ${$state.drawerOpen?'drawer-open':''}" id="side-menu"><div class="side-mobilehead"><strong>☰ Lê Hoàng Ngọc Đức</strong><button class="icon-btn" data-action="close-drawer">×</button></div><div class="navtitle">QUẢN LÝ GIẢNG DẠY</div>
  ${[['calendar','▦','Chính khóa'],['extra','◈','Dạy thêm'],['extraList','☷','Danh sách dạy thêm'],['overview','◫','TKB đầy đủ'],['statistics','▥','Thống kê tiến độ'],['progress','◷','PPCT & tiến độ'],['versions','⇄','Phiên bản TKB'],['settings','⚙','Cấu hình & dữ liệu']].map(([k,icon,label])=>`<button class="navitem ${$state.view===k?'selected':''}" data-view="${k}"><span class="navicon">${icon}</span>${label}</button>`).join('')}
  ${sideFilters()}<div class="sidefooter"><div class="stat-label">Năm học 2026 – 2027</div><div class="stat-desc">7 lớp chính khóa · 7 ngày/tuần<br>Sáng 5 tiết · Chiều 5 tiết · Tối 2 suất</div></div></aside><main class="content">${$state.notice?`<div class="notice">${esc($state.notice)}<button data-action="clear-notice">×</button></div>`:''}
@@ -254,7 +316,7 @@ function versionsPage(){const d=$state.data;const versions=[...d.versions].sort(
 }
 function previewConflicts(slots){const m={};for(const e of slots){const k=`${e.day}|${e.shift}|${e.period}`;(m[k]||=([])).push(e);}return Object.entries(m).filter(([,x])=>x.length>1);}
 function settingsPage(){return `<div class="pagehead"><div><div class="eyebrow">CẤU HÌNH HỆ THỐNG</div><h2>Dữ liệu & kết nối</h2><p>Quản lý quyền truy cập, sao lưu, lớp học và nơi lưu Google Sheets.</p></div></div>
- <div class="backend-health panel"><div><strong>Trạng thái lưu dạy thêm</strong><small>${$state.mode!=='google'?'Chưa kết nối Google Sheets':$state.extraServerReady===true?`Đã sẵn sàng · Apps Script ${esc($state.extraServerVersion)}`:$state.extraServerReady===false?`Cần cập nhật Apps Script · ${esc($state.extraServerError)}`:'Chưa kiểm tra'}</small></div><button class="btn primary" data-action="probe-extra">Kiểm tra máy chủ</button><button class="btn soft" data-action="diagnose-sync">Kiểm tra đồng bộ Sheets</button></div>${$state.syncDiagnostics?`<section class="panel sync-report"><h3>Kiểm tra đồng bộ hai chiều</h3><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.syncDiagnostics.apiVersion||'Chưa rõ')} · Apps Script ${esc($state.extraServerVersion||'Chưa xác định')}</p><p>Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp ${$state.syncDiagnostics.counts?.patterns||0} · Buổi/ngoại lệ ${$state.syncDiagnostics.counts?.exceptions||0} · Lịch tuần ${$state.syncDiagnostics.weekCount||0}</p><p>Lần cuối: ${esc($state.syncDiagnostics.lastRequest?.at||'Chưa có')} · ${esc($state.syncDiagnostics.lastRequest?.action||'')} · Đồng bộ lúc ${esc(new Date($state.syncDiagnostics.readAt).toLocaleString('vi-VN'))}</p></section>`:''}<div class="setting-grid"><section class="panel"><div class="panelheading"><h3>Google Sheets</h3><p>Chế độ hiện tại: <strong>${$state.mode==='google'?'Đã kết nối':'Dùng thử trong trình duyệt'}</strong></p></div>${$state.mode==='demo'?`<p>Đăng nhập sau khi đã cấu hình API trên Vercel. Dữ liệu demo đang lưu riêng trên máy này.</p><label>Mật khẩu ứng dụng</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="Nhập APP_PASSWORD"/><button class="btn primary full" data-action="login">Kết nối Google Sheets</button><p class="caption">Nếu chưa cấu hình máy chủ, xem hướng dẫn README.</p>`:`<p>Dữ liệu được lưu trong Google Sheets thông qua Apps Script và Vercel API. Khóa API không xuất hiện trong trình duyệt.</p><button class="btn soft" data-action="logout">Đăng xuất</button><button class="btn primary" data-action="bootstrap">Khởi tạo dữ liệu mẫu trên Sheet trống</button>`}</section>
+ <div class="backend-health panel"><div><strong>Trạng thái lưu dạy thêm</strong><small>${$state.mode!=='google'?'Chưa kết nối Google Sheets':$state.extraServerReady===true?`Đã sẵn sàng · Apps Script ${esc($state.extraServerVersion)}`:$state.extraServerReady===false?`Cần cập nhật Apps Script · ${esc($state.extraServerError)}`:'Chưa kiểm tra'}</small></div><button class="btn primary" data-action="probe-extra">Kiểm tra máy chủ</button><button class="btn soft" data-action="diagnose-sync">Kiểm tra đồng bộ Sheets</button></div>${$state.syncDiagnostics?`<section class="panel sync-report"><h3>Kiểm tra đồng bộ hai chiều</h3><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.syncDiagnostics.apiVersion||'Chưa rõ')} · Apps Script ${esc($state.extraServerVersion||'Chưa xác định')}</p><p>Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp ${$state.syncDiagnostics.counts?.patterns||0} · Buổi/ngoại lệ ${$state.syncDiagnostics.counts?.exceptions||0} · Lịch tuần ${$state.syncDiagnostics.weekCount||0}</p><p>Lần cuối: ${esc($state.syncDiagnostics.lastRequest?.at||'Chưa có')} · ${esc($state.syncDiagnostics.lastRequest?.action||'')} · Đồng bộ lúc ${esc(new Date($state.syncDiagnostics.readAt).toLocaleString('vi-VN'))}</p></section>`:''}<div class="system-status panel"><strong>Trạng thái thiết bị này</strong><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.apiVersion||'chưa xác định')} · Apps Script ${esc($state.extraServerVersion||'chưa xác định')}</p><p>Phiên: ${esc($state.sessionStatus)} · Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp: ${$state.data.extra_patterns?.length||0} · Ngoại lệ: ${$state.data.extra_sessions?.length||0}</p><p>Đồng bộ lần cuối: ${esc($state.lastSyncedAt?new Date($state.lastSyncedAt).toLocaleString('vi-VN'):'Chưa có')} · HTTP cuối: ${esc($state.lastHttpStatus||'Chưa có')} · Mã lỗi: ${esc($state.lastApiError||'Không có')}</p><div class="auth-actions"><button class="btn soft" data-action="diagnose-system">Kiểm tra trạng thái hệ thống</button>${$state.updateAvailable?'<button class="btn primary" data-action="refresh-app">Cập nhật ứng dụng</button>':''}</div></div><div class="setting-grid"><section class="panel"><div class="panelheading"><h3>Google Sheets</h3><p>Chế độ hiện tại: <strong>${$state.mode==='google'?'Đã kết nối':'Dùng thử trong trình duyệt'}</strong></p></div>${$state.mode==='demo'?`<p>Đăng nhập sau khi đã cấu hình API trên Vercel. Dữ liệu demo đang lưu riêng trên máy này.</p><label>Mật khẩu ứng dụng</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="Nhập APP_PASSWORD"/><button class="btn primary full" data-action="login">Kết nối Google Sheets</button><p class="caption">Nếu chưa cấu hình máy chủ, xem hướng dẫn README.</p>`:`<p>Dữ liệu được lưu trong Google Sheets thông qua Apps Script và Vercel API. Khóa API không xuất hiện trong trình duyệt.</p><button class="btn soft" data-action="logout">Đăng xuất</button><button class="btn primary" data-action="bootstrap">Khởi tạo dữ liệu mẫu trên Sheet trống</button>`}</section>
  <section class="panel"><div class="panelheading"><h3>Sao lưu</h3><p>Xuất toàn bộ dữ liệu để lưu an toàn; có thể mở bằng trình soạn thảo JSON.</p></div><button class="btn soft full" data-action="backup">↓ Tải bản sao JSON</button><button class="btn ghost full" data-action="diagnose-extra">⌕ Kiểm tra dạy thêm đã lưu</button><button class="btn ghost full" data-action="print">⎙ In thời khóa biểu hiện tại</button></section></div>
  <section class="panel"><div class="panelheading"><h3>Lớp đang phụ trách</h3></div><div class="class-grid">${$state.data.classes.map(c=>`<div class="class-card"><div class="class-symbol">${esc(c.grade)}</div><div><strong>${esc(c.name)} <small>${esc(c.id)}</small></strong><div>${esc(c.subjects.join(' · '))}</div></div></div>`).join('')}</div></section>`;
 }
@@ -330,7 +392,11 @@ function fitWeekTable(){
 function updateEditorFields(){
  // Dạy thêm sử dụng biểu mẫu riêng, không còn ẩn/hiện các trường chung gây nhầm lẫn.
 }
-function render(){if(!$state.data)return;$('#app').innerHTML=showTop()+modal();fitWeekTable();updateEditorFields();updateExtraFormUI();}
+function render(){
+ if($state.mode!=='google'){document.body.classList.remove('week-focus');$('#app').innerHTML=connectionPage();return;}
+ if(!$state.data)return;
+ $('#app').innerHTML=showTop()+modal();fitWeekTable();updateEditorFields();updateExtraFormUI();
+}
 window.addEventListener('resize',()=>fitWeekTable());
 window.addEventListener('orientationchange',()=>fitWeekTable());
 document.addEventListener('fullscreenchange',()=>fitWeekTable());
@@ -512,6 +578,10 @@ async function undoOfficial(id){
  $state.edit=null;notify('Đã hoàn tác thao tác gần nhất.');}
 async function doAction(target){const a=target.dataset.action;if(!a)return;
  try{
+ if(a==='login'){await loginAndSync();return;}
+ if(a==='recheck-session'){await init();if($state.mode==='google'&&$state.view==='extraList')await refreshExtraList();return;}
+ if(a==='refresh-app'){location.reload();return;}
+ if(a==='diagnose-system'){const previous=$state.apiVersion;const session=await getSession();if(!session.authenticated)throw Object.assign(new Error('Phiên không hợp lệ, đăng nhập lại.'),{code:session.code||'UNAUTHENTICATED'});await pullGoogle();const details=`Frontend ${FRONTEND_VERSION}, API ${$state.apiVersion}, Apps Script ${$state.extraServerVersion||'chưa kiểm tra'}; ${$state.data.extra_patterns.length} lịch lặp và ${$state.data.extra_sessions.length} ngoại lệ.`;return notify('Đã kiểm tra: '+details+(previous&&previous!==$state.apiVersion?' Phiên bản API đã đổi.':''));}
  if(a==='refresh-google'){
   if($state.mode!=='google')throw Error('Ứng dụng đang ở chế độ dùng thử, không phải Google Sheets. Vào Cấu hình & dữ liệu để đăng nhập máy chủ Production.');
   await pullGoogle();
@@ -561,10 +631,10 @@ async function doAction(target){const a=target.dataset.action;if(!a)return;
  if(a==='clear-change')return await clearEdit();
  if(a==='undo-official')return await undoOfficial(target.dataset.id);
  if(a==='export-statistics')return exportStatistics();
- if(a==='login'){const password=$('#login-pass')?.value;if(!password)throw Error('Nhập mật khẩu');const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});const j=await r.json();if(!r.ok)throw Error(j.error||'Không đăng nhập được');try{await pullGoogle();notify('Đã kết nối Google Sheets.');}catch(e){notify('Đăng nhập thành công nhưng chưa đọc được dữ liệu. '+e.message);}return;}
+ 
  if(a==='logout'){await callApi({op:'logout'});location.reload();return;}
  if(a==='bootstrap'){if($state.mode!=='google')throw Error('Chưa kết nối Google');if(!window.confirm('Chỉ khởi tạo trên Google Sheets mới trống. Dữ liệu hiện có sẽ không được ghi đè. Tiếp tục?'))return;const seed=await fetch('/seed.json').then(r=>r.json());await callApi({op:'bootstrap',seed});await pullGoogle();return notify('Đã khởi tạo đầy đủ lớp, lịch và PPCT trên Google Sheets.');}
- }catch(e){console.error(e);notify('Lỗi: '+e.message);}
+ }catch(e){console.error(e.code||'ACTION_ERROR',e.message);if($state.mode==='unauthenticated'||$state.mode==='connection-error'){ $state.authError=e.message;render();}else notify('Lỗi: '+e.message);}
 }
 document.addEventListener('click',e=>{
  const target=e.target.closest('[data-view], [data-action]');if(!target)return;
@@ -573,6 +643,7 @@ document.addEventListener('click',e=>{
  if(target.classList.contains('backdrop')&&e.target!==target)return;
  doAction(target);
 });
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='login-pass'){e.preventDefault();loginAndSync().catch(err=>{$state.authError=err.message;$state.lastApiError=err.code||'';render();});}});
 document.addEventListener('change',e=>{
  const table={'f-class':'filterClass','f-shift':'filterShift','f-subject':'filterSubject','f-kind':'filterKind','f-stream':'filterStream','ppct-grade':'ppctGrade','ppct-subject':'ppctSubject','ppct-stream':'ppctStream','stats-class':'statsClass','stats-subject':'statsSubject','stats-stream':'statsStream','stats-date':'statsDate','stats-period':'statsPeriod'};
  if(table[e.target.id]){$state[table[e.target.id]]=e.target.value;render();}
