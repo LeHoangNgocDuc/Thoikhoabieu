@@ -7,17 +7,21 @@ export default async function handler(req,res){
  if(!['POST','GET'].includes(req.method))return json(res,405,{error:'Phương thức không hỗ trợ'});
  if(!process.env.GAS_URL||!process.env.GAS_API_KEY)return json(res,503,{error:'Chưa cấu hình kết nối Google Apps Script'});
  const body=req.method==='GET'?{op:'load'}:req.body;
- if(!body||!['load','bootstrap','save','delete','replaceVersion','splitExtraPattern','endExtraPattern','saveOfficialChange','undoOfficialChange','mutateExtra','diagnoseExtra','probeExtra'].includes(body.op))return json(res,400,{error:'Thao tác không được hỗ trợ'});
+ if(!body||!['load','bootstrap','save','delete','replaceVersion','splitExtraPattern','endExtraPattern','saveOfficialChange','undoOfficialChange','mutateExtra','diagnoseExtra','probeExtra','listExtra','extraStatus'].includes(body.op))return json(res,400,{error:'Thao tác không được hỗ trợ'});
  const payload=JSON.stringify({...body,apiKey:process.env.GAS_API_KEY});
  if(payload.length>1_200_000)return json(res,413,{error:'Dữ liệu quá lớn'});
  try{
    const answer=await fetch(process.env.GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:payload,redirect:'follow',signal:AbortSignal.timeout(25000)});
    const output=await answer.text();let parsed;
    try{parsed=JSON.parse(output);}catch{return json(res,502,{error:'Apps Script không trả về JSON. Kiểm tra URL /exec và quyền triển khai.'});}
+   if(body.op==='mutateExtra'&&parsed.ok===true&&parsed.verified!==true){
+     return json(res,409,{ok:false,code:'WRITE_NOT_VERIFIED',stage:'apps-script',entityId:parsed.entityId||'',requestId:body.requestId,
+       error:'Máy chủ đã nhận yêu cầu nhưng chưa xác minh bản ghi. Có thể Apps Script chưa cập nhật V1.6.2. Dùng Kiểm tra đồng bộ với requestId trước khi thử lại.'});
+   }
    if(parsed.ok===false){
-     const oldBackend=/thao tác không được hỗ trợ/i.test(String(parsed.error||''));
-     return json(res,oldBackend?409:400,{...parsed,stage:'apps-script',
-       error:oldBackend?'Google Apps Script đang chạy bản cũ, chưa hỗ trợ lưu dạy thêm V1.6.1. Vào Apps Script > Triển khai > Quản lý tùy chọn triển khai > Phiên bản mới, sau đó thử Kiểm tra máy chủ trong Smart TKB.':parsed.error});
+     const oldBackend=/thao tác không được hỗ trợ|UNSUPPORTED_ACTION/i.test(String(parsed.error||''));
+     return json(res,oldBackend?409:400,{...parsed,code:oldBackend?'UNSUPPORTED_ACTION':(parsed.code||'APPS_SCRIPT_ERROR'),stage:'apps-script',
+       error:oldBackend?'Google Apps Script đang chạy bản cũ, chưa hỗ trợ lưu dạy thêm V1.6.2. Vào Apps Script > Triển khai > Quản lý tùy chọn triển khai > Phiên bản mới, sau đó thử Kiểm tra máy chủ trong Smart TKB.':parsed.error});
    }
    return json(res,200,{...parsed,stage:'apps-script'});
  }catch(e){return json(res,502,{error:`Không kết nối được Apps Script: ${e.message}`});}
