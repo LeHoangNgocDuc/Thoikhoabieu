@@ -2,7 +2,7 @@
  * Script properties: SMART_TKB_API_KEY (must match GAS_API_KEY in Vercel).
  * Deploy > New deployment > Web app > Execute as me > Anyone.
  */
-const SMART_TKB_SERVER_VERSION='1.6.5';
+const SMART_TKB_SERVER_VERSION='1.7.0';
 const EXTRA_OPS=['CREATE','EDIT_ONCE','EDIT_FUTURE','EDIT_ALL','CONVERT_ONCE','CANCEL_ONCE','STOP_FUTURE','DELETE_SERIES','DELETE_ONE'];
 const TABLES={
   classes:['id','name','grade','subjects'],
@@ -31,11 +31,11 @@ function doPost(e){
    initSheets_();
    if(body.op==='load')return json_({ok:true,data:readAll_(),apiVersion:SMART_TKB_SERVER_VERSION});
    if(body.op==='probeExtra')return json_({ok:true,apiVersion:SMART_TKB_SERVER_VERSION,extraWrites:true,
-    supportedActions:EXTRA_OPS, tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},
+    supportedActions:EXTRA_OPS,verifiedMainWrites:true,supportedMainActions:['ADD','EDIT','COPY','DELETE'],mainScopes:['one','future'], tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},
     sourceSheetName:SpreadsheetApp.getActiveSpreadsheet().getName(),
     sourceSheetIdTail:SpreadsheetApp.getActiveSpreadsheet().getId().slice(-6),
     capability:'mutateExtra:verified-readback:v1',
-    message:'Apps Script V1.6.5 có xác minh dữ liệu và lịch lặp',verifiedWrites:true});
+    message:'Apps Script V1.7.0 có xác minh dữ liệu và lịch lặp',verifiedWrites:true});
    if(body.op==='mutateExtra')return json_(mutateExtra_(body));
    if(body.op==='extraStatus')return json_(extraStatus_(body.requestId));
    if(body.op==='listExtra')return json_(extraList_(body.week));
@@ -48,6 +48,7 @@ function doPost(e){
    if(body.op==='endExtraPattern')return json_(endExtraPattern_(body.id,body.fromDate));
    if(body.op==='saveOfficialChange')return json_(saveOfficialChange_(body));
    if(body.op==='reviseMainSchedule')return json_(reviseMainSchedule_(body));
+   if(body.op==='mutateMainSchedule')return json_(mutateMainSchedule_(body));
    if(body.op==='undoOfficialChange')return json_(undoOfficialChange_(body));
    throw Error('UNSUPPORTED_ACTION: '+String(body.op||'không rõ'));
   }finally{lock.releaseLock();}
@@ -179,11 +180,11 @@ function officialRow_(body){
   assert_(/^\d{4}-\d{2}-\d{2}$/.test(String(row.moveDate||'')),'Ngày đến không hợp lệ');
   assert_(['S','C','T'].includes(row.moveShift),'Buổi đến không hợp lệ');
   assert_(Number.isInteger(Number(row.movePeriod))&&Number(row.movePeriod)>=1&&Number(row.movePeriod)<=(row.moveShift==='T'?2:5),'Tiết đến không hợp lệ');
-  const v=read_('versions').filter(x=>x.fromDate<=row.date).sort((a,b)=>b.fromDate.localeCompare(a.fromDate)||b.id.localeCompare(a.id))[0];
+  const v=read_('versions').filter(x=>x.fromDate<=row.date).sort(mainVersionCompare_)[0];
   const slot=read_('slots').find(x=>x.id===row.sourceSlotId&&x.versionId===v?.id);
   assert_(slot&&Number(slot.day)===extraNumberDay_(row.date)&&slot.shift===row.shift&&Number(slot.period)===Number(row.period),'Tiết nguồn không khớp lịch gốc');
   assert_(slot.classId===row.classId&&slot.subject===row.subject,'Tiết cần dời không khớp lớp/môn');
-  const toVer=read_('versions').filter(x=>x.fromDate<=row.moveDate).sort((a,b)=>b.fromDate.localeCompare(a.fromDate)||b.id.localeCompare(a.id))[0];
+  const toVer=read_('versions').filter(x=>x.fromDate<=row.moveDate).sort(mainVersionCompare_)[0];
   const conflicts=read_('slots').filter(x=>x.versionId===toVer?.id&&Number(x.day)===extraNumberDay_(row.moveDate)&&x.shift===row.moveShift&&Number(x.period)===Number(row.movePeriod));
   const previouslyMoved=read_('changes').filter(x=>x.action==='MOVE'&&x.date===row.moveDate&&x.sourceSlotId);
   assert_(!conflicts.some(x=>!previouslyMoved.some(m=>m.sourceSlotId===x.id)),'Ô đến đang có chính khóa; chọn ô trống');
@@ -459,51 +460,162 @@ function mutateExtra_(body){
  return {...reply,verified:true,verificationState:check.state};
 }
 
-/** V1.6.5 - immutable weekly revision. Writes only NEW versions/slots; prior weeks and PPCT stay untouched. */
-function reviseMainSchedule_(body){
- const from=String(body.fromDate||''),sourceId=String(body.sourceSlotId||''),p=body.patch||{};
- assert_(/^\d{4}-\d{2}-\d{2}$/.test(from),'Ngày áp dụng không hợp lệ');
- assert_(new Date(from+'T12:00:00Z').getUTCDay()===1,'Ngày áp dụng phải là thứ Hai');
- const day=Number(p.day),period=Number(p.period),shift=String(p.shift||''),classId=String(p.classId||''),subject=String(p.subject||'');
+/** V1.7.0: one endpoint, two scopes. An official TKB revision creates a new version;
+ * a one-week change writes ONLY a dated exception in the existing changes sheet. */
+function mutateMainSchedule_(body){
+ const scope=String(body.scope||'future');
+ assert_(['one','future'].includes(scope),'Phạm vi sửa TKB không hợp lệ');
+ return scope==='one'?mutateMainOnce_(body):reviseMainSchedule_(body);
+}
+function mainPatch_(patch){
+ const p=patch||{},day=Number(p.day),period=Number(p.period),shift=String(p.shift||'');
  assert_(Number.isInteger(day)&&day>=2&&day<=8,'Thứ không hợp lệ');
  assert_(['S','C','T'].includes(shift)&&Number.isInteger(period)&&period>=1&&period<=(shift==='T'?2:5),'Buổi hoặc tiết không hợp lệ');
+ const classId=String(p.classId||''),subject=String(p.subject||'');
  assert_(['Toán','Tin'].includes(subject),'Môn học không hợp lệ');
  const cls=read_('classes').find(x=>x.id===classId);
  assert_(cls&&Array.isArray(cls.subjects)&&cls.subjects.includes(subject),'Lớp chưa được phân công môn này');
  const stream=subject==='Tin'?'TIN':String(p.stream||'');
  assert_(subject==='Tin'||['','ĐS','HH'].includes(stream),'Mạch Toán không hợp lệ');
- const versions=read_('versions'),active=versions.filter(x=>x.fromDate<=from).sort((a,b)=>b.fromDate.localeCompare(a.fromDate)||b.id.localeCompare(a.id))[0];
- assert_(active&&active.id===String(body.expectedVersionId||''),'Phiên bản TKB đã thay đổi. Hãy tải lại trước khi sửa');
- const base=read_('slots').filter(x=>x.versionId===active.id),adding=!sourceId,source=adding?null:base.find(x=>x.id===sourceId);
- assert_(base.length&& (adding||source),'Không tìm thấy tiết chính khóa trong phiên bản đang dùng');
- assert_(base.length+(adding?1:0)<=84,'Phiên bản TKB vượt quá 84 vị trí');
- const newId=adding?'MANUAL-'+from+'-'+Utilities.getUuid().slice(0,12):sourceId;
- const changed=adding?{id:newId,versionId:'',day,shift,period,classId,subject,stream,kind:'MAIN',notes:String(body.reason||'').slice(0,220)}:{...source,day,shift,period,classId,subject,stream};
- if(!adding)assert_(!['day','shift','period','classId','subject','stream'].every(k=>String(source[k]||'')===String(changed[k]||'')),'Chưa thay đổi tiết');
- const moved=adding||Number(source.day)!==day||source.shift!==shift||Number(source.period)!==period;
- if(moved)assert_(!base.some(x=>x.id!==sourceId&&Number(x.day)===day&&x.shift===shift&&Number(x.period)===period),'Ô đến đang có tiết chính khóa');
- if(!adding){
+ return {day,shift,period,classId,subject,stream};
+}
+function mainVersionCompare_(a,b){
+ const date=String(b.fromDate||'').localeCompare(String(a.fromDate||''));if(date)return date;
+ const stamp=x=>Number(String(x.id||'').match(/\d{13}/)?.[0]||0);
+ return stamp(b)-stamp(a)||String(b.id||'').localeCompare(String(a.id||''));
+}
+function mainVersion_(body){
+ const from=String(body.fromDate||'');
+ assert_(/^\d{4}-\d{2}-\d{2}$/.test(from),'Ngày áp dụng không hợp lệ');
+ assert_(new Date(from+'T12:00:00Z').getUTCDay()===1,'Ngày áp dụng phải là thứ Hai');
+ const versions=read_('versions');
+ const active=versions.filter(x=>x.fromDate<=from).sort(mainVersionCompare_)[0];
+ assert_(active&&active.id===String(body.expectedVersionId||''),'Phiên bản TKB đã thay đổi. Hãy đồng bộ và thử lại');
+ return {from,active,base:read_('slots').filter(x=>x.versionId===active.id)};
+}
+/** Immutable weekly revision. Conflict/PPCT data from old versions is not deleted. */
+function reviseMainSchedule_(body){
+ const requestId=String(body.requestId||'').replace(/[^a-zA-Z0-9-]/g,'').slice(0,70);
+ if(requestId){
+  const previous=read_('versions').find(x=>String(x.notes||'').includes('[request:'+requestId+']'));
+  if(previous){
+   const original=read_('slots').filter(x=>x.versionId===previous.id);
+   const operation=String(body.action||(!body.sourceSlotId?'ADD':'EDIT')).toUpperCase();
+   const sourceId=String(body.sourceSlotId||'');
+   const addedId=String(previous.notes||'').match(/\[slot:([^\]]+)\]/)?.[1]||'';
+   const saved=operation==='DELETE'?null:original.find(x=>operation==='EDIT'?x.id===sourceId:x.id===addedId);
+   assert_(operation==='DELETE'?!original.some(x=>x.id===sourceId):Boolean(saved),'Đã ghi yêu cầu trước đó nhưng chưa thể xác minh kết quả; kiểm tra Sheet');
+   return {ok:true,verified:true,alreadySaved:true,versionId:previous.id,fromDate:previous.fromDate,sourceSlotId:saved?.id||sourceId,operation,slotCount:original.length,message:'Yêu cầu đã được ghi trước đó; không tạo thêm phiên bản trùng'};
+  }
+ }
+ const {from,active,base}=mainVersion_(body);
+ const sourceId=String(body.sourceSlotId||''),op=String(body.action||(!sourceId?'ADD':'EDIT')).toUpperCase();
+ assert_(['EDIT','ADD','DELETE','COPY'].includes(op),'Thao tác chính khóa không hợp lệ');
+ const source=sourceId?base.find(x=>x.id===sourceId):null;
+ assert_(base.length&&(['ADD','COPY'].includes(op)||source),'Không tìm thấy tiết chính khóa trong phiên bản đang dùng');
+ const adding=op==='ADD'||op==='COPY';
+ assert_(base.length+(adding?1:op==='DELETE'?-1:0)<=84,'Phiên bản TKB vượt quá 84 vị trí');
+ const patch=op==='DELETE'?null:mainPatch_(body.patch);
+ if(op==='EDIT')assert_(!['day','shift','period','classId','subject','stream'].every(k=>String(source[k]||'')===String(patch[k]||'')),'Chưa thay đổi thông tin tiết; dùng Xóa tiết để bỏ tiết này');
+ if(patch){
+  const moved=adding||Number(source.day)!==patch.day||source.shift!==patch.shift||Number(source.period)!==patch.period;
+  if(moved)assert_(!base.some(x=>x.id!==sourceId&&Number(x.day)===patch.day&&x.shift===patch.shift&&Number(x.period)===patch.period),'Ô đến đang có tiết chính khóa');
+ }
+ if(['DELETE','EDIT'].includes(op)){
   const done=read_('changes').some(c=>c.classId===source.classId&&c.date===extraIsoForDay_(from,Number(source.day))&&c.shift===source.shift&&Number(c.period)===Number(source.period)&&c.completed===true);
   assert_(!done,'Tiết này đã hoàn thành trong tuần áp dụng. Chọn tuần sau để giữ lịch sử');
  }
- const stamp=String(Date.now()).padStart(13,'0');const verId='zzzz-TKB-'+from+'-'+stamp+'-'+Utilities.getUuid().slice(0,8);
- const version={...active,id:verId,name:'Điều chỉnh TKB '+from,fromDate:from,toDate:'',notes:'Điều chỉnh một tiết từ phiên bản '+active.id+'; '+String(body.reason||'').slice(0,220)};
- const slots=base.map(x=>({...x,versionId:verId,...(x.id===sourceId?{day,shift,period,classId,subject,stream}:{})}));
- if(adding)slots.push({...changed,versionId:verId});
+ const newId=adding?'MANUAL-'+from+'-'+Utilities.getUuid().slice(0,12):sourceId;
+ const stamp=String(Date.now()).padStart(13,'0'),verId='zzzz-TKB-'+from+'-'+stamp+'-'+Utilities.getUuid().slice(0,8);
+ const version={...active,id:verId,name:'Điều chỉnh TKB '+from,fromDate:from,toDate:'',notes:op+' từ phiên bản '+active.id+'; '+String(body.reason||'').slice(0,125)+(requestId?' [request:'+requestId+']':'')+(adding?' [slot:'+newId+']':'')};
+ const slots=base.filter(x=>op!=='DELETE'||x.id!==sourceId).map(x=>({...x,versionId:verId,...(op==='EDIT'&&x.id===sourceId?patch:{})}));
+ if(adding)slots.push({...(source||{id:newId,kind:'MAIN',notes:''}),...patch,id:newId,versionId:verId,kind:'MAIN'});
  validateBatch_('versions',[version]);validateBatch_('slots',slots);
  const shSlots=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('slots'),shVersions=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('versions');
  const slotBefore=shSlots.getLastRow(),verBefore=shVersions.getLastRow();let slotAdded=false,verAdded=false;
  try{
-  appendBatch_('slots',slots);slotAdded=true;
+  if(slots.length){appendBatch_('slots',slots);slotAdded=true;}
   appendBatch_('versions',[version]);verAdded=true;SpreadsheetApp.flush();
-  const persisted=read_('slots').filter(x=>x.versionId===verId),listed=read_('versions').find(x=>x.id===verId),saved=persisted.find(x=>x.id===newId);
-  assert_(listed&&persisted.length===slots.length&&saved&&saved.classId===classId&&saved.subject===subject&&Number(saved.day)===day&&saved.shift===shift&&Number(saved.period)===period&&String(saved.stream||'')===stream,'Không xác minh được bản ghi TKB mới trên Google Sheets');
-  audit_({action:adding?'ADD_WEEKLY_SLOT':'SAVE_VERSION',entityType:'versions',entityId:verId,oldValue:JSON.stringify({sourceVersionId:active.id,slot:source||null}),newValue:JSON.stringify({newVersionId:verId,slot:saved,fromDate:from}),reason:String(body.reason||'').slice(0,2000)});
-  return {ok:true,verified:true,versionId:verId,previousVersionId:active.id,fromDate:from,sourceSlotId:newId,operation:adding?'ADD':'EDIT',slotCount:persisted.length,message:'Đã tạo phiên bản TKB mới và xác minh đọc lại Google Sheets'};
+  const persisted=read_('slots').filter(x=>x.versionId===verId),listed=read_('versions').find(x=>x.id===verId),saved=op==='DELETE'?null:persisted.find(x=>x.id===newId);
+  assert_(listed&&persisted.length===slots.length&&(op==='DELETE'?!persisted.some(x=>x.id===sourceId):saved&&saved.classId===patch.classId&&saved.subject===patch.subject&&Number(saved.day)===patch.day&&saved.shift===patch.shift&&Number(saved.period)===patch.period&&String(saved.stream||'')===patch.stream),'Không xác minh được thay đổi TKB trên Google Sheets');
+  audit_({action:op==='ADD'?'ADD_WEEKLY_SLOT':op==='COPY'?'COPY_WEEKLY_SLOT':op==='DELETE'?'DELETE_WEEKLY_SLOT':'SAVE_VERSION',entityType:'versions',entityId:verId,oldValue:JSON.stringify({sourceVersionId:active.id,slot:source||null}),newValue:JSON.stringify({newVersionId:verId,slot:saved,fromDate:from,operation:op}),reason:String(body.reason||'').slice(0,2000)});
+  return {ok:true,verified:true,versionId:verId,previousVersionId:active.id,fromDate:from,sourceSlotId:newId,operation:op,slotCount:persisted.length,message:'Đã ghi và đọc lại phiên bản TKB trên Google Sheets'};
  }catch(error){
   if(verAdded&&shVersions.getLastRow()===verBefore+1)shVersions.deleteRow(verBefore+1);
   if(slotAdded&&shSlots.getLastRow()===slotBefore+slots.length)shSlots.deleteRows(slotBefore+1,slots.length);
   throw error;
+ }
+}
+/** Effective positions for the selected week, including prior one-week overrides. */
+function mainOncePositions_(base,changes,from){
+ const map=new Map();
+ for(const s of base)map.set(s.id,{id:s.id,date:extraIsoForDay_(from,Number(s.day)),shift:s.shift,period:Number(s.period),classId:s.classId,subject:s.subject});
+ for(const c of changes){
+  if(c.action==='MOVE'&&c.date>=from&&c.date<=extraIsoForDay_(from,8)){
+   const val=map.get(c.sourceSlotId);if(val)map.set(c.sourceSlotId,{...val,date:c.moveDate,shift:c.moveShift,period:Number(c.movePeriod)});
+  }
+  if(c.scope!=='one'||!String(c.action||'').startsWith('MAIN_')||c.date<from||c.date>extraIsoForDay_(from,8))continue;
+  if(c.action==='MAIN_EDIT_ONCE'&&map.has(c.sourceSlotId)){
+   map.set(c.sourceSlotId,{id:c.sourceSlotId,date:c.moveDate,shift:c.moveShift,period:Number(c.movePeriod),classId:c.classId,subject:c.subject});
+  }else if(c.action==='MAIN_DELETE_ONCE')map.delete(c.sourceSlotId);
+  else if(c.action==='MAIN_ADD_ONCE')map.set(c.id,{id:c.id,date:c.date,shift:c.shift,period:Number(c.period),classId:c.classId,subject:c.subject});
+  else if(c.action==='MAIN_VOID_ONCE')map.delete(c.id);
+ }
+ return [...map.values()];
+}
+/** One-week edit/delete/copy with deterministic IDs for safe retries. */
+function mutateMainOnce_(body){
+ const {from,active,base}=mainVersion_(body);
+ const op=String(body.action||(!body.sourceSlotId?'ADD':'EDIT')).toUpperCase();
+ assert_(['EDIT','ADD','DELETE','COPY'].includes(op),'Thao tác chính khóa không hợp lệ');
+ const sourceId=String(body.sourceSlotId||'');
+ const changes=read_('changes');
+ const original=base.find(x=>x.id===sourceId);
+ const sourceOnce=changes.find(x=>x.id===sourceId&&x.action==='MAIN_ADD_ONCE'&&x.date>=from&&x.date<=extraIsoForDay_(from,8));
+ const source=original||sourceOnce;
+ assert_(['ADD','COPY'].includes(op)||source,'Không tìm thấy đúng tiết cần sửa hoặc xóa');
+ const patch=op==='DELETE'?null:mainPatch_(body.patch);
+ const previousId=original?'MAIN1-'+from+'-'+sourceId:(sourceOnce?sourceOnce.id:'');
+ const reqId=String(body.requestId||'').replace(/[^a-zA-Z0-9-]/g,'').slice(0,70);
+ assert_(!['ADD','COPY'].includes(op)||reqId.length>=8,'Thiếu mã yêu cầu duy nhất để tránh ghi trùng');
+ const id=['ADD','COPY'].includes(op)?'MAINADD-'+reqId:previousId;
+ assert_(id&&id.length<160,'Mã điều chỉnh không hợp lệ');
+ const prev=changes.find(x=>x.id===id),index=changes.findIndex(x=>x.id===id);
+ const targetDate=patch?extraIsoForDay_(from,patch.day):'';
+ if(['ADD','COPY'].includes(op)&&prev){
+  assert_(prev.action==='MAIN_ADD_ONCE'&&prev.date===targetDate&&prev.classId===patch.classId&&prev.shift===patch.shift&&Number(prev.period)===patch.period,'Mã yêu cầu đã được dùng cho một thay đổi khác');
+  return {ok:true,verified:true,operation:op,scope:'one',changeId:id,fromDate:from,targetDate,alreadySaved:true};
+ }
+ const positions=mainOncePositions_(base,changes,from);
+ const existing=positions.find(x=>x.id===sourceId);
+ if(['EDIT','DELETE'].includes(op))assert_(existing,'Tiết này đã bị xóa trong tuần đang chọn; hãy đồng bộ lại');
+ if(patch){
+  const occupied=positions.filter(x=>x.id!==((op==='EDIT')?sourceId:'')).some(x=>x.date===targetDate&&x.shift===patch.shift&&Number(x.period)===patch.period);
+  const stayed=op==='EDIT'&&existing&&existing.date===targetDate&&existing.shift===patch.shift&&Number(existing.period)===patch.period;
+  assert_(!occupied||stayed,'Ô đích đã có tiết chính khóa. Hãy chọn ô trống hoặc xóa đúng tiết trùng trước');
+  if(op==='EDIT')assert_(!(existing.date===targetDate&&existing.shift===patch.shift&&Number(existing.period)===patch.period&&existing.classId===patch.classId&&existing.subject===patch.subject&&String(source.stream||'')===patch.stream),'Chưa thay đổi thông tin tiết');
+ }
+ if(original&&['EDIT','DELETE'].includes(op)){
+  assert_(!changes.some(c=>c.completed===true&&c.date===extraIsoForDay_(from,Number(original.day))&&c.shift===original.shift&&Number(c.period)===Number(original.period)&&c.classId===original.classId),'Tiết đã xác nhận hoàn thành, không thể xóa/sửa');
+ }
+ const stamp=new Date().toISOString();
+ const action=op==='DELETE'?(sourceOnce?'MAIN_VOID_ONCE':'MAIN_DELETE_ONCE'):(sourceOnce&&op==='EDIT'?'MAIN_ADD_ONCE':(['ADD','COPY'].includes(op)?'MAIN_ADD_ONCE':'MAIN_EDIT_ONCE'));
+ const oldDate=original?extraIsoForDay_(from,Number(original.day)):(sourceOnce?.date||targetDate);
+ const row={id,date:action==='MAIN_ADD_ONCE'?targetDate:oldDate,shift:action==='MAIN_ADD_ONCE'?patch.shift:source.shift,period:action==='MAIN_ADD_ONCE'?patch.period:Number(source.period),action,classId:patch?.classId||source.classId,subject:patch?.subject||source.subject,stream:patch?patch.stream:(source?.stream||''),kind:'MAIN',notes:String(body.reason||'').slice(0,220),ppctId:'',completed:false,updatedAt:stamp,scope:'one',titleOverride:'',sourceSlotId:original?original.id:'',moveDate:patch?targetDate:'',moveShift:patch?.shift||'',movePeriod:patch?.period||0};
+ validateBatch_('changes',[row]);
+ const sheet=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('changes');
+ try{
+  if(index>=0)sheet.getRange(index+2,1,1,TABLES.changes.length).setValues([encode_('changes',row)]);
+  else appendBatch_('changes',[row]);
+  SpreadsheetApp.flush();
+  const saved=read_('changes').find(x=>x.id===id);
+  assert_(saved&&saved.action===row.action&&saved.date===row.date&&saved.classId===row.classId&&saved.subject===row.subject&&saved.shift===row.shift&&Number(saved.period)===row.period,'Google Sheets chưa xác nhận điều chỉnh một tuần');
+  audit_({action:op+'_ONE_WEEK',entityType:'changes',entityId:id,oldValue:JSON.stringify(prev||null),newValue:JSON.stringify(saved),reason:String(body.reason||'').slice(0,2000)});
+  return {ok:true,verified:true,scope:'one',operation:op,fromDate:from,changeId:id,targetDate:targetDate||oldDate,message:'Đã xác minh điều chỉnh riêng tuần trên Google Sheets'};
+ }catch(err){
+  if(index>=0&&prev)sheet.getRange(index+2,1,1,TABLES.changes.length).setValues([encode_('changes',prev)]);
+  else{const at=read_('changes').findIndex(x=>x.id===id);if(at>=0)sheet.deleteRow(at+2);}
+  throw err;
  }
 }
 function extraIsoForDay_(mondayIso,day){const d=new Date(mondayIso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+day-2);return Utilities.formatDate(d,'UTC','yyyy-MM-dd');}

@@ -91,11 +91,35 @@ export function tutoringForWeek(state,week){
  }
  return all.sort((a,b)=>a.date.localeCompare(b.date)||'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
 }
-export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort((a,b)=>String(b.fromDate).localeCompare(String(a.fromDate))||String(b.id).localeCompare(String(a.id)))[0]||null}
+// When an official import and a manual revision share the same Monday, use the real
+// creation timestamp embedded in their IDs, not lexical prefixes ('ver-' vs 'zzzz-').
+export function compareVersions(a,b){
+ const date=String(b.fromDate||'').localeCompare(String(a.fromDate||''));if(date)return date;
+ const stamp=x=>Number(String(x.id||'').match(/\d{13}/)?.[0]||0);
+ return stamp(b)-stamp(a)||String(b.id||'').localeCompare(String(a.id||''));
+}
+export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort(compareVersions)[0]||null}
 export function scheduleForDate(state,date){
  const ver=activeVersion(state,date);
  const day=dayNumber(date);
  const base=ver&&schoolWeek(date)!==0?(state.slots||[]).filter(x=>String(x.versionId).trim()===String(ver.id).trim()&&Number(x.day)===day).map(s=>({...s,date,changeId:'',status:'PLANNED'})):[];
+ // One-week manual revisions are keyed by exact source ID so overlapping lessons remain independent.
+ // They must not modify the immutable weekly base template or subsequent weeks.
+ const once=(state.changes||[]).filter(ch=>ch.scope==='one'&&String(ch.date||'')>=monday(date)&&String(ch.date||'')<=addDays(monday(date),6)&&String(ch.action||'').startsWith('MAIN_'));
+ for(const ch of once){
+  if(ch.action==='MAIN_ADD_ONCE'){
+   if(ch.date===date)base.push({id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:'MAIN',status:'PLANNED',notes:ch.notes||'',changeId:ch.id,oneTimeMain:true,scope:'one'});
+   continue;
+  }
+  if(!['MAIN_EDIT_ONCE','MAIN_DELETE_ONCE'].includes(ch.action))continue;
+  // A source can be moved to another day of THIS week: suppress at its original date.
+  if(ch.date===date){const idx=base.findIndex(x=>x.id===ch.sourceSlotId);if(idx>=0)base.splice(idx,1);}
+  if(ch.action==='MAIN_EDIT_ONCE'&&String(ch.moveDate||'')===date){
+   const sourceVersion=activeVersion(state,ch.date);
+   const source=(state.slots||[]).find(x=>x.versionId===sourceVersion?.id&&x.id===ch.sourceSlotId);
+   if(source)base.push({...source,id:source.id,date,day,shift:ch.moveShift,period:Number(ch.movePeriod),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',changeId:ch.id,status:'PLANNED',oneTimeMain:true,scope:'one'});
+  }
+ }
  // A MOVE selects an exact original slot id, not an arbitrary occupant of a conflicting cell.
  // Keep the original TKB version untouched: moving a single occurrence must not shift the following weeks.
  const sourceMoves=(state.changes||[]).filter(ch=>ch.action==='MOVE'&&ch.date===date);
@@ -319,29 +343,59 @@ export function validateOfficialScope(scope, pattern){
 }
 
 /** V1.6.5: preview an immutable timetable revision. Existing dated lessons and PPCT remain separate. */
-export function previewMainRevision(state,{sourceSlotId='',fromDate,day,shift,period,classId,subject,stream}){
+/** Preview creating an immutable TKB version, including precise deletion or copying. */
+export function previewMainRevision(state,{action,sourceSlotId='',fromDate,day,shift,period,classId,subject,stream}){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(fromDate||''))||monday(fromDate)!==fromDate)throw Error('Ngày áp dụng phải là thứ Hai đầu tuần');
  const version=activeVersion(state,fromDate);
  if(!version)throw Error('Chưa có phiên bản TKB tại tuần được chọn');
  const originals=(state.slots||[]).filter(x=>x.versionId===version.id);
- const adding=!sourceSlotId;
- const origin=adding?null:originals.find(x=>x.id===sourceSlotId);
- if(!adding&&!origin)throw Error('Không tìm thấy tiết nguồn trong phiên bản TKB đang dùng');
+ const op=action||(!sourceSlotId?'ADD':'EDIT');
+ if(!['ADD','EDIT','COPY','DELETE'].includes(op))throw Error('Hành động không hợp lệ');
+ const adding=op==='ADD'||op==='COPY';
+ const origin=sourceSlotId?originals.find(x=>x.id===sourceSlotId):null;
+ if(['EDIT','DELETE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết nguồn trong phiên bản TKB đang dùng');
  if(adding&&originals.length>=84)throw Error('Thời khóa biểu đã đủ số ô, không thể thêm tiết');
- const nextDay=Number(day),nextPeriod=Number(period);
- if(!Number.isInteger(nextDay)||nextDay<2||nextDay>8||!['S','C','T'].includes(shift)||!Number.isInteger(nextPeriod)||nextPeriod<1||nextPeriod>(shift==='T'?2:5))throw Error('Thứ, buổi hoặc tiết không hợp lệ');
- const cls=classById(state,classId);
- if(!cls||!cls.subjects.includes(subject))throw Error('Lớp được chọn chưa được phân công môn này');
- const nextStream=subject==='Tin'?'TIN':String(stream||'');
- if(subject==='Toán'&&!['','ĐS','HH'].includes(nextStream))throw Error('Mạch Toán không hợp lệ');
- const changed=adding?{id:'PREVIEW-NEW-OFFICIAL',versionId:version.id,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream,kind:'MAIN',notes:''}:{...origin,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream};
- if(!adding&&['day','shift','period','classId','subject','stream'].every(k=>String(origin[k]||'')===String(changed[k]||'')))throw Error('Chưa thay đổi thông tin tiết');
- const occupied=originals.filter(x=>adding||x.id!==sourceSlotId).filter(x=>Number(x.day)===nextDay&&x.shift===shift&&Number(x.period)===nextPeriod);
- const moved=adding||nextDay!==Number(origin.day)||shift!==origin.shift||nextPeriod!==Number(origin.period);
- if(moved&&occupied.length)throw Error('Ô đích đang có tiết chính khóa; hãy chọn ô khác');
- const adjusted=adding?[...originals,changed]:originals.map(x=>x.id===sourceSlotId?changed:{...x});
+ let changed=null,adjusted=[];
+ if(op==='DELETE')adjusted=originals.filter(x=>x.id!==sourceSlotId);
+ else {
+  const nextDay=Number(day),nextPeriod=Number(period);
+  if(!Number.isInteger(nextDay)||nextDay<2||nextDay>8||!['S','C','T'].includes(shift)||!Number.isInteger(nextPeriod)||nextPeriod<1||nextPeriod>(shift==='T'?2:5))throw Error('Thứ, buổi hoặc tiết không hợp lệ');
+  const cls=classById(state,classId);
+  if(!cls||!cls.subjects.includes(subject))throw Error('Lớp được chọn chưa được phân công môn này');
+  const nextStream=subject==='Tin'?'TIN':String(stream||'');
+  if(subject==='Toán'&&!['','ĐS','HH'].includes(nextStream))throw Error('Mạch Toán không hợp lệ');
+  changed=adding?{id:'PREVIEW-NEW-OFFICIAL',versionId:version.id,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream,kind:'MAIN',notes:''}:{...origin,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream};
+  if(op==='EDIT'&&['day','shift','period','classId','subject','stream'].every(k=>String(origin[k]||'')===String(changed[k]||'')))throw Error('Chưa thay đổi thông tin tiết. Muốn xóa tiết, hãy chọn nút Xóa tiết.');
+  const occupied=originals.filter(x=>adding||x.id!==sourceSlotId).filter(x=>Number(x.day)===nextDay&&x.shift===shift&&Number(x.period)===nextPeriod);
+  const moved=adding||nextDay!==Number(origin.day)||shift!==origin.shift||nextPeriod!==Number(origin.period);
+  if(moved&&occupied.length)throw Error('Ô đích đang có tiết chính khóa; hãy chọn ô khác');
+  adjusted=adding?[...originals,changed]:originals.map(x=>x.id===sourceSlotId?changed:{...x});
+ }
  const conflictKeys=new Set(),pos=new Map();
  for(const x of adjusted){const key=scheduleKey(x.day,x.shift,x.period);pos.set(key,(pos.get(key)||0)+1)}
  for(const [key,n] of pos)if(n>1)conflictKeys.add(key);
- return {version,origin,changed,slots:adjusted,operation:adding?'ADD':'EDIT',remainingConflicts:[...conflictKeys]};
+ return {version,origin,changed,slots:adjusted,operation:op,remainingConflicts:[...conflictKeys]};
+}
+/** For one-week changes, show a local preview before writing an exception to Sheets. */
+export function previewMainOnce(state,{action,sourceSlotId='',fromDate,day,shift,period,classId,subject,stream}){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(fromDate||''))||monday(fromDate)!==fromDate)throw Error('Tuần áp dụng không hợp lệ');
+ const version=activeVersion(state,fromDate);
+ if(!version)throw Error('Chưa có thời khóa biểu');
+ const targetDate=addDays(fromDate,Number(day)-2);
+ const op=action||(!sourceSlotId?'ADD':'EDIT');
+ if(!['ADD','EDIT','COPY','DELETE'].includes(op))throw Error('Hành động không hợp lệ');
+ const origin=(state.slots||[]).find(x=>x.versionId===version.id&&x.id===sourceSlotId)||(state.changes||[]).find(x=>x.id===sourceSlotId&&x.action==='MAIN_ADD_ONCE'&&monday(x.date)===fromDate);
+ if(['EDIT','DELETE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết cần sửa/xóa/sao chép');
+ if(op!=='DELETE'){
+  if(!Number.isInteger(Number(day))||day<2||day>8||!['S','C','T'].includes(shift)||!Number.isInteger(Number(period))||period<1||period>(shift==='T'?2:5))throw Error('Ô đích không hợp lệ');
+  const cls=classById(state,classId);
+  if(!cls||!cls.subjects.includes(subject))throw Error('Lớp không được phân công môn học này');
+  const weeklyEvents=eventsForWeek(state,fromDate);
+  const existing=weeklyEvents.find(x=>x.kind==='MAIN'&&x.id===sourceSlotId);
+  const stayed=op==='EDIT'&&existing&&existing.date===targetDate&&existing.shift===shift&&Number(existing.period)===Number(period);
+  const target=weeklyEvents.filter(x=>x.kind==='MAIN'&&x.date===targetDate&&x.shift===shift&&Number(x.period)===Number(period)&&!(op==='EDIT'&&(x.id===sourceSlotId||x.originalSlotId===sourceSlotId)));
+  if(target.length&&!stayed)throw Error('Ô đích đã có tiết chính khóa. Hãy chọn ô trống hoặc xóa tiết trùng trước.');
+  if(op==='EDIT'&&Number(origin.day||day)===Number(day)&&origin.shift===shift&&Number(origin.period)===Number(period)&&origin.classId===classId&&origin.subject===subject&&String(origin.stream||'')===(subject==='Tin'?'TIN':String(stream||'')))throw Error('Chưa thay đổi thông tin tiết. Hãy sửa trường dữ liệu hoặc dùng nút Xóa tiết.');
+ }
+ return {version,origin,targetDate,operation:op};
 }

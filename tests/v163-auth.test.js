@@ -14,7 +14,7 @@ const authReq=async()=>{const res=makeRes();await login(makeReq('POST',{password
 
 test('login sets HttpOnly Secure Lax Path cookie scoped to browser host',async()=>{
  const res=makeRes();await login(makeReq('POST',{password:process.env.APP_PASSWORD}),res);
- assert.equal(res.statusCode,200);assert.equal(res.body.apiVersion,'1.6.5');
+ assert.equal(res.statusCode,200);assert.equal(res.body.apiVersion,'1.7.0');
  for(const value of ['HttpOnly','Secure','SameSite=Lax','Path=/'])assert.match(res.headers['Set-Cookie'],new RegExp(value));
  assert.doesNotMatch(res.headers['Set-Cookie'],/Domain=/);
 });
@@ -56,6 +56,6 @@ test('server reports upstream failure distinctly and never returns ok on missing
 test('server reads Apps Script response with no-store and version metadata',async()=>{
  const cookie=await authReq(),orig=globalThis.fetch;let captured;
  globalThis.fetch=async(url,options)=>{captured={url,options};return {ok:true,status:200,text:async()=>JSON.stringify({ok:true,data:{classes:[],extra_patterns:[]},apiVersion:'1.6.2'})};};
- try{const r=makeRes();await tkb(makeReq('GET',{},cookie),r);assert.equal(r.statusCode,200);assert.equal(r.body.apiVersion,'1.6.5');assert.equal(r.body.gasVersion,'1.6.2');assert.equal(captured.options.cache,'no-store');assert.equal(captured.options.method,'POST');}
+ try{const r=makeRes();await tkb(makeReq('GET',{},cookie),r);assert.equal(r.statusCode,200);assert.equal(r.body.apiVersion,'1.7.0');assert.equal(r.body.gasVersion,'1.6.2');assert.equal(captured.options.cache,'no-store');assert.equal(captured.options.method,'POST');}
  finally{globalThis.fetch=orig;}
 });

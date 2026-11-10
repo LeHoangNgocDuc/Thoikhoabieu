@@ -3,7 +3,7 @@ export default async function handler(req,res){
  const session=sessionState(req);
  const deploymentCommit=String(process.env.VERCEL_GIT_COMMIT_SHA||'local').slice(0,8);
  if(req.method==='GET'&&req.query?.action==='version')
-  return json(res,200,{ok:true,apiVersion:API_VERSION,release:'v1.6.5',commit:deploymentCommit,
+  return json(res,200,{ok:true,apiVersion:API_VERSION,release:'v1.7.0',commit:deploymentCommit,
    note:'Thông tin phiên bản Vercel API; không chứa khóa hoặc dữ liệu cá nhân.'});
  if(req.method==='GET'&&req.query?.action==='session')
   return json(res,200,{ok:true,authenticated:session.authenticated,code:session.authenticated?'AUTHENTICATED':session.code,
@@ -18,7 +18,7 @@ export default async function handler(req,res){
  if(!['POST','GET'].includes(req.method))return json(res,405,{ok:false,code:'METHOD_NOT_ALLOWED',error:'Phương thức không hỗ trợ',apiVersion:API_VERSION});
  if(!process.env.GAS_URL||!process.env.GAS_API_KEY)return json(res,503,{ok:false,code:'BACKEND_NOT_CONFIGURED',error:'Chưa cấu hình kết nối Apps Script',apiVersion:API_VERSION});
  const body=req.method==='GET'?{op:'load'}:req.body;
- const operations=['load','bootstrap','save','delete','replaceVersion','splitExtraPattern','endExtraPattern','saveOfficialChange','undoOfficialChange','reviseMainSchedule','mutateExtra','diagnoseExtra','probeExtra','listExtra','extraStatus'];
+ const operations=['load','bootstrap','save','delete','replaceVersion','splitExtraPattern','endExtraPattern','saveOfficialChange','undoOfficialChange','reviseMainSchedule','mutateMainSchedule','mutateExtra','diagnoseExtra','probeExtra','listExtra','extraStatus'];
  if(!body||!operations.includes(body.op))return json(res,400,{ok:false,code:'UNSUPPORTED_ACTION',error:'Thao tác không được hỗ trợ',apiVersion:API_VERSION});
  const payload=JSON.stringify({...body,apiKey:process.env.GAS_API_KEY});
  if(payload.length>1_200_000)return json(res,413,{ok:false,code:'PAYLOAD_TOO_LARGE',error:'Dữ liệu quá lớn',apiVersion:API_VERSION});
@@ -31,7 +31,7 @@ export default async function handler(req,res){
      return json(res,409,{ok:false,code:'INCOMPATIBLE_GAS',stage:'apps-script',apiVersion:API_VERSION,
        gasVersion:parsed.apiVersion||'không xác định',error:'Web app Apps Script được kết nối không hỗ trợ ghi dạy thêm có xác minh. Kiểm tra URL /exec và bản triển khai.'});
    }
-   if(body.op==='reviseMainSchedule'&&parsed.ok===true&&parsed.verified!==true){
+   if(['reviseMainSchedule','mutateMainSchedule'].includes(body.op)&&parsed.ok===true&&parsed.verified!==true){
      return json(res,409,{ok:false,code:'VERSION_WRITE_NOT_VERIFIED',error:'Apps Script chưa xác nhận phiên bản thời khóa biểu mới',apiVersion:API_VERSION});
    }
    if(body.op==='mutateExtra'&&parsed.ok===true&&parsed.verified!==true){

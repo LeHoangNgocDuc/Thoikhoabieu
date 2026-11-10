@@ -468,3 +468,17 @@ body.week-focus .compact-full-toggle{display:none!important}
 .conflict-choices{display:grid;gap:10px;margin:15px 0}.conflict-choice{min-height:61px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;white-space:normal;gap:5px}.conflict-choice strong{font-size:13px}.conflict-choice small{font-size:11px;opacity:.8}
 .move-editor .formgrid input{width:100%;background:#f8fbfd;border:1px solid #dfe9ef;color:#2b4960;border-radius:8px;padding:10px;min-height:40px}.move-editor .formgrid label{font-size:12px}.move-editor{max-width:620px}
 @media(max-width:760px){.move-editor{width:100%;max-height:88dvh;border-radius:20px 20px 0 0;position:absolute;bottom:0;left:0;right:0}.move-editor .formgrid{grid-template-columns:1fr 1fr}.move-editor .modalactions .btn{min-height:44px}.conflict-choice{min-height:53px}}
+/* V1.7.0: precise main-lesson controls with comfortable touch targets. */
+.conflict-editor .conflict-choices{display:grid;gap:12px;max-height:56vh;overflow-y:auto}
+.conflict-entry{border:1px solid #cddde8;background:#f7fbff;border-radius:14px;padding:14px;display:grid;gap:8px}
+.conflict-entry strong{font-weight:800;color:#123a59}.conflict-entry small{color:#576b7d}
+.conflict-entry .row-buttons{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+.main-clipboard{margin:8px 0;padding:10px 14px;border:1px solid #badad0;background:#effbf7;border-radius:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:#14624b}
+.main-clipboard strong{font-size:.91rem}.main-clipboard span{font-size:.84rem;flex:1}
+.main-clipboard .btn{white-space:nowrap}
+.main-entry-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.move-editor .modalactions{display:flex;gap:8px;flex-wrap:wrap}
+.move-editor .modalactions .btn{min-height:40px}
+@media(max-width:600px){.conflict-entry .row-buttons .btn{flex:1 1 120px}.move-editor .modalactions .btn{flex:1 1 42%}.main-clipboard{gap:6px}}
+
+.move-editor #main-error[hidden]{display:none!important}

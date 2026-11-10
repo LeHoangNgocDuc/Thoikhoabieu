@@ -1,6 +1,6 @@
 {
-  "release": "1.6.5",
+  "release": "1.7.0",
   "application": "Smart TKB Nam Nha Trang",
-  "frontend": "1.6.5",
+  "frontend": "1.7.0",
   "note": "Kiểm tra URL này trên cùng tên miền Production để xác nhận bản mới."
 }

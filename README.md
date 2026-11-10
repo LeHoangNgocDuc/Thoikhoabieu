@@ -1,3 +1,9 @@
+# CẬP NHẬT MỚI: SMART TKB V1.7.0
+
+**Sửa/xóa/sao chép/dán tiết chính khóa; chọn chỉ một tuần hoặc đến khi có TKB mới. Xem [HUONG_DAN_NANG_CAP_V1_7_0.md](HUONG_DAN_NANG_CAP_V1_7_0.md) để cập nhật cả GitHub/Vercel và Google Apps Script.**
+
+---
+
 # Smart TKB V1.5 – Bản nâng cấp
 
 **Trước khi cập nhật: đọc [CAP_NHAT_V1_5.md](CAP_NHAT_V1_5.md).**
