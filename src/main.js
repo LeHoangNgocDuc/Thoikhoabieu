@@ -3,15 +3,17 @@ import {DAYS,SHIFTS,addDays,monday,dayNumber,schoolWeek,classById,activeVersion,
 import {extractTeacherSchedule} from './importExcel.js';
 import {SNAPSHOT_KEY,validateSnapshot,snapshotText} from './cache.js';
 import {moveCollision,validateOfficialScope} from './core.js';
+import {collapseTutorDisplay} from './mobileDisplay.js';
 
 const $=s=>document.querySelector(s);
 const newRequestId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FRONTEND_VERSION='1.8.0';
+const FRONTEND_VERSION='1.8.1';
+const COMPATIBLE_API_VERSION='1.8.0';
 const PENDING_EXTRA_KEY='smart-tkb-extra-pending-v162';
 const getSnapshot=()=>{try{return validateSnapshot(localStorage.getItem(SNAPSHOT_KEY));}catch{return null;}};
 function writeSnapshot(data){try{localStorage.setItem(SNAPSHOT_KEY,snapshotText(data));}catch(e){console.warn('Không lưu được bộ nhớ đệm, ứng dụng vẫn dùng dữ liệu trực tuyến.');}}
-const $state={data:null,mode:'checking',view:'overview',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',extraGrade:'all',extraLetter:'all',extraPeriod:'week',extraPickerGrade:9,syncDiagnostics:null,extraPending:null,extraDay:'all',extraShift:'all',refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false,clipboardMain:null,mainServerReady:false};
+const $state={data:null,mode:'checking',view:'overview',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:typeof window!=='undefined'&&window.matchMedia?.('(max-width:760px)').matches?'day':'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',extraGrade:'all',extraLetter:'all',extraPeriod:'week',extraPickerGrade:9,syncDiagnostics:null,extraPending:null,extraDay:'all',extraShift:'all',refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false,clipboardMain:null,mainServerReady:false};
 const shiftLabel=s=>({S:'Sáng',C:'Chiều',T:'Tối'})[s]||s;
 const dayLabel=n=>DAYS.find(d=>d.n===n)?.label||n;
 const className=id=>classById($state.data,id)?.name||id;
@@ -53,7 +55,7 @@ async function callApi(body){return serverRequest('/api/tkb',{method:'POST',head
 async function getSession(){
  const j=await serverRequest('/api/tkb?action=session');
  $state.backendConfigured=Boolean(j.backendConfigured);
- $state.apiVersion=String(j.apiVersion||'');$state.updateAvailable=Boolean($state.apiVersion&&$state.apiVersion!==FRONTEND_VERSION);
+ $state.apiVersion=String(j.apiVersion||'');$state.updateAvailable=Boolean($state.apiVersion&&!([FRONTEND_VERSION,COMPATIBLE_API_VERSION].includes($state.apiVersion)));
  $state.sessionStatus=j.authenticated?'authenticated':'unauthenticated';$state.sessionCode=j.code||'';
  return j;
 }
@@ -180,6 +182,23 @@ function sideFilters(){
  <button class="btn ghost full" data-action="reset-filters">Xóa bộ lọc</button>
  <div class="side-legend"><strong>Màu nhận diện lớp</strong>${($state.data?.classes||[]).map(c=>`<div><i style="background:${colorFor(c.id)[1]}"></i>${esc(c.name)} <small>${esc(c.id)}</small></div>`).join('')}</div></div>`;
 }
+function drawerTools(){
+ const isCalendar=['calendar','extra','overview'].includes($state.view);
+ const stats=$state.view==='statistics';
+ const extraList=$state.view==='extraList';
+ const cls=$state.data?.classes||[];
+ return `<div class="drawer-tools"><div class="navtitle">HIỂN THỊ & CÔNG CỤ</div>
+ <div class="drawer-connection"><strong>${$state.mode==='google'?'● Đã kết nối Google Sheets':'◌ Đang xem bản lưu'}</strong><small>Web ${FRONTEND_VERSION} · API ${esc($state.apiVersion||'?')}</small>${$state.mode==='cached'?`<small>Đồng bộ: ${esc($state.syncState==='checking'||$state.syncState==='syncing'?'Đang kiểm tra Sheet':$state.authError||'Chưa đồng bộ')}</small>`:''}</div>
+ <button class="btn soft full" data-action="refresh-google">↻ Đồng bộ Google Sheets</button><button class="btn soft full" data-action="today">Trở về tuần hiện tại</button>
+ ${$state.updateAvailable?'<button class="btn primary full" data-action="refresh-app">Cập nhật ứng dụng</button>':''}
+ ${$state.mode==='cached'?`<button class="btn soft full" data-action="${$state.cacheLoginRequired?'show-cache-login':'recheck-session'}">${$state.cacheLoginRequired?'Đăng nhập để đồng bộ':'Kiểm tra lại kết nối'}</button>`:''}
+ ${$state.notice?`<div class="drawer-message" role="status">${esc($state.notice)} <button data-action="clear-notice" aria-label="Xóa thông báo">×</button></div>`:''}
+ ${$state.extraPending?`<div class="drawer-message">Có yêu cầu Dạy thêm cần xác minh <button class="btn small" data-action="check-pending-extra">Kiểm tra lại</button></div>`:''}
+ ${isCalendar?`<div class="drawer-toolset"><strong>Chế độ lịch</strong><div class="drawer-option-grid"><button class="btn ${$state.calendarLayout==='week'?'primary':'soft'}" data-action="layout-week">Toàn tuần</button><button class="btn ${$state.calendarLayout==='day'?'primary':'soft'}" data-action="layout-day">Theo ngày</button></div><div class="drawer-option-grid">${[['calendar','Chính khóa'],['extra','Dạy thêm'],['overview','Tổng hợp']].map(([id,label])=>`<button class="btn ${$state.view===id?'primary':'soft'}" data-view="${id}">${label}</button>`).join('')}</div><button class="btn soft full" data-action="fit-week">${$state.fitWeek?'Giao diện đầy đủ':'Thu gọn giao diện'}</button><button class="btn soft full" data-action="fullscreen-week">Toàn màn hình</button><button class="btn soft full" data-action="export">Xuất lịch CSV</button><button class="btn soft full" data-action="print">In thời khóa biểu</button></div>`:''}
+ ${stats?`<div class="drawer-toolset"><strong>Bộ lọc thống kê</strong><label>Mốc thống kê<select id="drawer-stats-period">${options([['today','Đến hôm nay'],['week','Đến hết tuần'],['hk1','Học kỳ I'],['hk2','Năm học'],['custom','Chọn ngày']],$state.statsPeriod)}</select></label><label>Ngày<input id="drawer-stats-date" type="date" value="${esc($state.statsDate||vietnamToday())}" ${$state.statsPeriod==='custom'?'':'disabled'}></label><label>Lớp<select id="drawer-stats-class">${options([['all','Tất cả lớp'],...cls.map(c=>[c.id,c.name])],$state.statsClass)}</select></label><label>Môn<select id="drawer-stats-subject">${options([['all','Toán và Tin'],['Toán','Toán'],['Tin','Tin']],$state.statsSubject)}</select></label><label>Mạch<select id="drawer-stats-stream">${options([['all','Tất cả mạch'],['ĐS','Đại số'],['HH','Hình học'],['TIN','Tin học']],$state.statsStream)}</select></label><button class="btn soft full" data-action="export-statistics">Xuất thống kê CSV</button></div>`:''}
+ ${extraList?`<div class="drawer-toolset"><strong>Lọc danh sách dạy thêm</strong><label>Khối<select id="drawer-extra-grade">${options([['all','Tất cả'],...[6,7,8,9,10,11,12].map(n=>[String(n),'Khối '+n])],$state.extraGrade)}</select></label><label>Lớp<select id="drawer-extra-letter">${options([['all','Tất cả'],['A','A'],['B','B'],['C','C']],$state.extraLetter)}</select></label><label>Thời gian<select id="drawer-extra-period">${options([['week','Theo tuần'],['month','Theo tháng']],$state.extraPeriod)}</select></label><label>Ngày<select id="drawer-extra-day">${options([['all','Cả tuần'],...DAYS.map(d=>[String(d.n),d.label])],$state.extraDay)}</select></label><label>Buổi<select id="drawer-extra-shift">${options([['all','Cả ngày'],['S','Sáng'],['C','Chiều'],['T','Tối']],$state.extraShift)}</select></label><label>Tìm lớp / bài<input id="drawer-extra-list-search" value="${esc($state.extraListQuery)}" placeholder="Nhập từ khóa..."></label></div>`:''}
+ </div>`;
+}
 function showTop(){
  const d=$state.data;
  const official=eventsForWeek(d,$state.week).filter(e=>e.kind!=='EXTRA');
@@ -188,10 +207,10 @@ function showTop(){
  const combined=conflicts(all);
  const err=['extra','overview'].includes($state.view)?combined:conflicts(official);
  const events=['extra','overview'].includes($state.view)?all:official;
- return `<header class="topbar"><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':$state.syncState==='login-required'?'🔒 Bản lưu · cần đăng nhập':$state.syncState==='error'?'⚠ Bản lưu · lỗi đồng bộ':'◌ Bản lưu · đang đồng bộ Sheet...'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
+ return `<header class="topbar"><div class="mobile-topline"><button class="mobile-menu" data-action="toggle-drawer" aria-label="Mở menu chức năng" aria-expanded="${$state.drawerOpen?'true':'false'}" aria-controls="side-menu">☰</button><button class="mobile-week-arrow" data-action="prev-week" aria-label="Tuần trước">‹</button><strong class="mobile-week-title">Tuần ${schoolWeek($state.week)} · ${fmt($state.week)} – ${fmt(weekEnd())}</strong><button class="mobile-week-arrow" data-action="next-week" aria-label="Tuần sau">›</button></div><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':$state.syncState==='login-required'?'🔒 Bản lưu · cần đăng nhập':$state.syncState==='error'?'⚠ Bản lưu · lỗi đồng bộ':'◌ Bản lưu · đang đồng bộ Sheet...'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
  <div class="shell">${$state.drawerOpen?'<button class="drawer-scrim" data-action="close-drawer" aria-label="Đóng bộ lọc"></button>':''}<aside class="sidebar ${$state.drawerOpen?'drawer-open':''}" id="side-menu"><div class="side-mobilehead"><strong>☰ Lê Hoàng Ngọc Đức</strong><button class="icon-btn" data-action="close-drawer">×</button></div><div class="navtitle">QUẢN LÝ GIẢNG DẠY</div>
  ${[['overview','▦','Thời khóa biểu 7 ngày'],['calendar','◫','Dạy chính thức & Tăng vượt'],['extra','◈','Dạy thêm · Ngoài PPCT'],['extraList','☷','Danh sách dạy thêm'],['overview','◫','TKB đầy đủ'],['statistics','▥','Thống kê tiến độ'],['progress','◷','PPCT & tiến độ'],['versions','⇄','Phiên bản TKB'],['settings','⚙','Cấu hình & dữ liệu']].map(([k,icon,label])=>`<button class="navitem ${$state.view===k?'selected':''}" data-view="${k}"><span class="navicon">${icon}</span>${label}</button>`).join('')}
- ${sideFilters()}<div class="sidefooter"><div class="stat-label">Năm học 2026 – 2027</div><div class="stat-desc">7 lớp chính khóa · 7 ngày/tuần<br>Sáng 5 tiết · Chiều 5 tiết · Tối 2 suất</div></div></aside><main class="content">${$state.notice?`<div class="notice">${esc($state.notice)}<button data-action="clear-notice">×</button></div>`:''}
+ ${drawerTools()}${sideFilters()}<div class="sidefooter"><div class="stat-label">Năm học 2026 – 2027</div><div class="stat-desc">7 lớp chính khóa · 7 ngày/tuần<br>Sáng 5 tiết · Chiều 5 tiết · Tối 2 suất</div></div></aside><main class="content">${$state.notice?`<div class="notice">${esc($state.notice)}<button data-action="clear-notice">×</button></div>`:''}
  ${$state.mode==='cached'?`<div class="cache-notice" role="status"><strong>📋 Đang xem bản lưu gần nhất (${esc($state.snapshotAt?new Date($state.snapshotAt).toLocaleString('vi-VN'):'không rõ')})</strong> · ${esc($state.syncState==='checking'||$state.syncState==='syncing'?'Đang kiểm tra và đồng bộ Sheet...':$state.authError||'Chưa đồng bộ được')} <button class="btn soft" data-action="${$state.cacheLoginRequired?'show-cache-login':'recheck-session'}">${$state.cacheLoginRequired?'Đăng nhập để đồng bộ':'Thử lại'}</button></div>`:''}
  ${$state.extraPending?`<div class="pending-sync"><strong>⚠ Có yêu cầu dạy thêm cần xác minh</strong><span>${esc($state.extraPending.requestId)} · ${esc($state.extraPending.status?.state||$state.extraPending.error||'Đang kiểm tra')}</span><button data-action="check-pending-extra" class="btn soft">Kiểm tra lại</button></div>`:''}
  ${['calendar','extra','overview'].includes($state.view)?calendarPage(events,err):$state.view==='extraList'?extraListPage():$state.view==='statistics'?statisticsPage():$state.view==='progress'?progressPage():$state.view==='versions'?versionsPage():settingsPage()}
@@ -199,14 +218,25 @@ function showTop(){
 }
 function dayBoard(events,conflictKeys,page){
  const day=$state.dayIndex,date=addDays($state.week,day-2);
- const slots=SHIFTS.flatMap(s=>Array.from({length:s.count},(_,i)=>({shift:s.id,period:i+1,label:`${s.label} · ${s.id==='T'?'Suất':'Tiết'} ${i+1}`})));
- return `<div class="day-board"><div class="day-switch"><button data-action="prev-day" aria-label="Ngày trước">‹</button><strong>${dayLabel(day)} · ${fmt(date)}</strong><button data-action="next-day" aria-label="Ngày sau">›</button></div><div class="day-chips">${DAYS.map(d=>`<button type="button" data-action="select-day" data-day="${d.n}" class="${d.n===day?'selected':''}">${d.n===8?'CN':`T${d.n}`}<small>${fmt(addDays($state.week,d.n-2))}</small></button>`).join('')}</div><div class="day-events">${slots.map(s=>{
-  const matches=events.filter(x=>x.date===date&&x.shift===s.shift&&Number(x.period)===s.period&&(page!=='extra'||!$state.onlyExtra||x.kind==='EXTRA'));
-  const editType=page==='extra'?'extra':page==='calendar'?'official':matches.length?(matches[0].kind==='EXTRA'?'extra':'official'):'choose';
-  const conflict=conflictKeys.has(`${date}|${s.shift}|${s.period}`);
-  return `<button class="day-event ${matches.length?'has-events':''} ${conflict?'day-conflict':''}" data-action="open-cell" data-date="${date}" data-shift="${s.shift}" data-period="${s.period}" data-editor="${editType}"><span class="day-time">${s.label}</span><span class="day-contents">${matches.length?matches.map(x=>`<span class="day-entry" style="${styleFor(x.kind==='EXTRA'?parseGroups(x.groups)[0]:x.classId)}"><b>${esc(x.kind==='EXTRA'?`Dạy thêm · ${parseGroups(x.groups).length} nhóm`:className(x.classId))}</b><small>${esc(x.subject)} · ${x.kind==='EXTRA'?`Buổi ${x.lessonNumber||1}`:`${esc(x.stream||'')} · PPCT ${esc(x.ppct?.period||'—')}`}</small>${x.kind==='EXTRA'&&x.lessonTitle?`<small>${esc(x.lessonTitle)}</small>`:''}</span>`).join(''):'<span class="day-empty">+ Chưa có lịch · Nhấn để thêm</span>'}</span></button>`;
- }).join('')}</div></div>`;
+ const slots=SHIFTS.flatMap(sh=>Array.from({length:sh.count},(_,i)=>({shift:sh.id,period:i+1})));
+ const oneDay=events.filter(e=>e.date===date&&(!($state.view==='extra'&&$state.onlyExtra)||e.kind==='EXTRA'));
+ const cards=slots.map(slot=>{
+  const matches=oneDay.filter(x=>x.shift===slot.shift&&Number(x.period)===slot.period);
+  const mergedPrevious=oneDay.find(x=>x.kind==='EXTRA'&&x.shift===slot.shift&&Number(x.period)<slot.period&&Number(x.periodEnd||x.period)>=slot.period);
+  if(!matches.length&&mergedPrevious)return '';
+  const main=matches.some(e=>e.kind!=='EXTRA');const extra=matches.some(e=>e.kind==='EXTRA');
+  const editor=page==='extra'?'extra':page==='calendar'?'official':main?'official':extra?'extra':'choose';
+  const conflict=conflictKeys.has(`${date}|${slot.shift}|${slot.period}`);
+  const firstSpan=matches.find(e=>e.kind==='EXTRA'&&Number(e.periodEnd||e.period)>slot.period);
+  const label=firstSpan?(slot.shift==='T'?'Tối · Ca dạy':`${shiftLabel(slot.shift)} · Tiết ${slot.period}–${firstSpan.periodEnd}`):extra&&!main&&slot.shift==='T'?'Tối · Ca dạy':`${shiftLabel(slot.shift)} · ${slot.shift==='T'?'Ca dạy':'Tiết '+slot.period}`;
+  return `<button class="day-event ${matches.length?'has-events':''} ${conflict?'day-conflict':''}" data-action="open-cell" data-date="${date}" data-shift="${slot.shift}" data-period="${slot.period}" data-editor="${editor}"><span class="day-time">${label}</span><span class="day-contents">${matches.length?matches.map(x=>{
+   const names=x.kind==='EXTRA'?parseGroups(x.groups).map(className).join(' · '):className(x.classId);
+   return `<span class="day-entry ${x.kind==='EXTRA'?'day-extra-entry':''}" style="${styleFor(x.kind==='EXTRA'?parseGroups(x.groups)[0]:x.classId)}"><b>${esc(names||'Dạy thêm')}</b><small>${esc(x.kind==='EXTRA'?`${x.subject}${x.startTime?' · '+x.startTime+(x.endTime?'–'+x.endTime:''):''}`:`${x.subject} ${x.stream||''} · PPCT ${x.ppct?.period||'—'}`)}</small>${x.kind==='EXTRA'&&(x.lessonTitle||x.notes)?`<small>${esc(x.lessonTitle||x.notes)}</small>`:x.kind!=='EXTRA'&&x.ppct?.title?`<small>${esc(x.ppct.title)}</small>`:''}</span>`;
+  }).join(''):'<span class="day-empty">+ Chưa có lịch · Chạm để thêm</span>'}</span></button>`;
+ }).filter(Boolean).join('');
+ return `<div class="day-board"><div class="day-switch"><button data-action="prev-day" aria-label="Ngày trước">‹</button><strong>${dayLabel(day)} · ${fmt(date)}</strong><button data-action="next-day" aria-label="Ngày sau">›</button></div><div class="day-chips">${DAYS.map(d=>`<button type="button" data-action="select-day" data-day="${d.n}" class="${d.n===day?'selected':''}">${d.n===8?'CN':`T${d.n}`}<small>${fmt(addDays($state.week,d.n-2))}</small></button>`).join('')}</div><div class="day-events">${cards}</div></div>`;
 }
+
 function calendarPage(events,error){
  const page=$state.view,extraMode=page==='extra',overview=page==='overview';
  const heading=extraMode?'Lịch dạy thêm':overview?'Thời khóa biểu Thầy Đức · 7 ngày':'Thời khóa biểu chính khóa';
@@ -215,6 +245,7 @@ function calendarPage(events,error){
   const matchesClass=$state.filterClass==='all'||($state.filterClass===e.classId)||(e.kind==='EXTRA'&&parseGroups(e.groups).includes($state.filterClass));
   return matchesClass&&($state.filterShift==='all'||$state.filterShift===e.shift)&&($state.filterSubject==='all'||$state.filterSubject===e.subject)&&($state.filterStream==='all'||e.subject==='Tin'||e.kind==='EXTRA'||e.stream===$state.filterStream);
  });
+ const displayEvents=collapseTutorDisplay(filtered);
  const activeShifts=SHIFTS.filter(s=>$state.filterShift==='all'||s.id===$state.filterShift);
  const allOfficial=eventsForWeek($state.data,$state.week).filter(e=>e.kind!=='EXTRA');
  const allExtras=tutoringForWeek($state.data,$state.week);
@@ -223,18 +254,22 @@ function calendarPage(events,error){
  const completed=events.filter(e=>e.status==='DONE'&&(!extraMode||e.kind==='EXTRA')).length;
  const renderCell=(day,s,p)=>{
   const date=addDays($state.week,day-2);
-  const shown=filtered.filter(e=>e.date===date&&e.shift===s&&Number(e.period)===p&&(!extraMode||!$state.onlyExtra||e.kind==='EXTRA'));
+  const shown=displayEvents.filter(e=>e.date===date&&e.shift===s&&Number(e.period)===p&&(!extraMode||!$state.onlyExtra||e.kind==='EXTRA'));
+  const previousMerged=displayEvents.find(e=>e.kind==='EXTRA'&&e.date===date&&e.shift===s&&Number(e.period)===p-1&&Number(e.periodEnd||e.period)===p);
+  const previousHasOther=previousMerged&&displayEvents.some(e=>e.date===date&&e.shift===s&&Number(e.period)===p-1&&e!==previousMerged);
+  if(previousMerged&&!previousHasOther&&!shown.length)return '';
+  const merge=shown.length===1&&shown[0].kind==='EXTRA'&&Number(shown[0].periodEnd||p)===p+1&&!displayEvents.some(e=>e.date===date&&e.shift===s&&Number(e.period)===p+1);
   const main=allOfficial.some(e=>e.date===date&&e.shift===s&&Number(e.period)===p);
   const ex=allExtras.some(e=>e.date===date&&e.shift===s&&Number(e.period)===p);
   const editor=extraMode?'extra':overview?(main?'official':ex?'extra':'choose'):'official';
   const conflict=conflictKeys.has(`${date}|${s}|${p}`);
   const hint=shown.map(e=>e.kind==='EXTRA'?`${e.subject}: ${parseGroups(e.groups).map(className).join(' + ')}`:`${e.subject} ${className(e.classId)} (${e.stream||''})`).join(' | ')||'Nhấn để thêm hoặc điều chỉnh';
-  return `<td><button class="cell ${shown.length?'filled':''} ${conflict?'conflict':''}" data-action="open-cell" data-editor="${editor}" data-date="${date}" data-shift="${s}" data-period="${p}" title="${esc(hint)}">
-    ${shown.map(e=>{const groupNames=parseGroups(e.groups);const short=e.kind==='EXTRA'?(groupNames.length===1?className(groupNames[0]):`DT ${groupNames.length} lớp`):className(e.classId);const colors=styleFor(e.kind==='EXTRA'?(groupNames[0]||'extra'):e.classId);
+  return `<td ${merge?'rowspan="2" class="extra-merged-cell"':''}><button class="cell ${shown.length?'filled':''} ${conflict?'conflict':''}" data-action="open-cell" data-editor="${editor}" data-date="${date}" data-shift="${s}" data-period="${p}" title="${esc(hint)}">
+    ${shown.map(e=>{const groupNames=parseGroups(e.groups);const short=e.kind==='EXTRA'?groupNames.map(className).join(' · '):className(e.classId);const colors=styleFor(e.kind==='EXTRA'?(groupNames[0]||'extra'):e.classId);
      return `<span class="lesson ${e.kind==='EXTRA'?'tutor':e.subject==='Toán'?'math':'ict'} ${e.status==='OFF'?'off':''} ${extraMode&&e.kind!=='EXTRA'?'official-muted':''}" style="${colors}">
      <span class="lesson-name lesson-full">${esc(e.subject)} · ${esc(e.kind==='EXTRA'?groupNames.map(className).join(' + '):className(e.classId))}</span>
      <span class="lesson-name lesson-short">${esc(short)}</span>
-     <span class="lesson-sub lesson-sub-full">${e.kind==='EXTRA'?`<b>Suất ${esc(p)}</b> · Buổi ${esc(e.lessonNumber||1)}${e.recurring?' ↻':''}`:`<b>${esc(e.stream||'')}</b> · ${e.status==='OFF'?'NGHỈ · ':''}${e.ppct?`PPCT ${esc(e.ppct.period)}`:'Chưa gán PPCT'}`}</span><span class="lesson-sub lesson-sub-mobile">${e.kind==='EXTRA'?`S${esc(p)} · B${esc(e.lessonNumber||1)}`:`${esc(e.stream||'')} · ${e.ppct?`T${esc(e.ppct.period)}`:'—'}`}</span>
+     <span class="lesson-sub lesson-sub-full">${e.kind==='EXTRA'?`<b>${esc(e.subject)}</b>${e.startTime?' · '+esc(e.startTime):''}`:`<b>${esc(e.stream||'')}</b> · ${e.status==='OFF'?'NGHỈ · ':''}${e.ppct?`PPCT ${esc(e.ppct.period)}`:'Chưa gán PPCT'}`}</span><span class="lesson-sub lesson-sub-mobile">${e.kind==='EXTRA'?`${esc(e.subject)}`:`${esc(e.stream||'')} · ${e.ppct?`T${esc(e.ppct.period)}`:'—'}`}</span>
      ${e.kind==='EXTRA'&&(e.lessonTitle||e.notes)?`<span class="lesson-title">${esc(e.lessonTitle||e.notes)}</span>`:e.ppct?.title?`<span class="lesson-title">${esc(e.ppct.title)}</span>`:''}</span>`;
     }).join('')||'<span class="addmark">+</span>'}
     ${conflict?'<span class="alert-dot" title="Cần kiểm tra lịch trùng">!</span>':''}</button></td>`;
@@ -249,7 +284,7 @@ function calendarPage(events,error){
  ${$state.clipboardMain&&page!=='extra'?`<div class="main-clipboard"><strong>📋 Đã sao chép: ${esc($state.clipboardMain.subject)} ${esc(className($state.clipboardMain.classId))}</strong><span>Chạm ô đích, chọn “Dán tiết đã sao chép”.</span><button class="btn soft" data-action="cancel-copy-main">Hủy sao chép</button></div>`:''}
  ${error.length?`<details class="warning compact-warning"><summary>⚠ Có ${error.length} vị trí trùng lịch (chọn đúng tiết để sửa, xóa hoặc sao chép)</summary>
  ${error.map(c=>{const e=c.items[0];return `<div class="conflict-resolve"><strong>${fmt(e.date)} ${shiftLabel(e.shift)} tiết ${e.period}</strong><div class="conflict-options">${c.items.map(x=>`<div>${esc(x.kind==='EXTRA'?'Dạy thêm '+parseGroups(x.groups).join(', '):x.subject+' '+className(x.classId)+' '+(x.stream||''))} ${x.kind==='MAIN'?`<button class="btn soft" data-action="start-move" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Sửa</button> <button class="btn danger" data-action="start-delete-main" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Xóa</button> <button class="btn soft" data-action="copy-main" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Sao chép</button>`:'<span class="caption">Sửa trong Dạy thêm</span>'}</div>`).join('')}</div></div>`}).join('')}</details>`:''}
- ${$state.calendarLayout==='day'?dayBoard(filtered,conflictKeys,page):`<div class="table-scroller week-scroller"><table class="timetable"><thead><tr><th class="sidecol">Ca</th>${DAYS.map(d=>`<th><span class="day-long">${d.label}</span><span class="day-short">${d.n===8?'CN':`T${d.n}`}</span><small>${fmt(addDays($state.week,d.n-2))}</small></th>`).join('')}</tr></thead><tbody>
+ ${$state.calendarLayout==='day'?dayBoard(displayEvents,conflictKeys,page):`<div class="table-scroller week-scroller"><table class="timetable"><thead><tr><th class="sidecol">Ca</th>${DAYS.map(d=>`<th><span class="day-long">${d.label}</span><span class="day-short">${d.n===8?'CN':`T${d.n}`}</span><small>${fmt(addDays($state.week,d.n-2))}</small></th>`).join('')}</tr></thead><tbody>
  ${activeShifts.map(sh=>Array.from({length:sh.count},(_,i)=>`<tr><th class="period-label"><span>${sh.label}</span><strong>${sh.id==='T'?'Suất':'Tiết'} ${i+1}</strong></th>${DAYS.map(d=>renderCell(d.n,sh.id,i+1)).join('')}</tr>`).join('')).join('')}
  </tbody></table></div>`}<div class="legend"><span>Mỗi lớp một màu · Chọn ô để xem chi tiết</span><span><i class="dot red"></i> Trùng thời điểm</span><span>↻ Dạy thêm lặp hàng tuần</span></div></section>`;
 }
@@ -320,6 +355,13 @@ function statisticsPage(){
   <td>${x.planningPrecision==='estimated-date'?'≈ ':''}<span class="planned-number">${x.planned??0}</span>${x.planningPrecision==='unallocated'?'<small class="planned-note">Chưa có TKB phân bổ ngày</small>':''}</td>
   <td>${x.actual??0}${x.status==='partial'?'<small>Chưa tính các tiết chưa xác nhận</small>':''}${x.status!=='unconfirmed'?`<div class="progress-meter"><i style="width:${Math.min(100,Math.max(0,(x.actual/Math.max(1,x.planned))*100))}%"></i></div>`:''}</td>
   <td>${deltaCell(x)}</td><td>${x.next?`T${esc(x.next.period)} · ${esc(x.next.title)}`:'—'}${x.unlinked?`<span class="pending-stat"> · ${x.unlinked} tiết đã dạy chưa liên kết PPCT</span>`:''}${x.off?`<small>${x.off} tiết nghỉ đã ghi nhận</small>`:''}</td></tr>`).join('');
+ const compactRows=filtered.map(x=>`<tr>
+  <td><strong>${esc(className(x.classId))}</strong><small>${esc(x.subject)}${x.stream==='TIN'?'':' · '+esc(x.stream)}</small></td>
+  <td><strong>${x.planningPrecision==='estimated-date'?'≈ ':''}${x.planned??0}</strong>${x.planningPrecision==='unallocated'?'<small title="Chưa có TKB phân bổ ngày">Chưa phân bổ ngày</small>':''}</td>
+  <td><strong>${x.actual??0}</strong>${x.status==='partial'?'<small>Chưa đủ xác nhận</small>':''}</td>
+  <td><span class="mobile-pace ${x.delta<0?'behind':x.delta>0?'ahead':'ontime'}">${x.delta>0?'+':''}${x.delta??0}</span><small>${x.delta>0?'Nhanh':x.delta<0?'Chậm':'Đúng'}</small>${x.provisional?'<small>Tạm tính</small>':''}</td>
+  <td>${x.next?`<strong>Tiết ${esc(x.next.period)}</strong><small>${esc(x.next.title)}</small>`:'<span>—</span>'}${x.unlinked?`<small>${x.unlinked} tiết chưa liên kết</small>`:''}</td>
+ </tr>`).join('');
  const total=filtered.reduce((sum,x)=>sum+(Number(x.actual)||0)-(Number(x.planned)||0),0);
  const allReady=ready.length===filtered.length&&filtered.length>0;
  const mathPairs=cls.filter(c=>c.subjects.includes('Toán')).filter(c=>$state.statsClass==='all'||$state.statsClass===c.id).filter(()=>$state.statsSubject==='all'||$state.statsSubject==='Toán').map(c=>{
@@ -329,10 +371,11 @@ function statisticsPage(){
  }).join('');
  return `<div class="pagehead"><div><div class="eyebrow">SMART TKB V1.8.0 · LÊ HOÀNG NGỌC ĐỨC</div><h2>Thống kê tiến độ theo PPCT</h2><p>Đếm riêng theo lớp và mạch; chưa xác nhận thì không tự kết luận nhanh/chậm.</p></div><div class="actions"><button class="btn primary" data-action="export-statistics">↓ Xuất thống kê CSV</button><button class="btn soft" data-action="print">⎙ In báo cáo</button></div></div>
  <section class="panel"><div class="stats-toolbar"><div><label>Mốc thống kê</label><select id="stats-period">${options([['today','Đến hôm nay'],['week','Đến hết tuần đang xem'],['hk1','Đến hết học kỳ I'],['hk2','Đến hết năm học'],['custom','Chọn ngày cụ thể']],$state.statsPeriod)}</select></div><div><label>Ngày</label><input id="stats-date" type="date" value="${esc(date)}" ${$state.statsPeriod==='custom'?'':'disabled'}></div><div><label>Lớp</label><select id="stats-class">${options([['all','Tất cả lớp'],...cls.map(c=>[c.id,`${c.name} (${c.id})`])],$state.statsClass)}</select></div><div><label>Môn</label><select id="stats-subject">${options([['all','Toán và Tin'],['Toán','Toán'],['Tin','Tin']],$state.statsSubject)}</select></div><div><label>Mạch</label><select id="stats-stream">${options([['all','Tất cả mạch'],['ĐS','Đại số'],['HH','Hình học'],['TIN','Tin học']],$state.statsStream)}</select></div></div>
- <div class="statistics-summary"><div><small>Đã đủ xác nhận</small><strong>${ready.length}/${filtered.length}</strong></div><div><small>Còn tiết chưa xác nhận</small><strong>${partial.length}</strong></div><div><small>Chưa xác nhận mốc</small><strong>${unconfirmed.length}</strong></div><div><small>Chênh lệch đã ghi nhận · tạm tính nếu thiếu xác nhận</small><strong>${(total>0?'+':'')+total+' tiết'}</strong></div></div>
+ <div class="statistics-summary"><div><small>Đã đủ xác nhận</small><strong>${ready.length}/${filtered.length}</strong></div><div><small>Còn tiết chưa xác nhận</small><strong>${partial.length}</strong></div><div><small>Chưa xác nhận mốc</small><strong>${unconfirmed.length}</strong></div><div><small class="desktop-summary-label">Chênh lệch đã ghi nhận · tạm tính nếu thiếu xác nhận</small><small class="mobile-summary-label">Chênh lệch</small><strong>${(total>0?'+':'')+total+' tiết'}</strong></div></div>
  ${unconfirmed.length?`<div class="stats-warning">⚠ Có ${unconfirmed.length} mạch/lớp chưa xác nhận mốc PPCT. Vào “PPCT & tiến độ” để xác nhận số tiết đã dạy trước ngày bắt đầu theo dõi.</div>`:''}
  ${partial.length?`<div class="stats-warning">⚠ Có ${partial.length} mạch/lớp có tiết dự kiến chưa được xác nhận đã dạy hoặc nghỉ. Mở TKB, chạm vào từng tiết và chọn “Đã dạy”/“Nghỉ”; tạm thời không kết luận nhanh hay chậm đối với các mạch này.</div>`:''}
- <div class="table-scroller"><table class="data-table stats-table"><thead><tr><th>Lớp</th><th>Môn/mạch</th><th>Kế hoạch tới mốc</th><th>Đã dạy xác nhận</th><th>Nhanh/chậm</th><th>Tiết tiếp theo</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <div class="mobile-stats-scroller"><table class="mobile-stats-table"><colgroup><col style="width:23%"><col style="width:13%"><col style="width:13%"><col style="width:19%"><col style="width:32%"></colgroup><thead><tr><th>Lớp / Môn</th><th>Kế hoạch</th><th>Đã dạy</th><th>Nhanh / Chậm</th><th>Tiết tiếp theo</th></tr></thead><tbody>${compactRows}</tbody></table></div>
+ <div class="table-scroller desktop-stats-scroller"><table class="data-table stats-table"><thead><tr><th>Lớp</th><th>Môn/mạch</th><th>Kế hoạch tới mốc</th><th>Đã dạy xác nhận</th><th>Nhanh/chậm</th><th>Tiết tiếp theo</th></tr></thead><tbody>${rows}</tbody></table></div>
  <p class="caption">Kế hoạch lấy từ PPCT theo từng tuần; nếu chọn giữa tuần, phân bổ theo tiết trong TKB. Kỳ nghỉ không làm số tiết kế hoạch về 0. Thực tế = phần trước mốc đã xác nhận + các mã PPCT đã xác nhận dạy sau mốc (không tính lặp). Bản ghi chưa đánh dấu không tự xem là “đã dạy” hay “nghỉ”. Khi số tiết TKB trong tuần khác định mức PPCT, kết quả kế hoạch giữa tuần là ước tính và không đưa ra chênh lệch chính thức.</p></section>
  <section class="panel"><div class="panelheading"><h3>Tổng hợp Toán theo từng lớp</h3><p>Đại số và Hình học được tính độc lập; chỉ cộng chênh lệch khi cả hai mạch đủ xác nhận.</p></div><div class="math-summary">${mathPairs}</div></section>`;
 }
@@ -545,6 +588,7 @@ function updateMainFormUI(changed=''){
  if(periodSelect&&shiftSelect){const count=shiftSelect.value==='T'?2:5;const current=Math.min(Number(periodSelect.value)||1,count);if(periodSelect.options.length!==count)periodSelect.innerHTML=options(Array.from({length:count},(_,i)=>[i+1,String(i+1)]),current);}
 }
 function render(){
+ document.body.classList.toggle('drawer-active',$state.drawerOpen);
  if(!['google','cached'].includes($state.mode)){document.body.classList.remove('week-focus');$('#app').innerHTML=connectionPage();return;}
  if(!$state.data)return;
  $('#app').innerHTML=showTop()+modal();fitWeekTable();updateEditorFields();updateExtraFormUI();updateMainFormUI('move-class');
@@ -760,6 +804,13 @@ async function undoOfficial(id){
  else{const log=[...$state.data.audit_log].reverse().find(x=>x.entityId===id);if(!log||log.action!=='SAVE')throw Error('Không có thay đổi để hoàn tác');const old=JSON.parse(log.oldValue),current=$state.data.changes.findIndex(x=>x.id===id);if(current>=0)$state.data.changes.splice(current,1);if(old.change)$state.data.changes.push(old.change);if(JSON.parse(log.newValue).rule){const rule=JSON.parse(log.newValue).rule;$state.data.ppct_overrides=$state.data.ppct_overrides.filter(x=>x.id!==rule.id);if(old.rule)$state.data.ppct_overrides.push(old.rule);}log.action='UNDO';cacheDemo();}
  $state.edit=null;notify('Đã hoàn tác thao tác gần nhất.');}
 async function doAction(target){const a=target.dataset.action;if(!a)return;
+ // Menu selections close immediately even for async actions such as Sheet refresh.
+ if(target.closest('#side-menu') && a!=='toggle-drawer' && a!=='close-drawer'){
+  $state.drawerOpen=false;
+  document.querySelector('#side-menu')?.classList.remove('drawer-open');
+  document.querySelector('.drawer-scrim')?.remove();
+  document.body.classList.remove('drawer-active');
+ }
  try{
  if(a==='login'){await loginAndSync();$state.edit=null;return render();}
  if(a==='show-cache-login'){$state.edit={type:'login'};return render();}
@@ -770,10 +821,10 @@ async function doAction(target){const a=target.dataset.action;if(!a)return;
    const session=await getSession();
    if(!session.authenticated)throw Object.assign(new Error('Cần đăng nhập trên thiết bị này để kiểm tra Apps Script.'),{code:'UNAUTHENTICATED'});
    const probe=await probeExtraServer();
-   const matches=FRONTEND_VERSION===version.apiVersion&&FRONTEND_VERSION===(probe.gasVersion||probe.apiVersion)&&$state.mainServerReady;
+   const matches=version.apiVersion===(probe.gasVersion||probe.apiVersion)&&$state.mainServerReady;
    const label=`Web ${FRONTEND_VERSION} / API ${version.apiVersion} / GAS ${probe.gasVersion||probe.apiVersion||'?'}`;
    const commit=version.commit||'?';
-   return notify((matches?'✓ Web, API và Apps Script đều khớp phiên bản, hỗ trợ lưu TKB. ':'⚠ CHƯA ĐỒNG BỘ BA THÀNH PHẦN Web/API/GAS; cần cập nhật Apps Script (bút chì → Phiên bản mới) và Vercel. ')+label+` · Commit ${commit} · Sheet ${$state.extraSourceSheet||'?'} (...${$state.extraSourceTail||'?'})`);
+   return notify((matches?'✓ API và Apps Script tương thích, hỗ trợ lưu TKB; Web sử dụng bản tối ưu giao diện. ':'⚠ API và GAS chưa đồng bộ; cần cập nhật Apps Script (bút chì → Phiên bản mới) và Vercel. ')+label+` · Commit ${commit} · Sheet ${$state.extraSourceSheet||'?'} (...${$state.extraSourceTail||'?'})`);
  }
  if(a==='diagnose-system'){const previous=$state.apiVersion;const session=await getSession();if(!session.authenticated)throw Object.assign(new Error('Phiên không hợp lệ, đăng nhập lại.'),{code:session.code||'UNAUTHENTICATED'});await pullGoogle();const details=`Frontend ${FRONTEND_VERSION}, API ${$state.apiVersion}, Apps Script ${$state.extraServerVersion||'chưa kiểm tra'}; ${$state.data.extra_patterns.length} lịch lặp và ${$state.data.extra_sessions.length} ngoại lệ.`;return notify('Đã kiểm tra: '+details+(previous&&previous!==$state.apiVersion?' Phiên bản API đã đổi.':''));}
  if(a==='refresh-google'){
@@ -784,11 +835,11 @@ async function doAction(target){const a=target.dataset.action;if(!a)return;
  }
  if(a==='toggle-drawer'){$state.drawerOpen=!$state.drawerOpen;return render();}
  if(a==='close-drawer'){$state.drawerOpen=false;return render();}
- if(a==='reset-filters'){$state.filterClass='all';$state.filterShift='all';$state.filterSubject='all';$state.filterStream='all';return render();}
+ if(a==='reset-filters'){$state.filterClass='all';$state.filterShift='all';$state.filterSubject='all';$state.filterStream='all';$state.drawerOpen=false;return render();}
  if(a==='fit-week'){$state.fitWeek=!$state.fitWeek;localStorage.setItem('smart-tkb-focus-v14',$state.fitWeek?'on':'off');return render();}
  if(a==='fullscreen-week'){if(!document.fullscreenElement){await document.documentElement.requestFullscreen?.();try{await screen.orientation?.lock?.('landscape')}catch{}}else{await document.exitFullscreen?.();}return fitWeekTable();}
- if(a==='layout-week'){$state.calendarLayout='week';return render();}
- if(a==='layout-day'){$state.calendarLayout='day';return render();}
+ if(a==='layout-week'){$state.calendarLayout='week';$state.drawerOpen=false;return render();}
+ if(a==='layout-day'){$state.calendarLayout='day';$state.drawerOpen=false;return render();}
  if(a==='select-day'){$state.dayIndex=Number(target.dataset.day);return render();}
  if(a==='prev-day'||a==='next-day'){$state.dayIndex=$state.dayIndex+(a==='prev-day'?-1:1);if($state.dayIndex<2){$state.week=addDays($state.week,-7);$state.dayIndex=8;}if($state.dayIndex>8){$state.week=addDays($state.week,7);$state.dayIndex=2;}return render();}
  if(a==='clear-notice'){$state.notice='';return render();}
@@ -888,17 +939,39 @@ document.addEventListener('click',e=>{
  if(target.classList.contains('backdrop')&&e.target!==target)return;
  doAction(target);
 });
+// Accessible mobile drawer: edge-swipe to open, left-swipe to close, Escape to dismiss.
+let drawerTouchStart=null;
+document.addEventListener('touchstart',e=>{
+ if(window.innerWidth>760||$state.edit||e.touches.length!==1)return;
+ const touch=e.touches[0];
+ if((!$state.drawerOpen&&touch.clientX<=26)||($state.drawerOpen&&touch.clientX<=340))drawerTouchStart={x:touch.clientX,y:touch.clientY,opened:$state.drawerOpen};
+ else drawerTouchStart=null;
+},{passive:true});
+document.addEventListener('touchend',e=>{
+ if(!drawerTouchStart||e.changedTouches.length!==1)return;
+ const delta=e.changedTouches[0].clientX-drawerTouchStart.x;
+ const v=Math.abs(e.changedTouches[0].clientY-drawerTouchStart.y);
+ if(Math.abs(delta)>65&&Math.abs(delta)>v*1.4){
+  if(!drawerTouchStart.opened&&delta>0){$state.drawerOpen=true;render();}
+  if(drawerTouchStart.opened&&delta<0){$state.drawerOpen=false;render();}
+ }
+ drawerTouchStart=null;
+},{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$state.drawerOpen){$state.drawerOpen=false;render();}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='login-pass'){e.preventDefault();loginAndSync().catch(err=>{$state.authError=err.message;$state.lastApiError=err.code||'';render();});}});
 document.addEventListener('change',e=>{
  const table={'f-class':'filterClass','f-shift':'filterShift','f-subject':'filterSubject','f-kind':'filterKind','f-stream':'filterStream','ppct-grade':'ppctGrade','ppct-subject':'ppctSubject','ppct-stream':'ppctStream','stats-class':'statsClass','stats-subject':'statsSubject','stats-stream':'statsStream','stats-date':'statsDate','stats-period':'statsPeriod'};
- if(table[e.target.id]){$state[table[e.target.id]]=e.target.value;render();}
+ if(table[e.target.id]){$state[table[e.target.id]]=e.target.value;if(e.target.id.startsWith('f-'))$state.drawerOpen=false;render();}
+ const drawerStats={'drawer-stats-period':'statsPeriod','drawer-stats-date':'statsDate','drawer-stats-class':'statsClass','drawer-stats-subject':'statsSubject','drawer-stats-stream':'statsStream'};
+ const drawerExtra={'drawer-extra-grade':'extraGrade','drawer-extra-letter':'extraLetter','drawer-extra-period':'extraPeriod','drawer-extra-day':'extraDay','drawer-extra-shift':'extraShift'};
+ if(drawerStats[e.target.id]||drawerExtra[e.target.id]){$state[drawerStats[e.target.id]||drawerExtra[e.target.id]]=e.target.value;$state.drawerOpen=false;render();return;}
  if(e.target.id==='extra-period'){$state.extraPeriod=e.target.value;return render();}
  if(e.target.id==='extra-day'){$state.extraDay=e.target.value;return render();}
  if(e.target.id==='extra-shift'){$state.extraShift=e.target.value;return render();}
  if(['move-class','move-subject','move-shift'].includes(e.target.id))updateMainFormUI(e.target.id);
  if(e.target.closest('#extra-form')){delete e.target.form.dataset.requestId;updateExtraFormUI();}
  if(e.target.id==='extra-frequency')updateExtraFormUI();
- if(e.target.id==='only-extra'){$state.onlyExtra=e.target.checked;render();}
+ if(e.target.id==='only-extra'){$state.onlyExtra=e.target.checked;$state.drawerOpen=false;render();}
  if(['edit-action','edit-kind','edit-scope'].includes(e.target.id))updateEditorFields();
  if(e.target.id==='edit-class'||e.target.id==='edit-subject'||e.target.id==='edit-stream'){
   // The next render refreshes PPCT choices for the selected class/subject/stream; preserve edited selections.
@@ -907,14 +980,14 @@ document.addEventListener('change',e=>{
   const dropdown=$('#edit-ppct');dropdown.innerHTML='<option value="">Tự đề xuất theo tiến độ</option>'+seq.map(p=>`<option value="${esc(p.id)}">Tiết ${p.period}: ${esc(p.title)}</option>`).join('');
  }
 });
-document.addEventListener('input',e=>{if(e.target.closest('#extra-form')){delete e.target.form.dataset.requestId;updateExtraFormUI();}if(e.target.id==='extra-list-search'){$state.extraListQuery=e.target.value;const pos=e.target.selectionStart;render();const input=$('#extra-list-search');input?.focus();input?.setSelectionRange(pos,pos);}if(e.target.id==='ppct-query'){$state.ppctQuery=e.target.value;const pos=e.target.selectionStart;render();const input=$('#ppct-query');input?.focus();input?.setSelectionRange(pos,pos);}});
+document.addEventListener('input',e=>{if(e.target.closest('#extra-form')){delete e.target.form.dataset.requestId;updateExtraFormUI();}if(['extra-list-search','drawer-extra-list-search'].includes(e.target.id)){$state.extraListQuery=e.target.value;const id=e.target.id;const pos=e.target.selectionStart;render();const input=$('#'+id);input?.focus();input?.setSelectionRange(pos,pos);}if(e.target.id==='ppct-query'){$state.ppctQuery=e.target.value;const pos=e.target.selectionStart;render();const input=$('#ppct-query');input?.focus();input?.setSelectionRange(pos,pos);}});
 document.addEventListener('submit',async e=>{if(!['edit-form','extra-form','move-form'].includes(e.target.id))return;e.preventDefault();try{if(e.target.id==='extra-form')await saveExtra();else if(e.target.id==='move-form')await saveMove();else await saveEdit();}catch(err){console.error(err);if(e.target.id==='extra-form'){const box=$('#extra-error');if(box){box.hidden=false;box.textContent='Không thể lưu dạy thêm'+(err.code?' ['+err.code+']':'')+': '+err.message+' (Web '+FRONTEND_VERSION+' / API '+($state.apiVersion||'?')+' / GAS '+($state.extraServerVersion||'?')+').';}const state=$('#extra-status');if(state)state.textContent='Nội dung thầy vừa nhập vẫn được giữ nguyên để sửa hoặc thử lại.';}else if(e.target.id==='move-form'){const box=$('#main-error');if(box){box.hidden=false;box.textContent='Không lưu được: '+err.message+' (Web '+FRONTEND_VERSION+', API '+($state.apiVersion||'?')+'). Nội dung đã nhập được giữ nguyên.';}else notify('Lỗi: '+err.message);}else notify('Lỗi: '+err.message);}});
 init().catch(err=>{$('#app').innerHTML=`<p class="fatal">Không khởi động được ứng dụng: ${esc(err.message)}</p>`;});
 
 // V1.7.3: selectors are delegated so they survive rerenders.
 document.addEventListener('click',e=>{
- const grade=e.target.closest('[data-extra-grade]');if(grade){$state.extraGrade=grade.dataset.extraGrade;render();return;}
- const letter=e.target.closest('[data-extra-letter]');if(letter){$state.extraLetter=letter.dataset.extraLetter;render();return;}
+ const grade=e.target.closest('[data-extra-grade]');if(grade){$state.extraGrade=grade.dataset.extraGrade;$state.drawerOpen=false;render();return;}
+ const letter=e.target.closest('[data-extra-letter]');if(letter){$state.extraLetter=letter.dataset.extraLetter;$state.drawerOpen=false;render();return;}
  const pick=e.target.closest('[data-pick-grade]');if(pick){$state.extraPickerGrade=Number(pick.dataset.pickGrade);document.querySelectorAll('[data-pick-grade]').forEach(b=>{b.classList.toggle('primary',Number(b.dataset.pickGrade)===$state.extraPickerGrade);b.classList.toggle('soft',Number(b.dataset.pickGrade)!==$state.extraPickerGrade);});document.querySelectorAll('[data-pick-letter]').forEach(b=>b.textContent=`${$state.extraPickerGrade}${b.dataset.pickLetter}`);return;}
  const chosen=e.target.closest('[data-pick-letter]');if(chosen){const id=`${$state.extraPickerGrade}${chosen.dataset.pickLetter}`;const input=[...document.querySelectorAll('[data-extra-class]')].find(x=>x.dataset.extraClass===id);if(input){input.checked=!input.checked;updateExtraFormUI();}return;}
 });
