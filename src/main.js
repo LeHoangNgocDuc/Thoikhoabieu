@@ -1,13 +1,17 @@
 
-import {DAYS,SHIFTS,addDays,monday,dayNumber,schoolWeek,classById,activeVersion,eventsForWeek,conflicts,ppctSequence,parseDate,normalizeSheetData,tutoringForWeek,parseGroups,extraSlotOverlap,parseStreamPattern,progressAt,progressSummary,mathStreamPattern,applyStreamAssignments,recurringDateInWeek} from './core.js';
+import {DAYS,SHIFTS,addDays,monday,dayNumber,schoolWeek,classById,activeVersion,eventsForWeek,conflicts,ppctSequence,parseDate,normalizeSheetData,tutoringForWeek,parseGroups,extraSlotOverlap,parseStreamPattern,progressAt,progressSummary,mathStreamPattern,applyStreamAssignments,recurringDateInWeek,previewMainRevision} from './core.js';
 import {extractTeacherSchedule} from './importExcel.js';
+import {SNAPSHOT_KEY,validateSnapshot,snapshotText} from './cache.js';
+import {moveCollision,validateOfficialScope} from './core.js';
 
 const $=s=>document.querySelector(s);
 const newRequestId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FRONTEND_VERSION='1.6.3';
+const FRONTEND_VERSION='1.6.5';
 const PENDING_EXTRA_KEY='smart-tkb-extra-pending-v162';
-const $state={data:null,mode:'checking',view:'calendar',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',syncDiagnostics:null,extraPending:null,refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false};
+const getSnapshot=()=>{try{return validateSnapshot(localStorage.getItem(SNAPSHOT_KEY));}catch{return null;}};
+function writeSnapshot(data){try{localStorage.setItem(SNAPSHOT_KEY,snapshotText(data));}catch(e){console.warn('Không lưu được bộ nhớ đệm, ứng dụng vẫn dùng dữ liệu trực tuyến.');}}
+const $state={data:null,mode:'checking',view:'calendar',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',syncDiagnostics:null,extraPending:null,refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false};
 const shiftLabel=s=>({S:'Sáng',C:'Chiều',T:'Tối'})[s]||s;
 const dayLabel=n=>DAYS.find(d=>d.n===n)?.label||n;
 const className=id=>classById($state.data,id)?.name||id;
@@ -34,7 +38,7 @@ function apiError(response,j){
  const err=new Error(j?.error||`Lỗi máy chủ HTTP ${response.status}`);
  err.code=code;err.status=response.status;
  $state.lastHttpStatus=response.status;$state.lastApiError=code;
- if(response.status===401){$state.mode='unauthenticated';$state.sessionStatus='expired';$state.sessionCode=code;$state.loggedIn=false;$state.extraList=null;$state.authError=err.message;}
+ if(response.status===401){$state.mode=$state.data?'cached':'unauthenticated';$state.sessionStatus='expired';$state.cacheLoginRequired=true;$state.sessionCode=code;$state.loggedIn=false;$state.extraList=null;$state.authError=err.message;}
  return err;
 }
 async function serverRequest(path,opts={}){
@@ -64,11 +68,14 @@ function cacheDemo(){localStorage.setItem('smart-tkb-demo-v1',JSON.stringify($st
 async function probeExtraServer(){
  try{
    const r=await callApi({op:'probeExtra'});
-   if(!r.extraWrites||!r.verifiedWrites||!String(r.apiVersion||'').startsWith('1.6.2')||!Array.isArray(r.supportedActions)||!r.supportedActions.includes('CREATE'))throw Error('Apps Script chưa phải phiên bản V1.6.2 có xác minh đọc lại. Cập nhật Apps Script rồi triển khai Phiên bản mới trước khi sửa lịch.');
-   $state.extraServerReady=true;$state.extraServerVersion=r.apiVersion||'không rõ';$state.extraServerError='';
+   if(!r.extraWrites||!r.verifiedWrites||!Array.isArray(r.supportedActions)||!r.supportedActions.includes('CREATE'))throw Error('Apps Script chưa hỗ trợ xác minh ghi dạy thêm. Cập nhật Apps Script rồi triển khai Phiên bản mới trước khi sửa lịch.');
+   $state.extraServerReady=true;$state.extraServerVersion=r.gasVersion||r.apiVersion||'không rõ';
+   $state.extraSourceSheet=r.sourceSheetName||'';$state.extraSourceTail=r.sourceSheetIdTail||'';
+   $state.extraServerError='';
    return r;
  }catch(e){
-   const message=/thao tác không được hỗ trợ/i.test(e.message)?'API Vercel hoặc Apps Script vẫn đang chạy mã cũ. Cập nhật api/tkb.js và triển khai phiên bản Web app Apps Script mới (giữ nguyên URL /exec), sau đó kiểm tra lại.':e.message;
+   const message=e.code==='INCOMPATIBLE_GAS'||e.code==='UNSUPPORTED_ACTION'?
+     'Máy chủ GAS_URL chưa hỗ trợ ghi dạy thêm; kiểm tra phiên bản Vercel/API và deployment Apps Script tại Cấu hình & dữ liệu. '+e.message:e.message;
    $state.extraServerReady=false;$state.extraServerError=message;throw Error(message);
  }
 }
@@ -78,8 +85,9 @@ async function pullGoogle(){
    const err=new Error('Phản hồi Google Sheets thiếu cấu trúc dữ liệu. Không thể thay thế bằng dữ liệu mẫu.');err.code='SHEETS_READ_FAILED';throw err;
  }
  $state.data=normalizeSheetData(j.data);$state.mode='google';$state.loggedIn=true;$state.sessionStatus='authenticated';
- $state.remoteError='';$state.authError='';$state.extraList=null;$state.lastSyncedAt=new Date().toISOString();
- try{await probeExtraServer();}catch(e){console.warn('Lưu dạy thêm chưa sẵn sàng:',e.code||'BACKEND_NOT_READY');}
+ $state.remoteError='';$state.authError='';$state.extraList=null;$state.lastSyncedAt=new Date().toISOString();$state.snapshotAt=$state.lastSyncedAt;$state.syncState='synced';$state.cacheLoginRequired=false;writeSnapshot($state.data);render();
+ // The timetable has already rendered. Capability probing must never block the screen.
+ probeExtraServer().then(()=>render()).catch(e=>{console.warn('Lưu dạy thêm chưa sẵn sàng:',e.code||'BACKEND_NOT_READY');render();});
  return $state.data;
 }
 async function refreshExtraList(){
@@ -115,18 +123,22 @@ async function checkPendingExtra(){
  }catch(err){$state.extraPending={...pending,error:err.message};return null;}
 }
 async function init(){
- // Không thay thế dữ liệu máy chủ bằng seed/demo khi thiếu cookie hoặc lỗi mạng.
- $state.mode='checking';$state.sessionStatus='checking';render();
+ // Stale-while-revalidate: render a previously VERIFIED Google Sheets snapshot synchronously.
+ // A snapshot is NEVER an authorization credential. All writes require the server's HttpOnly cookie.
+ const last=getSnapshot();
+ if(last){$state.data=normalizeSheetData(last.data);$state.mode='cached';$state.snapshotAt=last.savedAt;$state.syncState='checking';$state.sessionStatus='checking';render();}
+ else {$state.mode='checking';$state.syncState='checking';$state.sessionStatus='checking';render();}
  try{
    const sess=await getSession();
-   if(!sess.backendConfigured){$state.mode='unconfigured';$state.authError='Vercel chưa có GAS_URL/GAS_API_KEY cho môi trường đang dùng.';}
-   else if(!sess.authenticated){$state.mode='unauthenticated';$state.authError=sess.code==='SESSION_EXPIRED'?'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.':'Thiết bị này chưa có phiên đăng nhập hợp lệ.';}
+   if(!sess.backendConfigured){$state.mode=last?'cached':'unconfigured';$state.syncState='error';$state.authError='Vercel chưa có GAS_URL/GAS_API_KEY.';}
+   else if(!sess.authenticated){$state.mode=last?'cached':'unauthenticated';$state.cacheLoginRequired=true;$state.syncState='login-required';$state.authError='Cần đăng nhập trên thiết bị này để đồng bộ và chỉnh sửa.';}
    else{
+     $state.syncState='syncing';render();
      try{await pullGoogle();await checkPendingExtra();if($state.view==='extraList')await refreshExtraList();}
-     catch(e){if(e.status===401){$state.mode='unauthenticated';$state.authError='Phiên đã hết hạn hoặc chưa hợp lệ, vui lòng đăng nhập lại.';}
-       else{$state.mode='connection-error';$state.remoteError=e.message;$state.authError=`Không đọc được Google Sheets: ${e.message}`;}}
+     catch(e){if(e.status===401){$state.mode=$state.data?'cached':'unauthenticated';$state.cacheLoginRequired=true;$state.syncState='login-required';$state.authError='Phiên hết hạn. Cần đăng nhập lại để đồng bộ.';}
+      else{$state.mode=$state.data?'cached':'connection-error';$state.syncState='error';$state.remoteError=e.message;$state.authError=`Không đọc được Google Sheets: ${e.message}`;}}
    }
- }catch(e){$state.mode=e.status===401?'unauthenticated':'connection-error';$state.authError=e.message;$state.remoteError=e.message;}
+ }catch(e){$state.mode=$state.data?'cached':e.status===401?'unauthenticated':'connection-error';$state.syncState='error';$state.authError=e.message;$state.remoteError=e.message;}
  render();
 }
 function connectionPage(){
@@ -170,10 +182,11 @@ function showTop(){
  const combined=conflicts(all);
  const err=['extra','overview'].includes($state.view)?combined:conflicts(official);
  const events=['extra','overview'].includes($state.view)?all:official;
- return `<header class="topbar"><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':'○ Chế độ dùng thử'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
+ return `<header class="topbar"><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':$state.syncState==='login-required'?'🔒 Bản lưu · cần đăng nhập':$state.syncState==='error'?'⚠ Bản lưu · lỗi đồng bộ':'◌ Bản lưu · đang đồng bộ Sheet...'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
  <div class="shell">${$state.drawerOpen?'<button class="drawer-scrim" data-action="close-drawer" aria-label="Đóng bộ lọc"></button>':''}<aside class="sidebar ${$state.drawerOpen?'drawer-open':''}" id="side-menu"><div class="side-mobilehead"><strong>☰ Lê Hoàng Ngọc Đức</strong><button class="icon-btn" data-action="close-drawer">×</button></div><div class="navtitle">QUẢN LÝ GIẢNG DẠY</div>
  ${[['calendar','▦','Chính khóa'],['extra','◈','Dạy thêm'],['extraList','☷','Danh sách dạy thêm'],['overview','◫','TKB đầy đủ'],['statistics','▥','Thống kê tiến độ'],['progress','◷','PPCT & tiến độ'],['versions','⇄','Phiên bản TKB'],['settings','⚙','Cấu hình & dữ liệu']].map(([k,icon,label])=>`<button class="navitem ${$state.view===k?'selected':''}" data-view="${k}"><span class="navicon">${icon}</span>${label}</button>`).join('')}
  ${sideFilters()}<div class="sidefooter"><div class="stat-label">Năm học 2026 – 2027</div><div class="stat-desc">7 lớp chính khóa · 7 ngày/tuần<br>Sáng 5 tiết · Chiều 5 tiết · Tối 2 suất</div></div></aside><main class="content">${$state.notice?`<div class="notice">${esc($state.notice)}<button data-action="clear-notice">×</button></div>`:''}
+ ${$state.mode==='cached'?`<div class="cache-notice" role="status"><strong>📋 Đang xem bản lưu gần nhất (${esc($state.snapshotAt?new Date($state.snapshotAt).toLocaleString('vi-VN'):'không rõ')})</strong> · ${esc($state.syncState==='checking'||$state.syncState==='syncing'?'Đang kiểm tra và đồng bộ Sheet...':$state.authError||'Chưa đồng bộ được')} <button class="btn soft" data-action="${$state.cacheLoginRequired?'show-cache-login':'recheck-session'}">${$state.cacheLoginRequired?'Đăng nhập để đồng bộ':'Thử lại'}</button></div>`:''}
  ${$state.extraPending?`<div class="pending-sync"><strong>⚠ Có yêu cầu dạy thêm cần xác minh</strong><span>${esc($state.extraPending.requestId)} · ${esc($state.extraPending.status?.state||$state.extraPending.error||'Đang kiểm tra')}</span><button data-action="check-pending-extra" class="btn soft">Kiểm tra lại</button></div>`:''}
  ${['calendar','extra','overview'].includes($state.view)?calendarPage(events,err):$state.view==='extraList'?extraListPage():$state.view==='statistics'?statisticsPage():$state.view==='progress'?progressPage():$state.view==='versions'?versionsPage():settingsPage()}
  </main></div>`;
@@ -220,20 +233,21 @@ function calendarPage(events,error){
     }).join('')||'<span class="addmark">+</span>'}
     ${conflict?'<span class="alert-dot" title="Cần kiểm tra lịch trùng">!</span>':''}</button></td>`;
  };
- return `<div class="pagehead"><div><div class="eyebrow">SMART TKB V1.6.2 · LÊ HOÀNG NGỌC ĐỨC</div><h2>${heading}</h2><p>${extraMode?'Dạy thêm độc lập với PPCT. Mỗi suất có thể chọn nhiều lớp hoặc nhóm tự đặt tên.':overview?'Xem cả chính khóa và dạy thêm nhưng lưu dữ liệu hoàn toàn riêng biệt.':'Chính khóa theo phiên bản TKB; nghỉ/dạy bù theo PPCT từng lớp.'}</p></div><div class="actions"><button class="btn soft" data-action="print">⎙ In</button><button class="btn primary" data-action="export">↓ Xuất CSV</button></div></div>
+ return `<div class="pagehead"><div><div class="eyebrow">SMART TKB V1.6.5 · LÊ HOÀNG NGỌC ĐỨC</div><h2>${heading}</h2><p>${extraMode?'Dạy thêm độc lập với PPCT. Mỗi suất có thể chọn nhiều lớp hoặc nhóm tự đặt tên.':overview?'Xem cả chính khóa và dạy thêm nhưng lưu dữ liệu hoàn toàn riêng biệt.':'Chính khóa theo phiên bản TKB; nghỉ/dạy bù theo PPCT từng lớp.'}</p></div><div class="actions"><button class="btn soft" data-action="print">⎙ In</button><button class="btn primary" data-action="export">↓ Xuất CSV</button></div></div>
  <div class="metrics"><div class="metric"><span>${extraMode?'Suất dạy thêm':'Tiết có lịch'}</span><strong>${occupied}</strong><small>Trong tuần đang xem</small></div><div class="metric"><span>Đã hoàn thành</span><strong>${completed}</strong><small>Đã xác nhận</small></div><div class="metric"><span>Phiên bản chính khóa</span><strong class="metric-version">${esc(version?.name||'Chưa có TKB')}</strong><small>Tuần ${schoolWeek($state.week)}</small></div><div class="metric ${error.length?'metric-warn':''}"><span>Trùng thời điểm</span><strong>${error.length}</strong><small>Kiểm tra trước khi xếp lịch</small></div></div>
  <section class="panel"><div class="weekbar"><button class="menu-toggle" data-action="toggle-drawer" aria-label="Mở danh mục và bộ lọc">☰<small>Bộ lọc</small></button><div class="weekchange"><button class="arrow" data-action="prev-week">‹</button><div><strong>Tuần ${schoolWeek($state.week)} · ${fmt($state.week)} – ${fmt(weekEnd())}</strong><span>${page==='calendar'?'Chính khóa · sáng 1–5 · chiều 1–5':'Đầy đủ 7 ngày · sáng 1–5 · chiều 1–5 · tối suất 1–2'}</span><em class="teacher-byline">GV: Lê Hoàng Ngọc Đức</em></div><button class="arrow" data-action="next-week">›</button></div><div class="weektools"><button class="btn soft" data-action="today">Tuần hiện tại</button><button class="btn fit-toggle" data-action="fit-week">${$state.fitWeek?'▣ Mở giao diện đầy đủ':'▣ Xem vừa màn hình'}</button><button class="btn soft" data-action="fullscreen-week">⛶ Toàn màn hình</button></div></div>
- <div class="view-layout-toolbar"><div class="layout-choice" role="group" aria-label="Cách xem lịch"><button type="button" data-action="layout-week" class="layout-button ${$state.calendarLayout==='week'?'on':''}">▦ Toàn tuần</button><button type="button" data-action="layout-day" class="layout-button ${$state.calendarLayout==='day'?'on':''}">☷ Theo ngày</button></div><span class="layout-info">Chạm ô để xem chi tiết · ${$state.mode==='google'?'Đã kết nối Sheets':'Chế độ dùng thử'}</span></div><div class="week-view-tabs"><button data-view="calendar" class="week-tab ${page==='calendar'?'active':''}">Chính khóa</button><button data-view="extra" class="week-tab ${page==='extra'?'active':''}">Dạy thêm</button><button data-view="overview" class="week-tab ${page==='overview'?'active':''}">Tổng hợp</button></div>
+ <div class="view-layout-toolbar"><div class="layout-choice" role="group" aria-label="Cách xem lịch"><button type="button" data-action="layout-week" class="layout-button ${$state.calendarLayout==='week'?'on':''}">▦ Toàn tuần</button><button type="button" data-action="layout-day" class="layout-button ${$state.calendarLayout==='day'?'on':''}">☷ Theo ngày</button></div><span class="layout-info">Chạm ô để xem chi tiết · ${$state.mode==='google'?'Đã kết nối Sheets':'Bản lưu đã xác thực · chỉ xem'}</span><span class="release-label" title="Phiên bản đang chạy trên trình duyệt và Vercel API">Web ${FRONTEND_VERSION} · API ${esc($state.apiVersion||'?')}</span></div><div class="week-view-tabs"><button data-view="calendar" class="week-tab ${page==='calendar'?'active':''}">Chính khóa</button><button data-view="extra" class="week-tab ${page==='extra'?'active':''}">Dạy thêm</button><button data-view="overview" class="week-tab ${page==='overview'?'active':''}">Tổng hợp</button></div>
  
  ${page==='calendar'?'<button class="btn soft compact-full-toggle" data-view="overview">▣ Xem TKB đầy đủ (cả dạy thêm)</button>':page==='extra'?`<div class="extra-hint">Dạy thêm lưu riêng · <button type="button" class="btn soft" data-action="open-extra-list">☷ Danh sách đã lưu</button></div>${$state.mode==='google'&&$state.extraServerReady===false?`<div class="extra-server-alert"><strong>Chưa thể lưu dạy thêm:</strong> ${esc($state.extraServerError)} <button class="btn soft" data-action="probe-extra">Kiểm tra lại</button></div>`:''}`:''}
- ${error.length?`<details class="warning compact-warning"><summary>⚠ Có ${error.length} vị trí trùng lịch (nhấn để xem)</summary><p>${error.map(c=>{const e=c.items[0];return `${fmt(e.date)} ${shiftLabel(e.shift)} ${e.period}: ${c.items.map(x=>x.kind==='EXTRA'?`Dạy thêm ${parseGroups(x.groups).join(', ')}`:`${x.subject} ${className(x.classId)}`).join(' / ')}`}).join('; ')}</p></details>`:''}
+ ${error.length?`<details class="warning compact-warning"><summary>⚠ Có ${error.length} vị trí trùng lịch (nhấn để chọn tiết cần dời)</summary>
+ ${error.map(c=>{const e=c.items[0];return `<div class="conflict-resolve"><strong>${fmt(e.date)} ${shiftLabel(e.shift)} tiết ${e.period}</strong><div class="conflict-options">${c.items.map(x=>`<div>${esc(x.kind==='EXTRA'?'Dạy thêm '+parseGroups(x.groups).join(', '):x.subject+' '+className(x.classId)+' '+(x.stream||''))} ${x.kind==='MAIN'?`<button class="btn soft" data-action="start-move" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Dời tiết này</button>`:'<span class="caption">Sửa trong Dạy thêm</span>'}</div>`).join('')}</div></div>`}).join('')}</details>`:''}
  ${$state.calendarLayout==='day'?dayBoard(filtered,conflictKeys,page):`<div class="table-scroller week-scroller"><table class="timetable"><thead><tr><th class="sidecol">Ca</th>${DAYS.map(d=>`<th><span class="day-long">${d.label}</span><span class="day-short">${d.n===8?'CN':`T${d.n}`}</span><small>${fmt(addDays($state.week,d.n-2))}</small></th>`).join('')}</tr></thead><tbody>
  ${activeShifts.map(sh=>Array.from({length:sh.count},(_,i)=>`<tr><th class="period-label"><span>${sh.label}</span><strong>${sh.id==='T'?'Suất':'Tiết'} ${i+1}</strong></th>${DAYS.map(d=>renderCell(d.n,sh.id,i+1)).join('')}</tr>`).join('')).join('')}
  </tbody></table></div>`}<div class="legend"><span>Mỗi lớp một màu · Chọn ô để xem chi tiết</span><span><i class="dot red"></i> Trùng thời điểm</span><span>↻ Dạy thêm lặp hàng tuần</span></div></section>`;
 }
 function fmt(date){const [y,m,d]=date.split('-');return `${d}/${m}`;}
 function extraListPage(){
- const ready=$state.mode==='google';const data=$state.extraList;
+ const ready=$state.mode==='google';const data=$state.extraList||($state.mode==='cached'?{patterns:$state.data?.extra_patterns||[],sessions:$state.data?.extra_sessions||[],readAt:$state.snapshotAt}:null);
  const patterns=data?.patterns||[],sessions=(data?.sessions||[]).filter(x=>!x.patternId&&x.action!=='CANCEL');
  const items=[...patterns.map(x=>({...x,_type:'pattern',_date:x.fromDate,_repeat:x.repeatRule||'weekly'})),
   ...sessions.map(x=>({...x,_type:'once',_date:x.date,_repeat:'once'}))];
@@ -254,7 +268,7 @@ function extraListPage(){
  }).join('');
  return `<div class="pagehead"><div><div class="eyebrow">SMART TKB · DẠY THÊM</div><h2>Danh sách lịch đã lưu</h2><p>Lấy trực tiếp từ Google Sheets, phân biệt lịch lặp và buổi một lần. Dữ liệu chính khóa, PPCT giữ nguyên.</p></div></div>
  <section class="panel extras-list"><div class="list-tools"><button class="btn soft" data-view="extra">← Xem thời khóa biểu</button><button class="btn primary" data-action="refresh-extra-list" ${$state.extraListLoading?'disabled':''}>↻ Đọc từ Google Sheets</button></div>
- <div class="list-summary">${!ready?'Chưa kết nối Google Sheets':$state.extraListLoading?'Đang đọc dữ liệu…':data?`Dữ liệu thật: ${patterns.length} mẫu lặp · ${sessions.length} buổi một lần · ${data.sessions.length-sessions.length} ngoại lệ · cập nhật ${esc(new Date(data.readAt).toLocaleString('vi-VN'))}`:'Nhấn “Đọc từ Google Sheets” để xem lịch đã lưu.'}</div>
+ <div class="list-summary">${!ready?($state.mode==='cached'?`BẢN LƯU ĐÃ XÁC THỰC · ${patterns.length} lịch lặp (chỉ xem, chưa đồng bộ mới)`:'Chưa kết nối Google Sheets'):$state.extraListLoading?'Đang đọc dữ liệu…':data?`Dữ liệu thật: ${patterns.length} mẫu lặp · ${sessions.length} buổi một lần · ${data.sessions.length-sessions.length} ngoại lệ · cập nhật ${esc(new Date(data.readAt).toLocaleString('vi-VN'))}`:'Nhấn “Đọc từ Google Sheets” để xem lịch đã lưu.'}</div>
  <label for="extra-list-search">Tìm lớp, nhóm, môn hoặc buổi</label><input id="extra-list-search" value="${esc($state.extraListQuery)}" placeholder="Ví dụ: 8B_CB, 9A_NC, Tối">
  <div class="table-scroller"><table class="data-table"><thead><tr><th>Ngày</th><th>Tiết / suất</th><th>Lớp / nhóm</th><th>Hình thức</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Chưa tìm thấy lịch phù hợp. Kiểm tra bộ lọc và kết nối.</td></tr>'}</tbody></table></div></section>`;
 }
@@ -288,7 +302,7 @@ function statisticsPage(){
    const valid=parts.every(x=>x?.status==='ready');const value=valid?parts[0].delta+parts[1].delta:null;
    return `<div class="sum-card"><strong>${esc(c.name)} · Toán tổng hợp</strong><span>${value===null?'Chưa đủ xác nhận':`${value>0?'+':''}${value} tiết`}</span><small>ĐS: ${parts[0]?.status==='ready'?parts[0].delta:'—'} · HH: ${parts[1]?.status==='ready'?parts[1].delta:'—'}</small></div>`;
  }).join('');
- return `<div class="pagehead"><div><div class="eyebrow">SMART TKB V1.6.2 · LÊ HOÀNG NGỌC ĐỨC</div><h2>Thống kê tiến độ theo PPCT</h2><p>Đếm riêng theo lớp và mạch; chưa xác nhận thì không tự kết luận nhanh/chậm.</p></div><div class="actions"><button class="btn primary" data-action="export-statistics">↓ Xuất thống kê CSV</button><button class="btn soft" data-action="print">⎙ In báo cáo</button></div></div>
+ return `<div class="pagehead"><div><div class="eyebrow">SMART TKB V1.6.5 · LÊ HOÀNG NGỌC ĐỨC</div><h2>Thống kê tiến độ theo PPCT</h2><p>Đếm riêng theo lớp và mạch; chưa xác nhận thì không tự kết luận nhanh/chậm.</p></div><div class="actions"><button class="btn primary" data-action="export-statistics">↓ Xuất thống kê CSV</button><button class="btn soft" data-action="print">⎙ In báo cáo</button></div></div>
  <section class="panel"><div class="stats-toolbar"><div><label>Mốc thống kê</label><select id="stats-period">${options([['today','Đến hôm nay'],['week','Đến hết tuần đang xem'],['hk1','Đến hết học kỳ I'],['hk2','Đến hết năm học'],['custom','Chọn ngày cụ thể']],$state.statsPeriod)}</select></div><div><label>Ngày</label><input id="stats-date" type="date" value="${esc(date)}" ${$state.statsPeriod==='custom'?'':'disabled'}></div><div><label>Lớp</label><select id="stats-class">${options([['all','Tất cả lớp'],...cls.map(c=>[c.id,`${c.name} (${c.id})`])],$state.statsClass)}</select></div><div><label>Môn</label><select id="stats-subject">${options([['all','Toán và Tin'],['Toán','Toán'],['Tin','Tin']],$state.statsSubject)}</select></div><div><label>Mạch</label><select id="stats-stream">${options([['all','Tất cả mạch'],['ĐS','Đại số'],['HH','Hình học'],['TIN','Tin học']],$state.statsStream)}</select></div></div>
  <div class="statistics-summary"><div><small>Đã đủ xác nhận</small><strong>${ready.length}/${filtered.length}</strong></div><div><small>Còn tiết chưa xác nhận</small><strong>${partial.length}</strong></div><div><small>Chưa xác nhận mốc</small><strong>${unconfirmed.length}</strong></div><div><small>Chênh lệch (chỉ khi đủ xác nhận)</small><strong>${allReady?(total>0?'+':'')+total+' tiết':'Chưa đủ dữ liệu'}</strong></div></div>
  ${unconfirmed.length?`<div class="stats-warning">⚠ Có ${unconfirmed.length} mạch/lớp chưa xác nhận mốc PPCT. Vào “PPCT & tiến độ” để xác nhận số tiết đã dạy trước ngày bắt đầu theo dõi.</div>`:''}
@@ -316,17 +330,85 @@ function versionsPage(){const d=$state.data;const versions=[...d.versions].sort(
 }
 function previewConflicts(slots){const m={};for(const e of slots){const k=`${e.day}|${e.shift}|${e.period}`;(m[k]||=([])).push(e);}return Object.entries(m).filter(([,x])=>x.length>1);}
 function settingsPage(){return `<div class="pagehead"><div><div class="eyebrow">CẤU HÌNH HỆ THỐNG</div><h2>Dữ liệu & kết nối</h2><p>Quản lý quyền truy cập, sao lưu, lớp học và nơi lưu Google Sheets.</p></div></div>
- <div class="backend-health panel"><div><strong>Trạng thái lưu dạy thêm</strong><small>${$state.mode!=='google'?'Chưa kết nối Google Sheets':$state.extraServerReady===true?`Đã sẵn sàng · Apps Script ${esc($state.extraServerVersion)}`:$state.extraServerReady===false?`Cần cập nhật Apps Script · ${esc($state.extraServerError)}`:'Chưa kiểm tra'}</small></div><button class="btn primary" data-action="probe-extra">Kiểm tra máy chủ</button><button class="btn soft" data-action="diagnose-sync">Kiểm tra đồng bộ Sheets</button></div>${$state.syncDiagnostics?`<section class="panel sync-report"><h3>Kiểm tra đồng bộ hai chiều</h3><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.syncDiagnostics.apiVersion||'Chưa rõ')} · Apps Script ${esc($state.extraServerVersion||'Chưa xác định')}</p><p>Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp ${$state.syncDiagnostics.counts?.patterns||0} · Buổi/ngoại lệ ${$state.syncDiagnostics.counts?.exceptions||0} · Lịch tuần ${$state.syncDiagnostics.weekCount||0}</p><p>Lần cuối: ${esc($state.syncDiagnostics.lastRequest?.at||'Chưa có')} · ${esc($state.syncDiagnostics.lastRequest?.action||'')} · Đồng bộ lúc ${esc(new Date($state.syncDiagnostics.readAt).toLocaleString('vi-VN'))}</p></section>`:''}<div class="system-status panel"><strong>Trạng thái thiết bị này</strong><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.apiVersion||'chưa xác định')} · Apps Script ${esc($state.extraServerVersion||'chưa xác định')}</p><p>Phiên: ${esc($state.sessionStatus)} · Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp: ${$state.data.extra_patterns?.length||0} · Ngoại lệ: ${$state.data.extra_sessions?.length||0}</p><p>Đồng bộ lần cuối: ${esc($state.lastSyncedAt?new Date($state.lastSyncedAt).toLocaleString('vi-VN'):'Chưa có')} · HTTP cuối: ${esc($state.lastHttpStatus||'Chưa có')} · Mã lỗi: ${esc($state.lastApiError||'Không có')}</p><div class="auth-actions"><button class="btn soft" data-action="diagnose-system">Kiểm tra trạng thái hệ thống</button>${$state.updateAvailable?'<button class="btn primary" data-action="refresh-app">Cập nhật ứng dụng</button>':''}</div></div><div class="setting-grid"><section class="panel"><div class="panelheading"><h3>Google Sheets</h3><p>Chế độ hiện tại: <strong>${$state.mode==='google'?'Đã kết nối':'Dùng thử trong trình duyệt'}</strong></p></div>${$state.mode==='demo'?`<p>Đăng nhập sau khi đã cấu hình API trên Vercel. Dữ liệu demo đang lưu riêng trên máy này.</p><label>Mật khẩu ứng dụng</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="Nhập APP_PASSWORD"/><button class="btn primary full" data-action="login">Kết nối Google Sheets</button><p class="caption">Nếu chưa cấu hình máy chủ, xem hướng dẫn README.</p>`:`<p>Dữ liệu được lưu trong Google Sheets thông qua Apps Script và Vercel API. Khóa API không xuất hiện trong trình duyệt.</p><button class="btn soft" data-action="logout">Đăng xuất</button><button class="btn primary" data-action="bootstrap">Khởi tạo dữ liệu mẫu trên Sheet trống</button>`}</section>
+ <div class="backend-health panel"><div><strong>Trạng thái lưu dạy thêm</strong><small>${$state.mode!=='google'?'Chưa kết nối Google Sheets':$state.extraServerReady===true?`Đã sẵn sàng · Apps Script ${esc($state.extraServerVersion)}`:$state.extraServerReady===false?`Cần cập nhật Apps Script · ${esc($state.extraServerError)}`:'Chưa kiểm tra'}</small></div><button class="btn primary" data-action="probe-extra">Kiểm tra máy chủ</button><button class="btn soft" data-action="diagnose-sync">Kiểm tra đồng bộ Sheets</button><button class="btn ghost" data-action="clear-local-snapshot">Xóa bản TKB lưu trên thiết bị</button></div>${$state.syncDiagnostics?`<section class="panel sync-report"><h3>Kiểm tra đồng bộ hai chiều</h3><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.syncDiagnostics.apiVersion||'Chưa rõ')} · Apps Script ${esc($state.extraServerVersion||'Chưa xác định')}</p><p>Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp ${$state.syncDiagnostics.counts?.patterns||0} · Buổi/ngoại lệ ${$state.syncDiagnostics.counts?.exceptions||0} · Lịch tuần ${$state.syncDiagnostics.weekCount||0}</p><p>Lần cuối: ${esc($state.syncDiagnostics.lastRequest?.at||'Chưa có')} · ${esc($state.syncDiagnostics.lastRequest?.action||'')} · Đồng bộ lúc ${esc(new Date($state.syncDiagnostics.readAt).toLocaleString('vi-VN'))}</p></section>`:''}<div class="system-status panel"><strong>Trạng thái thiết bị này</strong><p>Frontend ${FRONTEND_VERSION} · API ${esc($state.apiVersion||'chưa xác định')} · Apps Script ${esc($state.extraServerVersion||'chưa xác định')}</p><p>GAS ${esc($state.extraServerVersion||'?')} · File: ${esc($state.extraSourceSheet||'chưa xác định')} ${esc($state.extraSourceTail?('(...'+$state.extraSourceTail+')'):'')}.</p><p>Phiên: ${esc($state.sessionStatus)} · Google Sheets: ${$state.mode==='google'?'Đã kết nối':'Chưa kết nối'} · Lịch lặp: ${$state.data.extra_patterns?.length||0} · Ngoại lệ: ${$state.data.extra_sessions?.length||0}</p><p>Đồng bộ lần cuối: ${esc($state.lastSyncedAt?new Date($state.lastSyncedAt).toLocaleString('vi-VN'):'Chưa có')} · HTTP cuối: ${esc($state.lastHttpStatus||'Chưa có')} · Mã lỗi: ${esc($state.lastApiError||'Không có')}</p><div class="auth-actions"><button class="btn soft" data-action="diagnose-system">Kiểm tra trạng thái hệ thống</button><button class="btn soft" data-action="verify-release">Xác minh phiên bản Web / API / GAS</button>${$state.updateAvailable?'<button class="btn primary" data-action="refresh-app">Cập nhật ứng dụng</button>':''}</div></div><div class="setting-grid"><section class="panel"><div class="panelheading"><h3>Google Sheets</h3><p>Chế độ hiện tại: <strong>${$state.mode==='google'?'Đã kết nối':'Dùng thử trong trình duyệt'}</strong></p></div>${$state.mode==='demo'?`<p>Đăng nhập sau khi đã cấu hình API trên Vercel. Dữ liệu demo đang lưu riêng trên máy này.</p><label>Mật khẩu ứng dụng</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="Nhập APP_PASSWORD"/><button class="btn primary full" data-action="login">Kết nối Google Sheets</button><p class="caption">Nếu chưa cấu hình máy chủ, xem hướng dẫn README.</p>`:`<p>Dữ liệu được lưu trong Google Sheets thông qua Apps Script và Vercel API. Khóa API không xuất hiện trong trình duyệt.</p><button class="btn soft" data-action="logout">Đăng xuất</button><button class="btn primary" data-action="bootstrap">Khởi tạo dữ liệu mẫu trên Sheet trống</button>`}</section>
  <section class="panel"><div class="panelheading"><h3>Sao lưu</h3><p>Xuất toàn bộ dữ liệu để lưu an toàn; có thể mở bằng trình soạn thảo JSON.</p></div><button class="btn soft full" data-action="backup">↓ Tải bản sao JSON</button><button class="btn ghost full" data-action="diagnose-extra">⌕ Kiểm tra dạy thêm đã lưu</button><button class="btn ghost full" data-action="print">⎙ In thời khóa biểu hiện tại</button></section></div>
  <section class="panel"><div class="panelheading"><h3>Lớp đang phụ trách</h3></div><div class="class-grid">${$state.data.classes.map(c=>`<div class="class-card"><div class="class-symbol">${esc(c.grade)}</div><div><strong>${esc(c.name)} <small>${esc(c.id)}</small></strong><div>${esc(c.subjects.join(' · '))}</div></div></div>`).join('')}</div></section>`;
 }
 function modal(){
  if(!$state.edit)return '';
+ if($state.edit.type==='login')return `<div class="backdrop"><section class="modal cache-login" role="dialog" aria-modal="true"><div class="modalhead"><h3>Đăng nhập để đồng bộ Google Sheets</h3><button class="icon-btn" data-action="close-modal">×</button></div><p>Bản TKB đang hiển thị chỉ để xem. Dữ liệu mới chỉ được đọc sau khi đăng nhập hợp lệ.</p><label for="login-pass">Mật khẩu Smart TKB</label><input id="login-pass" type="password" autocomplete="current-password"/><button class="btn primary" data-action="login">Đăng nhập và đồng bộ</button></section></div>`;
+ if($state.edit.type==='move'||$state.edit.type==='addMain')return moveModal();
+ if($state.edit.type==='conflict')return conflictModal();
  if($state.edit.type==='choose'){
   const x=$state.edit;
   return `<div class="backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true"><div class="modalhead"><h3>${fmt(x.date)} · ${shiftLabel(x.shift)} ${x.period}</h3><button class="icon-btn" data-action="close-modal">×</button></div><p>Chọn loại lịch cần thêm. Chính khóa và dạy thêm được lưu riêng.</p><div class="row-buttons"><button class="btn primary" data-action="choose-official">Chính khóa / Dạy bù</button><button class="btn soft" data-action="choose-extra">Dạy thêm</button></div></section></div>`;
  }
  return $state.edit.type==='extra'?extraModal():officialModal();
+}
+function conflictModal(){
+ const {date,shift,period}=$state.edit;
+ const list=eventsForWeek($state.data,monday(date)).filter(e=>e.kind==='MAIN'&&e.date===date&&e.shift===shift&&Number(e.period)===Number(period));
+ return `<div class="backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-label="Chọn tiết trùng để chỉnh"><div class="modalhead"><h3>Chọn đúng tiết cần chỉnh</h3><button class="icon-btn" data-action="close-modal">×</button></div>
+ <p>${fmt(date)} · ${shiftLabel(shift)} tiết ${period}. Chọn tiết của đúng lớp; tiết còn lại sẽ được giữ nguyên.</p>
+ <div class="conflict-choices">${list.map(e=>`<button type="button" class="btn soft conflict-choice" data-action="start-move" data-date="${esc(e.date)}" data-id="${esc(e.id)}"><strong>${esc(e.subject)} · ${esc(className(e.classId))}</strong><small>${esc(e.stream||'')} · PPCT ${esc(e.ppct?.period||'—')} · Chỉnh tiết này</small></button>`).join('')}</div>
+ <p class="formhint">Chế độ “Từ tuần này trở đi” tạo phiên bản TKB mới trên Google Sheets, không sửa lịch các tuần trước.</p></section></div>`;
+}
+function moveModal(){
+ const {date,sourceSlotId}=$state.edit;
+ const adding=!sourceSlotId;
+ const event=adding?null:eventsForWeek($state.data,monday(date)).find(e=>e.date===date&&(e.id===sourceSlotId||e.originalSlotId===sourceSlotId));
+ const version=activeVersion($state.data,date);
+ const stored=adding?null:($state.data.slots||[]).find(x=>x.versionId===version?.id&&x.id===sourceSlotId);
+ if(!version||(!adding&&(!event||!stored)))return `<div class="backdrop"><section class="modal"><p>Không tìm thấy tiết nguồn. Hãy tải lại dữ liệu.</p><button data-action="close-modal" class="btn soft">Đóng</button></section></div>`;
+ const initial=stored||{classId:'7F38',subject:'Toán',stream:'',shift:$state.edit.shift||'S',period:Number($state.edit.period)||1};
+ const days=DAYS.map(d=>[addDays(monday(date),d.n-2),`${d.label} · ${fmt(addDays(monday(date),d.n-2))}`]);
+ return `<div class="backdrop" data-action="close-modal"><section class="modal move-editor" role="dialog" aria-modal="true" aria-label="${adding?'Thêm tiết chính khóa cố định':'Điều chỉnh tiết chính khóa'}"><div class="modalhead"><h3>${adding?'Thêm tiết chính khóa cố định':'Sửa tiết chính khóa'}</h3><button data-action="close-modal" class="icon-btn">×</button></div>
+ ${adding?'<p>Thêm tiết thủ công <strong>một lần</strong>, các tuần sau sẽ tự động giữ đúng thứ, buổi, tiết, lớp và môn.</p>':`<p><strong>Tiết đang chọn:</strong> ${esc(event.subject)} ${esc(className(event.classId))} ${esc(event.stream||'')} · PPCT ${esc(event.ppct?.period||'—')}</p><p class="formhint">Chỉ chỉnh đúng tiết đã chọn, không sửa tiết còn lại ở ô trùng.</p>`}
+ <form id="move-form"><div class="formgrid">
+ <div class="wide"><label for="move-scope">Phạm vi áp dụng</label><select id="move-scope">${options(adding?[['future','Từ tuần này và TẤT CẢ tuần tiếp theo']]:[['future','Từ tuần này và TẤT CẢ tuần tiếp theo (mặc định)'],['one','Chỉ sửa một lần trong ngày']], 'future')}</select><small class="formhint">Lưu một phiên bản TKB mới vào Google Sheets, không cần nhập lại mỗi tuần. Nếu sau này nhập TKB mới của trường, lịch mới sẽ thay thế phiên bản này.</small></div>
+ <div><label for="move-class">Lớp</label><select id="move-class">${options(($state.data.classes||[]).map(c=>[c.id,`${c.name} (${c.id})`]),initial.classId)}</select></div>
+ <div><label for="move-subject">Môn học</label><select id="move-subject">${options([['Toán','Toán'],['Tin','Tin']],initial.subject)}</select></div>
+ <div><label for="move-stream">Mạch Toán</label><select id="move-stream">${options([['','Tự phân bổ theo PPCT'],['ĐS','Đại số'],['HH','Hình học']],initial.subject==='Toán'?initial.stream||'':'')}</select></div>
+ <div><label for="move-date">Thứ</label><select id="move-date">${options(days,date)}</select></div>
+ <div><label for="move-shift">Buổi</label><select id="move-shift">${options([['S','Sáng'],['C','Chiều'],['T','Tối']],initial.shift)}</select></div>
+ <div><label for="move-period">Tiết / suất</label><select id="move-period">${options([[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],Number(initial.period))}</select></div>
+ <div class="wide"><label for="move-reason">Lý do</label><input id="move-reason" placeholder="Ví dụ: Bổ sung tiết theo TKB hoặc sửa tiết bị trùng" maxlength="240" value="${adding?'Thêm tiết chính khóa thủ công':'Điều chỉnh thời khóa biểu chính khóa'}"></div>
+ <div class="wide"><p class="formhint">${adding?'Nếu ô đã có tiết chính khóa, hãy chọn vị trí khác hoặc sửa đúng tiết hiện có.':'Nếu chỉ đổi môn nhưng vẫn để hai lớp ở cùng thời điểm thì cảnh báo trùng vẫn còn.'}</p></div>
+ </div><div class="modalactions"><button class="btn ghost" type="button" data-action="close-modal">Hủy</button><button class="btn primary" type="submit">${adding?'Thêm và lưu các tuần sau':'Lưu thay đổi các tuần sau'}</button></div></form></section></div>`;
+}
+async function saveMove(){
+ if($state.mode!=='google')throw Error('Cần đăng nhập Google Sheets trước khi sửa tiết chính khóa.');
+ const {date,sourceSlotId=''}=$state.edit,adding=!sourceSlotId;
+ const toDate=$('#move-date')?.value,shift=$('#move-shift')?.value,period=Number($('#move-period')?.value);
+ const scope=$('#move-scope')?.value||'future',classId=$('#move-class')?.value,subject=$('#move-subject')?.value,stream=$('#move-stream')?.value||'';
+ const reason=($('#move-reason')?.value||'Điều chỉnh TKB').trim();
+ if(scope==='future'){
+  const fromDate=monday(date);
+  const draft=previewMainRevision($state.data,{sourceSlotId,fromDate,day:dayNumber(toDate),shift,period,classId,subject,stream});
+  if(!adding){
+   const sourceDate=addDays(fromDate,Number(draft.origin.day)-2);
+   const done=($state.data.changes||[]).some(x=>x.date===sourceDate&&x.shift===draft.origin.shift&&Number(x.period)===Number(draft.origin.period)&&x.completed===true&&(x.classId===draft.origin.classId));
+   if(done)throw Error('Tiết này đã hoàn thành trong tuần được chọn. Chọn tuần sau để giữ lịch sử đã dạy.');
+  }
+  const before=adding?'Thêm tiết chính khóa cố định':`${className(draft.origin.classId)} ${draft.origin.subject} · ${dayLabel(draft.origin.day)} ${shiftLabel(draft.origin.shift)} tiết ${draft.origin.period}`;
+  const after=`${className(classId)} ${subject} · ${dayLabel(dayNumber(toDate))} ${shiftLabel(shift)} tiết ${period}`;
+  if(!window.confirm(`LƯU TKB CHÍNH KHÓA từ ${fmt(fromDate)} cho tất cả tuần tiếp theo?\n${before}${adding?' → ': ' → '}${after}.\nCác tuần trước giữ nguyên. Khi nhập TKB mới của trường, phiên bản đó sẽ thay thế.${draft.remainingConflicts.length?'\nCảnh báo: còn '+draft.remainingConflicts.length+' vị trí trùng.':''}`))return;
+  const result=await callApi({op:'reviseMainSchedule',fromDate,expectedVersionId:draft.version.id,sourceSlotId,patch:{day:dayNumber(toDate),shift,period,classId,subject,stream},reason});
+  if(!result.verified)throw Error('Máy chủ chưa xác nhận ghi phiên bản TKB mới.');
+  try{await pullGoogle()}catch(e){throw Error('Đã ghi phiên bản '+result.versionId+' nhưng tải lại dữ liệu thất bại: '+e.message);}
+  const active=activeVersion($state.data,fromDate),saved=($state.data.slots||[]).find(s=>s.versionId===result.versionId&&s.id===result.sourceSlotId);
+  if(active?.id!==result.versionId||!saved||saved.classId!==classId||saved.subject!==subject||Number(saved.day)!==dayNumber(toDate)||saved.shift!==shift||Number(saved.period)!==period)throw Error('Đã ghi Google Sheets nhưng chưa hiển thị đúng phiên bản mới. Hãy bấm Tải lại dữ liệu.');
+  $state.edit=null;return notify(`Đã ${adding?'thêm tiết cố định':'sửa tiết'} và lưu trực tiếp Google Sheets, áp dụng cho mọi tuần từ ${fmt(fromDate)}. Các tuần trước giữ nguyên.`);
+ }
+ if(adding)throw Error('Thêm tiết chính khóa mới cần chọn áp dụng từ tuần này trở đi.');
+ const version=activeVersion($state.data,date),original=($state.data.slots||[]).find(s=>s.versionId===version?.id&&s.id===sourceSlotId);
+ if(!original)throw Error('Không tìm thấy tiết nguồn.');
+ if(original.classId!==classId||original.subject!==subject||String(original.stream||'')!==String(stream||''))throw Error('Chế độ một ngày chỉ dời vị trí. Muốn đổi môn/lớp/mạch và lưu các tuần sau, chọn “Từ tuần đang xem trở đi”.');
+ const row=moveCollision($state.data,sourceSlotId,date,toDate,shift,period);
+ if(!window.confirm(`Dời riêng lớp ${className(row.classId)} từ ${fmt(date)} sang ${fmt(toDate)}? Các tuần sau không thay đổi.`))return;
+ const existing=$state.data.changes.find(x=>x.id===row.id);
+ await callApi({op:'saveOfficialChange',row:{...row,updatedAt:existing?.updatedAt||''},expectedUpdatedAt:existing?.updatedAt||'',reason});
+ await pullGoogle();$state.edit=null;notify('Đã dời riêng tiết được chọn, không ảnh hưởng các tuần sau.');
 }
 function extraModal(){
  const {date,shift,period}=$state.edit;
@@ -335,7 +417,7 @@ function extraModal(){
  const classIds=groups.filter(g=>known.has(g)),custom=groups.filter(g=>!known.has(g));
  const repeatRule=current?.recurring?(current.toDate?'until':'weekly'):current?'once':'weekly';
  return `<div class="backdrop" data-action="close-modal"><section class="modal extra-editor v16-modal" role="dialog" aria-modal="true" aria-label="${current?'Chỉnh sửa':'Thêm'} suất dạy thêm"><div class="modalhead"><div><div class="eyebrow">DẠY THÊM · LƯU TRÊN GOOGLE SHEETS</div><h3>${current?'Chỉnh sửa suất dạy thêm':'Thêm suất dạy thêm'}</h3><p>${fmt(date)} · ${dayLabel(dayNumber(date))} · ${shiftLabel(shift)} · ${shift==='T'?'Suất':'Tiết'} ${period}</p></div><button type="button" class="icon-btn" data-action="close-modal" aria-label="Đóng cửa sổ">×</button></div>
- ${$state.mode!=='google'?'<div class="editor-warning">⚠ Chế độ dùng thử: dữ liệu chỉ nằm trong trình duyệt này. Hãy kết nối Google Sheets để lưu bền vững.</div>':$state.extraServerReady===false?`<div class="editor-warning"><b>Máy chủ lưu dạy thêm chưa đồng bộ.</b><p>${esc($state.extraServerError)}</p><p>Hãy triển khai Apps Script V1.6.2 rồi bấm Kiểm tra máy chủ trong mục Cấu hình.</p></div>`:''}
+ ${$state.mode!=='google'?'<div class="editor-warning">⚠ Đang xem bản TKB đã lưu, không thể chỉnh sửa khi chưa đăng nhập và kết nối Google Sheets.</div>':$state.extraServerReady===false?`<div class="editor-warning"><b>Máy chủ lưu dạy thêm chưa đồng bộ.</b><p>${esc($state.extraServerError)}</p><p>Hãy triển khai Apps Script bản mới rồi bấm Kiểm tra máy chủ trong mục Cấu hình.</p></div>`:''}
  <form id="extra-form"><div class="formgrid">
  <div><label for="extra-subject">Môn học</label><select id="extra-subject">${options([['Toán','Toán'],['Tin','Tin']],current?.subject||'Toán')}</select></div>
  <div><label for="extra-start-lesson">Buổi thứ</label><input id="extra-start-lesson" type="number" min="1" max="9999" value="${esc(current?.lessonNumber||1)}"></div>
@@ -365,6 +447,7 @@ function officialModal(){
  const lessons=ppctSequence($state.data,classById($state.data,classId)?.grade||7,subject,subject==='Tin'?'TIN':stream);
  return `<div class="backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true"><div class="modalhead"><div><div class="eyebrow">CHÍNH KHÓA / DẠY BÙ</div><h3>${fmt(date)} · ${shiftLabel(shift)} · ${shift==='T'?'Suất':'Tiết'} ${period}</h3></div><button class="icon-btn" data-action="close-modal">×</button></div>
  ${e?`<div class="current-lesson"><strong>${esc(e.subject)} ${esc(className(e.classId))} ${esc(e.stream||'')}</strong><span>${esc(e.ppct?.title||'Chưa có nội dung PPCT')}</span><small>${e.kind==='MAIN'?'Chính khóa':'Dạy bù'}</small></div>`:'<div class="current-lesson">Ô trống: thêm tiết dạy bù chính khóa. Dạy thêm được nhập ở tab riêng.</div>'}
+ <div class="row-buttons manual-main-action"><button type="button" class="btn soft" data-action="${e&&e.kind==='MAIN'?'start-move':'start-main-add'}" ${e&&e.kind==='MAIN'?`data-id="${esc(e.id)}"`:''} data-date="${esc(date)}" data-shift="${esc(shift)}" data-period="${period}">${e&&e.kind==='MAIN'?'✎ Sửa tiết cố định cho các tuần sau':'＋ Thêm tiết chính khóa cố định hàng tuần'}</button></div>
  <form id="edit-form"><div class="formgrid"><div class="wide"><label>Hành động</label><select id="edit-action">${options([...(e&&e.kind==='MAIN'?[['EDIT','Chỉnh nội dung / số tiết PPCT (chưa xác nhận đã dạy)'],['DONE','Đã dạy và hoàn thành PPCT'],['OFF','Nghỉ tiết (không tăng PPCT)']]:[]),['ADD','Thêm tiết dạy bù']],action)}</select></div>
  <div><label>Lớp chính khóa</label><select id="edit-class">${options(($state.data.classes||[]).map(c=>[c.id,`${c.name} (${c.id})`]),classId)}</select></div>
  <div><label>Môn</label><select id="edit-subject">${options([['Toán','Toán'],['Tin','Tin']],subject)}</select></div>
@@ -390,10 +473,10 @@ function fitWeekTable(){
  document.documentElement.style.setProperty('--tkb-row-height',Math.max(18,(available-39)/($state.filterShift==='all'?($state.view==='calendar'?10:12):$state.filterShift==='T'?2:5))+'px');
 }
 function updateEditorFields(){
- // Dạy thêm sử dụng biểu mẫu riêng, không còn ẩn/hiện các trường chung gây nhầm lẫn.
+ const scope=$('#edit-scope')?.value||'following';const pattern=$('#edit-pattern');if(pattern){const group=pattern.closest('.wide');if(group)group.hidden=scope!=='future';pattern.required=scope==='future';}
 }
 function render(){
- if($state.mode!=='google'){document.body.classList.remove('week-focus');$('#app').innerHTML=connectionPage();return;}
+ if(!['google','cached'].includes($state.mode)){document.body.classList.remove('week-focus');$('#app').innerHTML=connectionPage();return;}
  if(!$state.data)return;
  $('#app').innerHTML=showTop()+modal();fitWeekTable();updateEditorFields();updateExtraFormUI();
 }
@@ -430,8 +513,10 @@ async function writeOfficial(row,existing,rule=null,reason=''){
  }
 }
 async function saveEdit(){
+ if($state.mode!=='google')throw Error('Chỉ xem bản lưu. Cần đăng nhập để sửa chính khóa.');
  const {date,shift,period}=$state.edit,get=id=>$('#'+id)?.value;
  const action=get('edit-action'),scope=get('edit-scope')||'following';
+ validateOfficialScope(scope,get('edit-pattern'));
  const existing=($state.data.changes||[]).find(x=>x.kind!=='EXTRA'&&x.date===date&&x.shift===shift&&Number(x.period)===Number(period));
  const subject=get('edit-subject'),stream=subject==='Tin'?'TIN':get('edit-stream'),classId=get('edit-class');
  const cls=classById($state.data,classId);
@@ -450,8 +535,7 @@ async function saveEdit(){
  // Apply the weekly stream rule from NEXT Monday only. It never modifies confirmed historical cells.
  let rule=null;
  if(scope==='future'&&subject==='Toán'){
-  const fromDate=addDays(monday(date),7),pattern=parseStreamPattern(get('edit-pattern'));
-  if(!pattern.length)throw Error('Chọn C cần nhập mẫu ĐS/HH, ví dụ ĐS,ĐS,HH,ĐS');
+  const fromDate=addDays(monday(date),7),pattern=validateOfficialScope(scope,get('edit-pattern'));
   const existingRule=($state.data.ppct_overrides||[]).find(r=>r.classId===classId&&r.fromDate===fromDate);
   rule={id:existingRule?.id||`RULE-${classId}-${fromDate}`,classId,subject:'Toán',fromDate,toDate:'',pattern,notes:reason,updatedAt:new Date().toISOString()};
   // Preview next week's schedule. The app checks exact counts at render and safely falls back when counts change.
@@ -475,7 +559,7 @@ async function saveEdit(){
  await writeOfficial(row,existing,rule,reason);$state.edit=null;notify('Đã lưu điều chỉnh và cập nhật đề xuất cho các tiết chưa dạy. Vào Thống kê tiến độ để xem nhanh/chậm.');
 }
 async function sendExtraMutation(action,row,current,form,extra={}){
- if($state.backendConfigured&&$state.mode!=='google')throw Error('Google Sheets chưa kết nối. Không được lưu vào dữ liệu mẫu thay cho dữ liệu chính. Vui lòng đăng nhập hoặc tải lại kết nối.');
+ if($state.mode!=='google')throw Error('Google Sheets chưa kết nối. Vui lòng đăng nhập hoặc đồng bộ trước khi lưu.');
  const requestId=form.dataset.requestId||(form.dataset.requestId=newRequestId());
  if($state.mode==='google'){
   if($state.extraServerReady!==true)await probeExtraServer();
@@ -486,7 +570,11 @@ async function sendExtraMutation(action,row,current,form,extra={}){
    answer=await callApi({op:'mutateExtra',action,row,entityId:current?.recurring?current.patternId:current?.id||'',date:row?.date||$state.edit.date,
     requestId,expectedRevision:current?.revision||0,expectedOccurrenceRevision:current?.occurrenceRevision||0,...extra});
   }catch(err){
-   // A transport timeout is ambiguous: the server may have committed already.
+   // Known rejection is final; querying request status cannot repair an incompatible GAS deployment.
+   if(['INCOMPATIBLE_GAS','UNSUPPORTED_ACTION','GAS_AUTH_FAILED','INVALID_ORIGIN','AUTH_NOT_CONFIGURED','BACKEND_NOT_CONFIGURED','WRITE_NOT_VERIFIED'].includes(err.code)){
+     localStorage.removeItem(PENDING_EXTRA_KEY);throw err;
+   }
+   // Only a transport error is ambiguous: the server may have committed already.
    const status=await checkPendingExtra();
    if(!status?.verified){throw Error(`Không xác nhận được trạng thái ghi: ${err.message}. Giữ nguyên nội dung; bấm Kiểm tra lại trước khi gửi yêu cầu mới.`);}
    answer={ok:true,verified:true,requestId,entityId:status.entityId,table:status.table||'',recovered:true};
@@ -519,6 +607,7 @@ async function sendExtraMutation(action,row,current,form,extra={}){
  cacheDemo();return {ok:true,entityId:id};
 }
 async function saveExtra(){
+ if($state.mode!=='google')throw Error('Chỉ xem bản lưu. Cần đăng nhập để lưu Dạy thêm.');
  const form=$('#extra-form');if(!form||$state.savingExtra)return;
  const {date,shift,period}=$state.edit;
  const classIds=[...document.querySelectorAll('[data-extra-class]:checked')].map(el=>el.dataset.extraClass);
@@ -578,9 +667,20 @@ async function undoOfficial(id){
  $state.edit=null;notify('Đã hoàn tác thao tác gần nhất.');}
 async function doAction(target){const a=target.dataset.action;if(!a)return;
  try{
- if(a==='login'){await loginAndSync();return;}
+ if(a==='login'){await loginAndSync();$state.edit=null;return render();}
+ if(a==='show-cache-login'){$state.edit={type:'login'};return render();}
  if(a==='recheck-session'){await init();if($state.mode==='google'&&$state.view==='extraList')await refreshExtraList();return;}
  if(a==='refresh-app'){location.reload();return;}
+ if(a==='verify-release'){
+   const version=await serverRequest('/api/tkb?action=version');
+   const session=await getSession();
+   if(!session.authenticated)throw Object.assign(new Error('Cần đăng nhập trên thiết bị này để kiểm tra Apps Script.'),{code:'UNAUTHENTICATED'});
+   const probe=await probeExtraServer();
+   const matches=FRONTEND_VERSION===version.apiVersion;
+   const label=`Web ${FRONTEND_VERSION} / API ${version.apiVersion} / GAS ${probe.gasVersion||probe.apiVersion||'?'}`;
+   const commit=version.commit||'?';
+   return notify((matches?'✓ Phiên bản Web/API khớp. ':'⚠ Web và API KHÁC phiên bản, kiểm tra Production + cache. ')+label+` · Commit ${commit} · Sheet ${$state.extraSourceSheet||'?'} (...${$state.extraSourceTail||'?'})`);
+ }
  if(a==='diagnose-system'){const previous=$state.apiVersion;const session=await getSession();if(!session.authenticated)throw Object.assign(new Error('Phiên không hợp lệ, đăng nhập lại.'),{code:session.code||'UNAUTHENTICATED'});await pullGoogle();const details=`Frontend ${FRONTEND_VERSION}, API ${$state.apiVersion}, Apps Script ${$state.extraServerVersion||'chưa kiểm tra'}; ${$state.data.extra_patterns.length} lịch lặp và ${$state.data.extra_sessions.length} ngoại lệ.`;return notify('Đã kiểm tra: '+details+(previous&&previous!==$state.apiVersion?' Phiên bản API đã đổi.':''));}
  if(a==='refresh-google'){
   if($state.mode!=='google')throw Error('Ứng dụng đang ở chế độ dùng thử, không phải Google Sheets. Vào Cấu hình & dữ liệu để đăng nhập máy chủ Production.');
@@ -599,18 +699,23 @@ async function doAction(target){const a=target.dataset.action;if(!a)return;
  if(a==='prev-day'||a==='next-day'){$state.dayIndex=$state.dayIndex+(a==='prev-day'?-1:1);if($state.dayIndex<2){$state.week=addDays($state.week,-7);$state.dayIndex=8;}if($state.dayIndex>8){$state.week=addDays($state.week,7);$state.dayIndex=2;}return render();}
  if(a==='clear-notice'){$state.notice='';return render();}
  if(a==='open-settings'){$state.view='settings';return render();}
+ if($state.mode==='cached'&&['delete-extra','save-baseline','save-version','clear-change','undo-official','bootstrap','prepare-version','parse-excel','remove-draft-slot'].includes(a))throw Error('Chỉ được xem bản lưu. Hãy đăng nhập để chỉnh sửa.');
  if(a==='prev-week'||a==='next-week'){$state.week=addDays($state.week,a==='prev-week'?-7:7);return render();}
  if(a==='today'){$state.week=monday(new Date().toISOString().slice(0,10));return render();}
- if(a==='open-cell'){$state.edit={date:target.dataset.date,shift:target.dataset.shift,period:Number(target.dataset.period),type:target.dataset.editor||'official'};return render();}
+ if(a==='start-main-add'){if($state.mode!=='google')throw Error('Cần đăng nhập để thêm tiết cố định');$state.edit={type:'addMain',date:target.dataset.date,shift:target.dataset.shift,period:Number(target.dataset.period),sourceSlotId:''};return render();}
+ if(a==='start-move'){if($state.mode!=='google')throw Error('Cần đăng nhập để dời tiết');$state.edit={type:'move',date:target.dataset.date,sourceSlotId:target.dataset.id};return render();}
+ if(a==='open-cell'){const date=target.dataset.date,shift=target.dataset.shift,period=Number(target.dataset.period),editor=target.dataset.editor||'official';
+ const same=eventsForWeek($state.data,monday(date)).filter(x=>x.kind==='MAIN'&&x.date===date&&x.shift===shift&&Number(x.period)===period);
+ $state.edit={date,shift,period,type:editor==='official'&&same.length>1?'conflict':editor};return render();}
  if(a==='close-modal'){$state.edit=null;return render();}
- if(a==='choose-extra'){$state.edit.type='extra';return render();}
- if(a==='choose-official'){$state.edit.type='official';return render();}
+ if(a==='choose-extra'){if($state.mode!=='google')throw Error('Cần đăng nhập để thêm Dạy thêm');$state.edit.type='extra';return render();}
+ if(a==='choose-official'){if($state.mode!=='google')throw Error('Cần đăng nhập để chỉnh sửa Chính khóa');$state.edit.type='official';return render();}
  if(a==='delete-extra')return await deleteExtra();
  if(a==='print')return window.print();
  if(a==='export')return exportCsv();
  if(a==='open-extra-list'){$state.view='extraList';await refreshExtraList();return;}
- if(a==='refresh-extra-list'){await refreshExtraList();return;}
- if(a==='open-saved-extra'){$state.view='extra';$state.week=monday(target.dataset.date);$state.edit={type:'extra',date:target.dataset.date,shift:target.dataset.shift,period:Number(target.dataset.period)};return render();}
+ if(a==='refresh-extra-list'){if($state.mode!=='google')return await init();await refreshExtraList();return;}
+ if(a==='open-saved-extra'){if($state.mode!=='google')throw Error('Đang xem bản lưu: cần đăng nhập trước khi chỉnh sửa');$state.view='extra';$state.week=monday(target.dataset.date);$state.edit={type:'extra',date:target.dataset.date,shift:target.dataset.shift,period:Number(target.dataset.period)};return render();}
  if(a==='diagnose-sync'){
   if($state.mode!=='google')throw Error('Chưa kết nối Google Sheets');
   await probeExtraServer();const r=await callApi({op:'listExtra',week:$state.week});
@@ -632,7 +737,8 @@ async function doAction(target){const a=target.dataset.action;if(!a)return;
  if(a==='undo-official')return await undoOfficial(target.dataset.id);
  if(a==='export-statistics')return exportStatistics();
  
- if(a==='logout'){await callApi({op:'logout'});location.reload();return;}
+ if(a==='logout'){await callApi({op:'logout'});localStorage.removeItem(SNAPSHOT_KEY);location.reload();return;}
+ if(a==='clear-local-snapshot'){localStorage.removeItem(SNAPSHOT_KEY);return notify('Đã xóa bản lưu trên thiết bị này; Google Sheets không thay đổi.');}
  if(a==='bootstrap'){if($state.mode!=='google')throw Error('Chưa kết nối Google');if(!window.confirm('Chỉ khởi tạo trên Google Sheets mới trống. Dữ liệu hiện có sẽ không được ghi đè. Tiếp tục?'))return;const seed=await fetch('/seed.json').then(r=>r.json());await callApi({op:'bootstrap',seed});await pullGoogle();return notify('Đã khởi tạo đầy đủ lớp, lịch và PPCT trên Google Sheets.');}
  }catch(e){console.error(e.code||'ACTION_ERROR',e.message);if($state.mode==='unauthenticated'||$state.mode==='connection-error'){ $state.authError=e.message;render();}else notify('Lỗi: '+e.message);}
 }
@@ -650,7 +756,7 @@ document.addEventListener('change',e=>{
  if(e.target.closest('#extra-form')){delete e.target.form.dataset.requestId;updateExtraFormUI();}
  if(e.target.id==='extra-frequency')updateExtraFormUI();
  if(e.target.id==='only-extra'){$state.onlyExtra=e.target.checked;render();}
- if(['edit-action','edit-kind'].includes(e.target.id))updateEditorFields();
+ if(['edit-action','edit-kind','edit-scope'].includes(e.target.id))updateEditorFields();
  if(e.target.id==='edit-class'||e.target.id==='edit-subject'||e.target.id==='edit-stream'){
   // The next render refreshes PPCT choices for the selected class/subject/stream; preserve edited selections.
   const classId=$('#edit-class').value,subject=$('#edit-subject').value,stream=subject==='Tin'?'TIN':$('#edit-stream').value;
@@ -659,5 +765,5 @@ document.addEventListener('change',e=>{
  }
 });
 document.addEventListener('input',e=>{if(e.target.closest('#extra-form')){delete e.target.form.dataset.requestId;updateExtraFormUI();}if(e.target.id==='extra-list-search'){$state.extraListQuery=e.target.value;const pos=e.target.selectionStart;render();const input=$('#extra-list-search');input?.focus();input?.setSelectionRange(pos,pos);}if(e.target.id==='ppct-query'){$state.ppctQuery=e.target.value;const pos=e.target.selectionStart;render();const input=$('#ppct-query');input?.focus();input?.setSelectionRange(pos,pos);}});
-document.addEventListener('submit',async e=>{if(!['edit-form','extra-form'].includes(e.target.id))return;e.preventDefault();try{if(e.target.id==='extra-form')await saveExtra();else await saveEdit();}catch(err){console.error(err);if(e.target.id==='extra-form'){const box=$('#extra-error');if(box){box.hidden=false;box.textContent='Không thể lưu dạy thêm: '+err.message+(String(err.message).includes('không được hỗ trợ')?' Kiểm tra Apps Script đã chọn PHIÊN BẢN MỚI và Vercel đã triển khai Production.':'');}const state=$('#extra-status');if(state)state.textContent='Nội dung thầy vừa nhập vẫn được giữ nguyên để sửa hoặc thử lại.';}else notify('Lỗi: '+err.message);}});
+document.addEventListener('submit',async e=>{if(!['edit-form','extra-form','move-form'].includes(e.target.id))return;e.preventDefault();try{if(e.target.id==='extra-form')await saveExtra();else if(e.target.id==='move-form')await saveMove();else await saveEdit();}catch(err){console.error(err);if(e.target.id==='extra-form'){const box=$('#extra-error');if(box){box.hidden=false;box.textContent='Không thể lưu dạy thêm'+(err.code?' ['+err.code+']':'')+': '+err.message+' (Web '+FRONTEND_VERSION+' / API '+($state.apiVersion||'?')+' / GAS '+($state.extraServerVersion||'?')+').';}const state=$('#extra-status');if(state)state.textContent='Nội dung thầy vừa nhập vẫn được giữ nguyên để sửa hoặc thử lại.';}else notify('Lỗi: '+err.message);}});
 init().catch(err=>{$('#app').innerHTML=`<p class="fatal">Không khởi động được ứng dụng: ${esc(err.message)}</p>`;});

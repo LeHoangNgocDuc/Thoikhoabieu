@@ -1,0 +1,406 @@
+TAP version 13
+# Subtest: week starts Monday, full seven days
+ok 1 - week starts Monday, full seven days
+  ---
+  duration_ms: 101.255079
+  type: 'test'
+  ...
+# Subtest: seed has correct courses and 350 PPCT
+ok 2 - seed has correct courses and 350 PPCT
+  ---
+  duration_ms: 0.788995
+  type: 'test'
+  ...
+# Subtest: slot only valid for currently active version
+ok 3 - slot only valid for currently active version
+  ---
+  duration_ms: 0.560532
+  type: 'test'
+  ...
+# Subtest: week includes schedules, detects actual conflict in source
+ok 4 - week includes schedules, detects actual conflict in source
+  ---
+  duration_ms: 33.914587
+  type: 'test'
+  ...
+# Subtest: OFF does not consume PPCT but next class lesson moves forward
+ok 5 - OFF does not consume PPCT but next class lesson moves forward
+  ---
+  duration_ms: 3.891461
+  type: 'test'
+  ...
+# Subtest: independent class and stream tracking
+ok 6 - independent class and stream tracking
+  ---
+  duration_ms: 2.476976
+  type: 'test'
+  ...
+# Subtest: Google Sheet transport with string day/period is normalized and week 10 displays
+ok 7 - Google Sheet transport with string day/period is normalized and week 10 displays
+  ---
+  duration_ms: 4.900086
+  type: 'test'
+  ...
+# Subtest: math stream order explicitly matches the new alternating plan
+ok 8 - math stream order explicitly matches the new alternating plan
+  ---
+  duration_ms: 3.481564
+  type: 'test'
+  ...
+# Subtest: free-text multiple extra classes are one joint session without false conflict
+ok 9 - free-text multiple extra classes are one joint session without false conflict
+  ---
+  duration_ms: 5.906049
+  type: 'test'
+  ...
+# Subtest: V1.3 separate tuition sessions never change official curriculum
+ok 10 - V1.3 separate tuition sessions never change official curriculum
+  ---
+  duration_ms: 7.752851
+  type: 'test'
+  ...
+# Subtest: V1.3 course name date corruption is recovered only for recognized classes
+ok 11 - V1.3 course name date corruption is recovered only for recognized classes
+  ---
+  duration_ms: 3.296499
+  type: 'test'
+  ...
+# Subtest: V1.3 sessions permit classes as JSON strings and custom names
+ok 12 - V1.3 sessions permit classes as JSON strings and custom names
+  ---
+  duration_ms: 1.712671
+  type: 'test'
+  ...
+# Subtest: V1.3 official vs tutoring at same time is a real conflict
+ok 13 - V1.3 official vs tutoring at same time is a real conflict
+  ---
+  duration_ms: 2.704535
+  type: 'test'
+  ...
+# Subtest: V1.4 default weekly tutoring survives following weeks and class lists are preserved
+ok 14 - V1.4 default weekly tutoring survives following weeks and class lists are preserved
+  ---
+  duration_ms: 10.897118
+  type: 'test'
+  ...
+# Subtest: V1.4 week-only override does not change following weeks
+ok 15 - V1.4 week-only override does not change following weeks
+  ---
+  duration_ms: 1.436941
+  type: 'test'
+  ...
+# Subtest: V1.4 cancelled week disappears and the next active class keeps sequential lesson number
+ok 16 - V1.4 cancelled week disappears and the next active class keeps sequential lesson number
+  ---
+  duration_ms: 1.125807
+  type: 'test'
+  ...
+# Subtest: V1.4 ending pattern keeps past sessions and hides future
+ok 17 - V1.4 ending pattern keeps past sessions and hides future
+  ---
+  duration_ms: 2.700203
+  type: 'test'
+  ...
+# Subtest: V1.4 existing one-time rows remain visible even without extra_patterns sheet rows
+ok 18 - V1.4 existing one-time rows remain visible even without extra_patterns sheet rows
+  ---
+  duration_ms: 1.108224
+  type: 'test'
+  ...
+# Subtest: V1.4 recurring extra lessons do not alter curriculum or create a fake collision between joint classes
+ok 19 - V1.4 recurring extra lessons do not alter curriculum or create a fake collision between joint classes
+  ---
+  duration_ms: 17.107711
+  type: 'test'
+  ...
+# Subtest: V1.4 pattern serialization from Google Sheets preserves arrays and booleans
+ok 20 - V1.4 pattern serialization from Google Sheets preserves arrays and booleans
+  ---
+  duration_ms: 3.01748
+  type: 'test'
+  ...
+# Subtest: V1.5 Apps Script saves audited change and undo keeps immutable audit trail
+ok 21 - V1.5 Apps Script saves audited change and undo keeps immutable audit trail
+  ---
+  duration_ms: 15.618226
+  type: 'test'
+  ...
+# Subtest: V1.5 Apps Script prevents stale writes, tampered class and wrong PPCT
+ok 22 - V1.5 Apps Script prevents stale writes, tampered class and wrong PPCT
+  ---
+  duration_ms: 9.115177
+  type: 'test'
+  ...
+# Subtest: V1.5 stream rule and lesson correction undo together
+ok 23 - V1.5 stream rule and lesson correction undo together
+  ---
+  duration_ms: 101.423035
+  type: 'test'
+  ...
+# Subtest: V1.5 unconfirmed baselines never fabricate actual counts or pace
+ok 24 - V1.5 unconfirmed baselines never fabricate actual counts or pace
+  ---
+  duration_ms: 12.226982
+  type: 'test'
+  ...
+# Subtest: V1.5 actual is distinct confirmed PPCT, not forecasted slots
+ok 25 - V1.5 actual is distinct confirmed PPCT, not forecasted slots
+  ---
+  duration_ms: 116.597496
+  type: 'test'
+  ...
+# Subtest: V1.5 correction on a class changes its future projection but not another class or stream
+ok 26 - V1.5 correction on a class changes its future projection but not another class or stream
+  ---
+  duration_ms: 21.477911
+  type: 'test'
+  ...
+# Subtest: V1.5 weekly stream rules apply to only chosen class from effective date
+ok 27 - V1.5 weekly stream rules apply to only chosen class from effective date
+  ---
+  duration_ms: 5.656894
+  type: 'test'
+  ...
+# Subtest: V1.5 finished record on different date counts only when <= report date
+ok 28 - V1.5 finished record on different date counts only when <= report date
+  ---
+  duration_ms: 3.881397
+  type: 'test'
+  ...
+# Subtest: V1.5 normalization loads new audit and overrides with old Sheets intact
+ok 29 - V1.5 normalization loads new audit and overrides with old Sheets intact
+  ---
+  duration_ms: 3.173485
+  type: 'test'
+  ...
+# Subtest: V1.5 one-off unconfirmed correction changes display only, not upcoming pointer
+ok 30 - V1.5 one-off unconfirmed correction changes display only, not upcoming pointer
+  ---
+  duration_ms: 7.205262
+  type: 'test'
+  ...
+# Subtest: V1.6 saves multiple classes as a single weekly tutoring pattern
+ok 31 - V1.6 saves multiple classes as a single weekly tutoring pattern
+  ---
+  duration_ms: 58.469889
+  type: 'test'
+  ...
+# Subtest: V1.6 duplicate retry is idempotent and does not add another pattern
+ok 32 - V1.6 duplicate retry is idempotent and does not add another pattern
+  ---
+  duration_ms: 7.533538
+  type: 'test'
+  ...
+# Subtest: V1.6 one-day edit keeps future weeks and classes independent
+ok 33 - V1.6 one-day edit keeps future weeks and classes independent
+  ---
+  duration_ms: 8.40619
+  type: 'test'
+  ...
+# Subtest: V1.6 split from week 14 preserves older weeks and carries date overrides
+ok 34 - V1.6 split from week 14 preserves older weeks and carries date overrides
+  ---
+  duration_ms: 14.75122
+  type: 'test'
+  ...
+# Subtest: V1.6 cancel a week does not remove later sessions
+ok 35 - V1.6 cancel a week does not remove later sessions
+  ---
+  duration_ms: 6.370462
+  type: 'test'
+  ...
+# Subtest: V1.6 weekly until date and stopping recurrence
+ok 36 - V1.6 weekly until date and stopping recurrence
+  ---
+  duration_ms: 5.52993
+  type: 'test'
+  ...
+# Subtest: V1.6 once to weekly conversion retains audit without duplicating occurrence
+ok 37 - V1.6 once to weekly conversion retains audit without duplicating occurrence
+  ---
+  duration_ms: 7.457658
+  type: 'test'
+  ...
+# Subtest: V1.6 optimistic revision prevents stale overwrites
+ok 38 - V1.6 optimistic revision prevents stale overwrites
+  ---
+  duration_ms: 4.061403
+  type: 'test'
+  ...
+# Subtest: V1.6 reject missing group, invalid time and do not alter PPCT
+ok 39 - V1.6 reject missing group, invalid time and do not alter PPCT
+  ---
+  duration_ms: 6.995113
+  type: 'test'
+  ...
+# Subtest: V1.6 overlap detects time collisions and different shifts as separate slots
+ok 40 - V1.6 overlap detects time collisions and different shifts as separate slots
+  ---
+  duration_ms: 1.060879
+  type: 'test'
+  ...
+# Subtest: V1.6.1 Apps Script declares probe and supports all recurring tutoring mutations
+ok 41 - V1.6.1 Apps Script declares probe and supports all recurring tutoring mutations
+  ---
+  duration_ms: 6.184226
+  type: 'test'
+  ...
+# Subtest: Vercel proxy identifies outdated Apps Script rather than generic unsupported action
+ok 42 - Vercel proxy identifies outdated Apps Script rather than generic unsupported action
+  ---
+  duration_ms: 6.143171
+  type: 'test'
+  ...
+# Subtest: Vercel proxy accepts positive capability probe
+ok 43 - Vercel proxy accepts positive capability probe
+  ---
+  duration_ms: 0.918038
+  type: 'test'
+  ...
+# Subtest: Google UTC timestamp at 17:00Z is the following Vietnam calendar day
+ok 44 - Google UTC timestamp at 17:00Z is the following Vietnam calendar day
+  ---
+  duration_ms: 141.717443
+  type: 'test'
+  ...
+# Subtest: mid-week PPCT target does not count lessons scheduled on later days
+ok 45 - mid-week PPCT target does not count lessons scheduled on later days
+  ---
+  duration_ms: 4.668542
+  type: 'test'
+  ...
+# Subtest: PPCT plan does not drop to zero during school breaks
+ok 46 - PPCT plan does not drop to zero during school breaks
+  ---
+  duration_ms: 2.952845
+  type: 'test'
+  ...
+# Subtest: unconfirmed baseline refuses to report actual and delta, but displays the planned amount
+ok 47 - unconfirmed baseline refuses to report actual and delta, but displays the planned amount
+  ---
+  duration_ms: 1.98851
+  type: 'test'
+  ...
+# Subtest: confirmed initial position alone is insufficient when planned lessons are unmarked
+ok 48 - confirmed initial position alone is insufficient when planned lessons are unmarked
+  ---
+  duration_ms: 1.795406
+  type: 'test'
+  ...
+# Subtest: confirmed completed entry closes the only Tin 9/1 slot for that week
+ok 49 - confirmed completed entry closes the only Tin 9/1 slot for that week
+  ---
+  duration_ms: 5.774147
+  type: 'test'
+  ...
+# Subtest: an explicit cancellation is known as not taught, not an unknown lesson
+ok 50 - an explicit cancellation is known as not taught, not an unknown lesson
+  ---
+  duration_ms: 3.659664
+  type: 'test'
+  ...
+# Subtest: unlinked done change is flagged rather than accepted as complete stats
+ok 51 - unlinked done change is flagged rather than accepted as complete stats
+  ---
+  duration_ms: 3.343888
+  type: 'test'
+  ...
+# Subtest: extra tutoring never counts toward official progress
+ok 52 - extra tutoring never counts toward official progress
+  ---
+  duration_ms: 4.780116
+  type: 'test'
+  ...
+# Subtest: progress summary covers every assigned class/mạch, not only baseline entries
+ok 53 - progress summary covers every assigned class/mạch, not only baseline entries
+  ---
+  duration_ms: 4.03815
+  type: 'test'
+  ...
+# Subtest: login sets HttpOnly Secure Lax Path cookie scoped to browser host
+ok 54 - login sets HttpOnly Secure Lax Path cookie scoped to browser host
+  ---
+  duration_ms: 3.050482
+  type: 'test'
+  ...
+# Subtest: different device without cookie is unauthenticated even when desktop is logged in
+ok 55 - different device without cookie is unauthenticated even when desktop is logged in
+  ---
+  duration_ms: 1.605682
+  type: 'test'
+  ...
+# Subtest: session endpoint distinguishes unauthenticated and authenticated and never exposes secrets
+ok 56 - session endpoint distinguishes unauthenticated and authenticated and never exposes secrets
+  ---
+  duration_ms: 0.751256
+  type: 'test'
+  ...
+# Subtest: expired signed session responds as SESSION_EXPIRED rather than Sheets error
+ok 57 - expired signed session responds as SESSION_EXPIRED rather than Sheets error
+  ---
+  duration_ms: 0.947486
+  type: 'test'
+  ...
+# Subtest: wrong password and cross-origin POST rejected with explicit code
+ok 58 - wrong password and cross-origin POST rejected with explicit code
+  ---
+  duration_ms: 0.946555
+  type: 'test'
+  ...
+# Subtest: logging out one browser does not invalidate separate browser cookie
+ok 59 - logging out one browser does not invalidate separate browser cookie
+  ---
+  duration_ms: 2.193723
+  type: 'test'
+  ...
+# Subtest: server reports upstream failure distinctly and never returns ok on missing Sheets data
+ok 60 - server reports upstream failure distinctly and never returns ok on missing Sheets data
+  ---
+  duration_ms: 0.693127
+  type: 'test'
+  ...
+# Subtest: server reads Apps Script response with no-store and version metadata
+ok 61 - server reads Apps Script response with no-store and version metadata
+  ---
+  duration_ms: 0.866025
+  type: 'test'
+  ...
+# Subtest: Read-only cache only accepts verified Google snapshots, never stores audit or session tokens
+ok 62 - Read-only cache only accepts verified Google snapshots, never stores audit or session tokens
+  ---
+  duration_ms: 9.792498
+  type: 'test'
+  ...
+# Subtest: Only scope C requires Algebra/Geometry string; scopes A/B ignore stale input
+ok 63 - Only scope C requires Algebra/Geometry string; scopes A/B ignore stale input
+  ---
+  duration_ms: 1.475031
+  type: 'test'
+  ...
+# Subtest: A single collided official period can move by exact slot id while preserving other class
+ok 64 - A single collided official period can move by exact slot id while preserving other class
+  ---
+  duration_ms: 29.811223
+  type: 'test'
+  ...
+# Subtest: Moving a filled slot is rejected, and dạy thêm remains independent
+ok 65 - Moving a filled slot is rejected, and dạy thêm remains independent
+  ---
+  duration_ms: 6.153998
+  type: 'test'
+  ...
+# Subtest: Apps Script preserves old saveOfficialChange op and accepts safe per-slot MOVE
+ok 66 - Apps Script preserves old saveOfficialChange op and accepts safe per-slot MOVE
+  ---
+  duration_ms: 13.88939
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 463.488719

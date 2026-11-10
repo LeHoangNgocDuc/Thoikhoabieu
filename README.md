@@ -1,3 +1,11 @@
+# Smart TKB V1.5 – Bản nâng cấp
+
+**Trước khi cập nhật: đọc [CAP_NHAT_V1_5.md](CAP_NHAT_V1_5.md).**
+
+> **SMART TKB V1.3:** Xem `CAP_NHAT_V1_3.md` để nâng cấp và sửa lỗi hiển thị tên lớp, tách Dạy thêm/Chính khóa, chọn nhiều lớp và xem tuần vừa màn hình. V1.3 cần cập nhật cả Apps Script lẫn mã GitHub.
+
+> **CẬP NHẬT V1.2:** Mở `CAP_NHAT_V1_2.md` để xem chế độ toàn tuần vừa màn hình, thứ tự mạch ĐS/HH và cách thêm nhiều lớp dạy thêm trong một suất. Giữ nguyên Google Sheets/Apps Script; khi cập nhật từ V1.1 chỉ cần thay `src/core.js`, `src/main.js`, `src/style.css`.
+
 # SMART TKB – Trường THCS Nam Nha Trang
 
 **Bộ mã nguồn dự án MVP 1.0, năm học 2026–2027.** Ứng dụng quản lý lịch 7 ngày/tuần, sáng 5 tiết, chiều 5 tiết, tối 2 suất; lịch chính khóa theo phiên bản, lịch dạy thêm và dạy bù theo ngày; PPCT Toán ĐS/HH và Tin; Google Sheets làm nơi lưu trữ.

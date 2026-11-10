@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-export const API_VERSION = '1.6.4';
+export const API_VERSION = '1.6.5';
 const COOKIE_NAME='smart_tkb_session';
 const DAY=86400;
 export function json(res,status,data){

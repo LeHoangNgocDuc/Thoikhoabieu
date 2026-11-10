@@ -46,7 +46,7 @@ export function normalizeSheetData(raw){
  out.slots.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.versionId=String(x.versionId||'').trim();x.stream=String(x.stream||'');});
  out.ppct.forEach(x=>{x.grade=Number(x.grade);x.week=Number(x.week);x.period=Number(x.period);});
  out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
- out.changes.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.scope=String(x.scope||'one');x.titleOverride=String(x.titleOverride||'');});
+ out.changes.forEach(x=>{x.date=toIso(x.date);x.moveDate=toIso(x.moveDate);x.movePeriod=x.movePeriod?Number(x.movePeriod):0;x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.scope=String(x.scope||'one');x.titleOverride=String(x.titleOverride||'');});
  out.ppct_overrides.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.pattern=parseStreamPattern(x.pattern);});
  out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'once';x.revision=Number(x.revision)||0;});
  out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'weekly';x.revision=Number(x.revision)||0;});
@@ -94,18 +94,25 @@ export function tutoringForWeek(state,week){
 export function activeVersion(state,date){return [...(state.versions||[])].filter(v=>String(v.fromDate||'').slice(0,10)<=date).sort((a,b)=>String(b.fromDate).localeCompare(String(a.fromDate))||String(b.id).localeCompare(String(a.id)))[0]||null}
 export function scheduleForDate(state,date){
  const ver=activeVersion(state,date);
- const day=parseDate(date).getDay()===0?8:parseDate(date).getDay()+1;
+ const day=dayNumber(date);
  const base=ver&&schoolWeek(date)!==0?(state.slots||[]).filter(x=>String(x.versionId).trim()===String(ver.id).trim()&&Number(x.day)===day).map(s=>({...s,date,changeId:'',status:'PLANNED'})):[];
- for(const ch of (state.changes||[]).filter(x=>x.date===date)){
-  const index=base.findIndex(x=>x.shift===ch.shift&&x.period===Number(ch.period));
+ // A MOVE selects an exact original slot id, not an arbitrary occupant of a conflicting cell.
+ // Keep the original TKB version untouched: moving a single occurrence must not shift the following weeks.
+ const sourceMoves=(state.changes||[]).filter(ch=>ch.action==='MOVE'&&ch.date===date);
+ for(const mv of sourceMoves){const ix=base.findIndex(x=>x.id===mv.sourceSlotId);if(ix>=0)base.splice(ix,1);}
+ for(const ch of (state.changes||[]).filter(x=>x.date===date&&x.action!=='MOVE')){
+  const index=base.findIndex(x=>x.shift===ch.shift&&Number(x.period)===Number(ch.period)&&(!ch.sourceSlotId||x.id===ch.sourceSlotId));
   if(ch.action==='CLEAR')continue;
   if(ch.action==='OFF'||ch.action==='DONE'||ch.action==='EDIT'){
    if(index>=0){const was=base[index];base[index]={...was,...(ch.action==='EDIT'?{classId:ch.classId||was.classId,subject:ch.subject||was.subject,stream:ch.stream||was.stream}:{}),status:ch.action==='OFF'?'OFF':(ch.action==='DONE'||ch.completed)?'DONE':'PLANNED',notes:ch.notes||was.notes,ppctId:ch.ppctId||'',scope:ch.scope||'following',titleOverride:ch.titleOverride||'',changeId:ch.id};}
   }else if(ch.action==='ADD'){
-   const event={id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:ch.kind||'EXTRA',notes:ch.notes||'',status:ch.completed?'DONE':'PLANNED',ppctId:ch.ppctId||'',scope:ch.scope||'following',titleOverride:ch.titleOverride||'',changeId:ch.id};
-   // keep conflicts visible for audit instead of silently overwriting
-   base.push(event);
+   base.push({id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:ch.kind||'MAKEUP',notes:ch.notes||'',status:ch.completed?'DONE':'PLANNED',ppctId:ch.ppctId||'',scope:ch.scope||'following',titleOverride:ch.titleOverride||'',changeId:ch.id});
   }
+ }
+ for(const mv of (state.changes||[]).filter(x=>x.action==='MOVE'&&x.moveDate===date)){
+  const sourceVersion=activeVersion(state,mv.date);
+  const slot=(state.slots||[]).find(x=>x.id===mv.sourceSlotId&&x.versionId===sourceVersion?.id);
+  if(slot)base.push({...slot,id:slot.id+'@'+date,date,day,shift:mv.moveShift,period:Number(mv.movePeriod),changeId:mv.id,kind:'MAIN',status:'PLANNED',notes:mv.notes||slot.notes||'',originalSlotId:slot.id});
  }
  return base.sort((a,b)=>'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
 }
@@ -288,4 +295,53 @@ export function extraSlotOverlap(a,b){
 export function extraGroupLabels(item,state){
  const names=new Map((state?.classes||[]).map(c=>[c.id,c.name]));
  return parseGroups(item.groups).map(id=>names.get(id)||id);
+}
+
+/** Prepare an unambiguous one-off MOVE without touching PPCT progress. */
+export function moveCollision(state,sourceSlotId,sourceDate,targetDate,targetShift,targetPeriod){
+ const ver=activeVersion(state,sourceDate);
+ const slot=(state.slots||[]).find(x=>x.id===sourceSlotId&&x.versionId===ver?.id);
+ if(!slot)throw Error('Không tìm thấy tiết chính khóa trong phiên bản đang áp dụng');
+ if(dayNumber(sourceDate)!==Number(slot.day))throw Error('Ngày nguồn không thuộc tiết đã chọn');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)||!['S','C','T'].includes(targetShift)||!Number.isInteger(Number(targetPeriod))||Number(targetPeriod)<1||Number(targetPeriod)>(targetShift==='T'?2:5))throw Error('Vị trí đích không hợp lệ');
+ if(targetDate===sourceDate&&targetShift===slot.shift&&Number(targetPeriod)===Number(slot.period))throw Error('Chưa thay đổi vị trí');
+ const used=[...eventsForWeek(state,monday(targetDate)).filter(e=>e.kind!=='EXTRA'),...tutoringForWeek(state,monday(targetDate))];
+ if(used.some(e=>e.date===targetDate&&e.shift===targetShift&&Number(e.period)===Number(targetPeriod)&&e.status!=='OFF'))throw Error('Ô đích đã có tiết; hãy chọn một ô trống');
+ const computed=eventsForWeek(state,monday(sourceDate)).find(e=>e.id===sourceSlotId&&e.date===sourceDate);
+ return {id:`MOVE-${sourceDate}-${sourceSlotId}`,date:sourceDate,shift:slot.shift,period:Number(slot.period),action:'MOVE',classId:slot.classId,subject:slot.subject,stream:computed?.stream||(slot.subject==='Tin'?'TIN':'ĐS'),kind:'MAIN',notes:'Dời một tiết bị trùng lịch',ppctId:'',completed:false,updatedAt:'',scope:'one',titleOverride:'',sourceSlotId,moveDate:targetDate,moveShift:targetShift,movePeriod:Number(targetPeriod)};
+}
+export function validateOfficialScope(scope, pattern){
+ if(!['one','following','future'].includes(scope))throw Error('Phạm vi điều chỉnh không hợp lệ');
+ if(scope!=='future')return [];
+ const parsed=parseStreamPattern(pattern);
+ if(!parsed.length)throw Error('Chọn C cần nhập mẫu ĐS/HH, ví dụ ĐS,ĐS,HH,ĐS');
+ return parsed;
+}
+
+/** V1.6.5: preview an immutable timetable revision. Existing dated lessons and PPCT remain separate. */
+export function previewMainRevision(state,{sourceSlotId='',fromDate,day,shift,period,classId,subject,stream}){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(fromDate||''))||monday(fromDate)!==fromDate)throw Error('Ngày áp dụng phải là thứ Hai đầu tuần');
+ const version=activeVersion(state,fromDate);
+ if(!version)throw Error('Chưa có phiên bản TKB tại tuần được chọn');
+ const originals=(state.slots||[]).filter(x=>x.versionId===version.id);
+ const adding=!sourceSlotId;
+ const origin=adding?null:originals.find(x=>x.id===sourceSlotId);
+ if(!adding&&!origin)throw Error('Không tìm thấy tiết nguồn trong phiên bản TKB đang dùng');
+ if(adding&&originals.length>=84)throw Error('Thời khóa biểu đã đủ số ô, không thể thêm tiết');
+ const nextDay=Number(day),nextPeriod=Number(period);
+ if(!Number.isInteger(nextDay)||nextDay<2||nextDay>8||!['S','C','T'].includes(shift)||!Number.isInteger(nextPeriod)||nextPeriod<1||nextPeriod>(shift==='T'?2:5))throw Error('Thứ, buổi hoặc tiết không hợp lệ');
+ const cls=classById(state,classId);
+ if(!cls||!cls.subjects.includes(subject))throw Error('Lớp được chọn chưa được phân công môn này');
+ const nextStream=subject==='Tin'?'TIN':String(stream||'');
+ if(subject==='Toán'&&!['','ĐS','HH'].includes(nextStream))throw Error('Mạch Toán không hợp lệ');
+ const changed=adding?{id:'PREVIEW-NEW-OFFICIAL',versionId:version.id,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream,kind:'MAIN',notes:''}:{...origin,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream};
+ if(!adding&&['day','shift','period','classId','subject','stream'].every(k=>String(origin[k]||'')===String(changed[k]||'')))throw Error('Chưa thay đổi thông tin tiết');
+ const occupied=originals.filter(x=>adding||x.id!==sourceSlotId).filter(x=>Number(x.day)===nextDay&&x.shift===shift&&Number(x.period)===nextPeriod);
+ const moved=adding||nextDay!==Number(origin.day)||shift!==origin.shift||nextPeriod!==Number(origin.period);
+ if(moved&&occupied.length)throw Error('Ô đích đang có tiết chính khóa; hãy chọn ô khác');
+ const adjusted=adding?[...originals,changed]:originals.map(x=>x.id===sourceSlotId?changed:{...x});
+ const conflictKeys=new Set(),pos=new Map();
+ for(const x of adjusted){const key=scheduleKey(x.day,x.shift,x.period);pos.set(key,(pos.get(key)||0)+1)}
+ for(const [key,n] of pos)if(n>1)conflictKeys.add(key);
+ return {version,origin,changed,slots:adjusted,operation:adding?'ADD':'EDIT',remainingConflicts:[...conflictKeys]};
 }

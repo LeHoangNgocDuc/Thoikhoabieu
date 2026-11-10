@@ -448,3 +448,23 @@ body.week-focus .compact-full-toggle{display:none!important}
 .system-status strong{font-size:14px}
 .system-status p{font-size:12px;margin:7px 0;overflow-wrap:anywhere}
 @media(max-width:600px){.auth-page{padding:18px 12px;align-items:center}.auth-card{border-radius:20px;padding:24px 20px}.auth-actions .btn{flex:1}.auth-details{font-size:12px}}
+/* V1.6.4: last-known-good timetable stays visible during authentication and slow GAS reads. */
+.cache-notice{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 12px;margin:8px 0;background:#fff8df;border:1px solid #efcb7e;border-radius:12px;color:#665018;font-size:12px;line-height:1.45}
+.cache-notice strong{font-weight:750}
+.cache-notice .btn{min-height:34px;padding:5px 10px;margin-left:auto}
+.conflict-resolve{padding:10px 12px;border-top:1px solid #f5dfb4}
+.conflict-resolve strong{display:block;margin-bottom:8px}
+.conflict-options{display:flex;flex-wrap:wrap;gap:8px}
+.conflict-options>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:9px;background:#fff;border:1px solid #e2d3b9;min-width:220px}
+.conflict-options .btn{min-height:36px;padding:5px 8px}
+.move-editor .formgrid{padding-top:8px}
+@media(max-width:650px){.cache-notice{font-size:11px}.cache-notice .btn{margin-left:0}.conflict-options{display:block}.conflict-options>div{min-width:0;max-width:100%;margin:6px 0}.move-editor{max-height:85dvh;overflow-y:auto}}
+
+/* V1.6.5: visible release fingerprint; no overlay on timetable. */
+.release-label{font-size:10px;font-weight:800;color:#087d77;background:#e4f8f2;border:1px solid #bde6db;border-radius:8px;padding:5px 8px;white-space:nowrap}
+@media(max-width:760px){.release-label{font-size:9px;padding:3px 6px;white-space:normal;line-height:1.2;text-align:center}}
+
+/* V1.6.5 persistent official-slot editor */
+.conflict-choices{display:grid;gap:10px;margin:15px 0}.conflict-choice{min-height:61px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;white-space:normal;gap:5px}.conflict-choice strong{font-size:13px}.conflict-choice small{font-size:11px;opacity:.8}
+.move-editor .formgrid input{width:100%;background:#f8fbfd;border:1px solid #dfe9ef;color:#2b4960;border-radius:8px;padding:10px;min-height:40px}.move-editor .formgrid label{font-size:12px}.move-editor{max-width:620px}
+@media(max-width:760px){.move-editor{width:100%;max-height:88dvh;border-radius:20px 20px 0 0;position:absolute;bottom:0;left:0;right:0}.move-editor .formgrid{grid-template-columns:1fr 1fr}.move-editor .modalactions .btn{min-height:44px}.conflict-choice{min-height:53px}}
