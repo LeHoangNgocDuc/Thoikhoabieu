@@ -20,7 +20,22 @@ export function classById(state,id){return (state.classes||[]).find(c=>c.id===id
 // Normalize at the data boundary AND tolerate old deployments that return numeric fields as strings.
 export function normalizeSheetData(raw){
  const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes','extra_sessions','extra_patterns','ppct_overrides','audit_log'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
- const toIso=v=>{if(!v)return '';const str=String(v).trim();const iso=str.match(/^(\d{4}-\d{2}-\d{2})/);if(iso)return iso[1];const d=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return d?`${d[3]}-${d[2]}-${d[1]}`:str;};
+ const toIso=v=>{
+  if(!v)return '';
+  const str=String(v).trim();
+  // A GAS Date at 00:00 in Vietnam is often serialized as 17:00Z on the previous day.
+  // Interpret instants in the school's timezone; never simply slice the UTC date.
+  if(v instanceof Date||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)){
+    const dt=v instanceof Date?v:new Date(str);
+    if(!Number.isNaN(dt.getTime())){
+      const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(dt);
+      const x=Object.fromEntries(parts.filter(t=>t.type!=='literal').map(t=>[t.type,t.value]));
+      return `${x.year}-${x.month}-${x.day}`;
+    }
+  }
+  const iso=str.match(/^(\d{4}-\d{2}-\d{2})$/);if(iso)return iso[1];
+  const d=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return d?`${d[3]}-${d[2]}-${d[1]}`:str;
+ };
  out.classes.forEach(x=>{
   // Some existing Sheets cells like 7/2 were auto-detected as dates by Google Sheets.
   // Old Apps Script deployments sent their JS Date serialized as ISO timestamps.
@@ -180,31 +195,87 @@ export function seedSanity(state){
 }
 
 
-// V1.5: Actual progress must never infer completed lessons from timetable projections.
-// Unconfirmed baselines return no pace comparison instead of fabricated results.
+// V1.6.2: PPCT-paced statistics. Distinguish confirmed historical coverage,
+// explicitly confirmed teaching, and lessons whose outcome is still unknown.
+// The official timetable is not evidence a lesson actually took place.
+function weekPlanAt(state,classId,subject,stream,throughDate,seq){
+ const teachingWeek=schoolWeek(throughDate);
+ if(teachingWeek<1){
+  // The two non-teaching weeks in the 2026-2027 calendar do not reset totals.
+  let preceding=addDays(monday(throughDate),-7),previous=0;
+  for(let i=0;i<54;i++,preceding=addDays(preceding,-7)){
+   const n=schoolWeek(preceding);if(n>0){previous=n;break;}
+  }
+  return {planned:seq.filter(p=>p.week<=previous).length,precision:'week',week:previous};
+ }
+ const before=seq.filter(p=>p.week>0&&p.week<teachingWeek).length;
+ const current=seq.filter(p=>p.week===teachingWeek).length;
+ if(throughDate>=addDays(monday(throughDate),6))return {planned:before+current,precision:'week',week:teachingWeek};
+ // For a mid-week report, use the actual scheduled lesson positions to distribute
+ // the PPCT weekly quota rather than counting lessons from future days.
+ const events=[];for(let i=0;i<7;i++)events.push(...scheduleForDate(state,addDays(monday(throughDate),i)));
+ applyStreamAssignments(state,events);
+ const scheduled=events.filter(e=>e.kind!=='EXTRA'&&e.classId===classId&&e.subject===subject&&e.stream===stream);
+ if(!scheduled.length&&current)return {planned:before,precision:'unallocated',week:teachingWeek};
+ const elapsed=scheduled.filter(e=>e.date<=throughDate).length;
+ return {planned:before+Math.min(current,elapsed),precision:scheduled.length===current?'date':'estimated-date',week:teachingWeek,
+   weeklyQuota:current,weeklySlots:scheduled.length};
+}
+function actualForProgress(state,classId,subject,stream,throughDate,baseline,seq){
+ const start=baseline.fromDate;
+ const prefix=Math.min(seq.length,Math.max(0,Number(baseline.nextIndex)||0));
+ const completed=new Set(seq.slice(0,prefix).map(p=>p.id));
+ const knownIds=new Set(seq.map(p=>p.id));
+ const doneChanges=(state.changes||[]).filter(c=>c.classId===classId&&c.subject===subject&&c.stream===stream&&
+    c.date>=start&&c.date<=throughDate&&c.completed===true&&c.action!=='OFF'&&c.action!=='CLEAR'&&c.kind!=='EXTRA');
+ let unlinked=0;
+ for(const ch of doneChanges){if(ch.ppctId&&knownIds.has(ch.ppctId))completed.add(ch.ppctId);else unlinked++;}
+ // The baseline confirms lessons before fromDate, but NOT every appointment since
+ // fromDate. An unmarked appointment is unknown, not a proven missed lesson.
+ let pending=0,off=0,scheduled=0;
+ for(let week=monday(start);week<=monday(throughDate);week=addDays(week,7)){
+  const events=[];
+  for(let i=0;i<7;i++)events.push(...scheduleForDate(state,addDays(week,i)));
+  applyStreamAssignments(state,events);
+  for(const e of events){
+   if(e.date<start||e.date>throughDate||e.kind==='EXTRA'||e.classId!==classId||e.subject!==subject||e.stream!==stream)continue;
+   scheduled++;
+   if(e.status==='OFF'){off++;continue;}
+   if(e.status==='DONE')continue;
+   pending++;
+  }
+ }
+ return {actual:completed.size,pending,off,scheduled,unlinked,completedIds:completed};
+}
 export function progressAt(state,classId,subject,stream,throughDate){
  const cls=classById(state,classId);
- if(!cls)return {status:'missing-class'};
- const baseline=(state.baselines||[]).find(b=>b.classId===classId&&b.subject===subject&&b.stream===stream);
+ if(!cls)return {status:'missing-class',classId,subject,stream};
  const seq=ppctSequence(state,cls.grade,subject,stream);
- const wk=schoolWeek(throughDate);
- const planned=seq.filter(p=>p.week>0&&p.week<=wk).length;
- if(!baseline||!baseline.confirmed||throughDate<baseline.fromDate){return {status:'unconfirmed',classId,subject,stream,planned,actual:null,delta:null,next:null};}
- const next=Math.min(seq.length,Math.max(0,Number(baseline.nextIndex)||0));
- const completed=new Set(seq.slice(0,next).map(p=>p.id));
- let unlinked=0;
- for(const ch of state.changes||[]){
-  if(ch.classId!==classId||ch.subject!==subject||ch.stream!==stream)continue;
-  if(ch.date<baseline.fromDate||ch.date>throughDate||!ch.completed||ch.action==='OFF')continue;
-  if(ch.ppctId&&seq.some(p=>p.id===ch.ppctId))completed.add(ch.ppctId);
-  else unlinked++;
+ const plan=weekPlanAt(state,classId,subject,stream,throughDate,seq);
+ const baseline=(state.baselines||[]).find(b=>b.classId===classId&&b.subject===subject&&b.stream===stream);
+ const identity={classId,subject,stream,planned:plan.planned,planningPrecision:plan.precision,
+  weeklyQuota:plan.weeklyQuota??null,weeklySlots:plan.weeklySlots??null};
+ if(!baseline||!baseline.confirmed||throughDate<baseline.fromDate){
+  return {...identity,status:'unconfirmed',actual:null,delta:null,next:null,reason:'Chưa xác nhận số tiết đã dạy trước ngày bắt đầu theo dõi.'};
  }
- const actual=completed.size;
- return {status:'ready',classId,subject,stream,planned,actual,delta:actual-planned,unlinked,
-    next:seq.find(p=>!completed.has(p.id))||null,baselineDate:baseline.fromDate};
+ const actual=actualForProgress(state,classId,subject,stream,throughDate,baseline,seq);
+ const complete=actual.pending===0&&actual.unlinked===0&&plan.precision!=='unallocated'&&plan.precision!=='estimated-date';
+ return {...identity,status:complete?'ready':'partial',actual:actual.actual,delta:complete?actual.actual-plan.planned:null,
+  knownDelta:actual.actual-plan.planned,pending:actual.pending,off:actual.off,unlinked:actual.unlinked,
+  next:seq.find(p=>!actual.completedIds.has(p.id))||null,baselineDate:baseline.fromDate,
+  reason:complete?'Đã có đủ xác nhận đến ngày thống kê.':
+   `Cần xác nhận ${actual.pending} tiết chưa đánh dấu đã dạy/nghỉ${actual.unlinked?`; ${actual.unlinked} tiết đã dạy chưa có mã PPCT`:''}${plan.precision==='estimated-date'?'; số tiết xếp lịch trong tuần khác định mức PPCT':''}.`};
 }
 export function progressSummary(state,throughDate){
- return (state.baselines||[]).map(b=>progressAt(state,b.classId,b.subject,b.stream,throughDate));
+ // Display every assigned subject and stream even if a baseline row is missing.
+ const known=new Set(),items=[];
+ for(const cls of (state.classes||[]))for(const subject of (cls.subjects||[])){
+  for(const stream of subject==='Toán'?['ĐS','HH']:['TIN']){
+   const key=`${cls.id}|${subject}|${stream}`;if(known.has(key))continue;
+   known.add(key);items.push(progressAt(state,cls.id,subject,stream,throughDate));
+  }
+ }
+ return items;
 }
 
 // V1.6: independent tutoring sessions can share one slot with multiple groups,

@@ -202,10 +202,10 @@ body.week-focus .teacher-byline{display:block;font-size:8px;margin-top:1px}
 .extra-only-toggle input{width:16px;height:16px;accent-color:#0c8c78}
 .lesson.official-muted{filter:saturate(.45);opacity:.48}
 .lesson.official-muted:hover{opacity:1;filter:none}
-.stats-toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:17px}
+.stats-toolbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px;margin-bottom:17px}
 .stats-toolbar label{font-size:11px;font-weight:700;color:#517089;display:block;margin-bottom:6px}
 .stats-toolbar input,.stats-toolbar select{border:1px solid #d7e6ee;background:#f7fbfe;border-radius:10px;padding:12px;width:100%;min-width:0;color:#24495e;min-height:42px}
-.statistics-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.statistics-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .statistics-summary>div{background:linear-gradient(135deg,#eaf7f5,#f4fafd);border:1px solid #d8ebe7;border-radius:12px;padding:16px}
 .statistics-summary small{display:block;font-size:11px;color:#577382}
 .statistics-summary strong{display:block;margin-top:8px;font-size:21px;color:#116e68}
@@ -222,7 +222,7 @@ body.week-focus .teacher-byline{display:block;font-size:8px;margin-top:1px}
 body.week-focus .compact-full-toggle,body.week-focus .extra-only-toggle{font-size:9px;padding:3px 8px;margin:0 0 4px}
 body.week-focus .compact-full-toggle{min-height:20px}
 body.week-focus .extra-only-toggle{min-height:20px}
-@media(max-width:760px){.stats-toolbar{grid-template-columns:1fr 1fr}.statistics-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.statistics-summary>div{padding:11px 8px}.statistics-summary strong{font-size:17px}.statistics-summary small{font-size:9px}.math-summary{grid-template-columns:1fr}.stats-table{min-width:740px}}
+@media(max-width:760px){.stats-toolbar{grid-template-columns:1fr 1fr}.statistics-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.statistics-summary>div{padding:11px 8px}.statistics-summary strong{font-size:17px}.statistics-summary small{font-size:9px}.math-summary{grid-template-columns:1fr}.stats-table{min-width:740px}}
 @media(max-width:420px){.stats-toolbar{grid-template-columns:1fr}.compact-full-toggle{width:100%;justify-content:center}}
 @media print{.compact-full-toggle,.extra-only-toggle{display:none!important}}
 
@@ -390,3 +390,40 @@ body.week-focus .compact-full-toggle{display:none!important}
 .extra-server-alert{padding:9px 12px;background:#fff4e5;border:1px solid #f4d1a5;color:#8b4914;border-radius:10px;font-size:11px;line-height:1.6;margin:4px 0 8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .extra-server-alert strong{font-weight:800}
 .extra-server-alert .btn{padding:7px 11px;min-height:38px;margin-left:auto}
+
+/* V1.6.2: searchable, server-backed tutoring list and explicit sync state. */
+.pending-sync{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:8px 0;padding:12px 14px;border-radius:12px;border:1px solid #f6bc6d;background:#fff8e8;color:#77460e;font-size:12px;line-height:1.5}
+.pending-sync strong{font-weight:800}.pending-sync span{flex:1;min-width:155px;overflow-wrap:anywhere}.pending-sync .btn{min-height:40px}
+.extras-list{padding:18px}.extras-list .list-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.extras-list .list-summary{margin:14px 0;background:#edf8f5;color:#156a5f;padding:12px 15px;border:1px solid #d1e9e3;border-radius:11px;font-weight:600;font-size:13px;line-height:1.5}
+.extras-list label{display:block;font-size:12px;font-weight:700;color:#496477;margin-bottom:7px}
+.extras-list input{width:min(100%,440px);border:1px solid #d8e3eb;background:#fff;color:#17354c;border-radius:12px;min-height:44px;padding:10px 12px;font-family:inherit;font-size:14px}
+.extras-list .table-scroller{margin-top:14px;max-width:100%;overflow:auto;border-radius:10px}
+.extras-list .data-table{min-width:740px}.extras-list .data-table td{vertical-align:top;font-size:12px;line-height:1.55}
+.extras-list .data-table td:nth-child(3){max-width:320px;min-width:180px}
+.extras-list .data-table small{display:block;color:#78909e;font-size:11px;margin-top:4px}
+.extras-list .list-groups{overflow-wrap:anywhere;color:#426073;margin-top:2px}
+.extras-list .mini-history{margin-top:6px;color:#386d82;max-width:270px}.extras-list .mini-history summary{cursor:pointer;font-size:11px}.extras-list .mini-history p{font-size:10px;overflow-wrap:anywhere;margin:4px 0}
+.sync-report{border:1px solid #b8e4d9;background:#f2fbf9;padding:15px 18px;margin-bottom:14px;color:#194e53}
+.sync-report h3{font-size:16px;margin:0 0 10px}.sync-report p{margin:5px 0;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+@media(max-width:760px){
+ .extras-list{padding:12px!important}.extras-list .list-tools .btn{flex:1;min-height:44px;font-size:12px}
+ .extras-list .table-scroller{margin-left:0;margin-right:0}.extras-list input{width:100%}
+ .pending-sync{padding:10px;flex-direction:column;align-items:stretch}.pending-sync .btn{width:100%}
+ .sync-report{padding:12px}
+ .backend-health{gap:8px}.backend-health .btn{width:100%;min-height:44px}
+}
+
+/* V1.6.2: keep the mobile header legible; management actions live in the drawer. */
+@media(max-width:760px){
+  .topbar{display:flex;align-items:center;gap:8px;min-height:58px;height:58px;padding:7px 10px;overflow:hidden}
+  .topbar .topright{display:none!important}
+  .topbar .brandmark{width:34px;min-width:34px;height:34px;font-size:12px}
+  .topbar .brandtext{flex:1;min-width:0;overflow:hidden}
+  .topbar .brandtext h1{font-size:13px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
+  .topbar .brandtext p{font-size:9px;line-height:1.2;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:3px}
+  .stats-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats-toolbar>div:first-child,.stats-toolbar>div:nth-child(3){grid-column:1/-1}
+  .stats-toolbar input,.stats-toolbar select{min-height:44px;font-size:13px}
+}
+@media(max-width:420px){.stats-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
