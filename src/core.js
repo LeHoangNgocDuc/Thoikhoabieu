@@ -48,8 +48,8 @@ export function normalizeSheetData(raw){
  out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
  out.changes.forEach(x=>{x.date=toIso(x.date);x.moveDate=toIso(x.moveDate);x.movePeriod=x.movePeriod?Number(x.movePeriod):0;x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.scope=String(x.scope||'one');x.titleOverride=String(x.titleOverride||'');});
  out.ppct_overrides.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.pattern=parseStreamPattern(x.pattern);});
- out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'once';x.revision=Number(x.revision)||0;});
- out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'weekly';x.revision=Number(x.revision)||0;});
+ out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'once';x.teachingStatus=x.teachingStatus|| (x.completed?'DONE':'PLANNED');x.revision=Number(x.revision)||0;});
+ out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'weekly';x.teachingStatus=x.teachingStatus||'PLANNED';x.revision=Number(x.revision)||0;});
  return out;
 }
 export function parseStreamPattern(value){if(Array.isArray(value))return value.map(x=>String(x).trim().toUpperCase()).filter(x=>x==='ĐS'||x==='HH');if(!value)return [];try{const x=JSON.parse(value);if(Array.isArray(x))return parseStreamPattern(x)}catch{}return String(value).split(/[,;\s]+/).map(x=>x.toUpperCase()).filter(x=>x==='ĐS'||x==='HH');}
@@ -82,12 +82,12 @@ export function tutoringForWeek(state,week){
    if(!overrides.some(x=>x.patternId===pattern.id&&x.date===probe&&x.action==='CANCEL'))lessonNumber++;
   }
   const resolved={...pattern,...(override&&override.action==='EDIT'?override:{}),id:override?.action==='EDIT'?override.id:`${pattern.id}@${date}`,patternId:pattern.id,day:Number(pattern.day),date,recurring:true,kind:'EXTRA',groups:parseGroups(override?.action==='EDIT'?override.groups:pattern.groups),lessonNumber:override?.lessonNumber>0?Number(override.lessonNumber):lessonNumber,revision:Number(pattern.revision||0),occurrenceRevision:Number(override?.revision||0),completed:override?.action==='EDIT'?Boolean(override.completed):false};
-  resolved.status=resolved.completed?'DONE':'PLANNED';resolved.ppct=null;resolved.classId='';
+  resolved.teachingStatus=override?.action==='EDIT'?(override.teachingStatus|| (override.completed?'DONE':'PLANNED')):'PLANNED';resolved.status=resolved.teachingStatus;resolved.ppct=null;resolved.classId='';
   all.push(resolved);
  }
  for(const item of overrides){
   if(item.patternId||item.action==='CANCEL'||item.date<start||item.date>end)continue;
-  all.push({...item,kind:'EXTRA',recurring:false,groups:parseGroups(item.groups),classIds:parseGroups(item.classIds),customGroups:parseGroups(item.customGroups),revision:Number(item.revision)||0,classId:'',status:item.completed?'DONE':'PLANNED',lessonNumber:Number(item.lessonNumber)||1,ppct:null});
+  all.push({...item,kind:'EXTRA',recurring:false,groups:parseGroups(item.groups),classIds:parseGroups(item.classIds),customGroups:parseGroups(item.customGroups),revision:Number(item.revision)||0,classId:'',status:item.teachingStatus||(item.completed?'DONE':'PLANNED'),lessonNumber:Number(item.lessonNumber)||1,ppct:null});
  }
  return all.sort((a,b)=>a.date.localeCompare(b.date)||'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
 }
@@ -120,13 +120,13 @@ export function scheduleForDate(state,date){
    if(ch.date===date)base.push({id:ch.id,versionId:ver?.id||'',date,day,shift:ch.shift,period:Number(ch.period),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',kind:'MAIN',status:'PLANNED',notes:ch.notes||'',changeId:ch.id,oneTimeMain:true,scope:'one'});
    continue;
   }
-  if(!['MAIN_EDIT_ONCE','MAIN_DELETE_ONCE'].includes(ch.action))continue;
+  if(!['MAIN_EDIT_ONCE','MAIN_DELETE_ONCE','MAIN_REPLACE_ONCE','MAIN_VOID_ONCE'].includes(ch.action))continue;
   // A source can be moved to another day of THIS week: suppress at its original date.
   if(ch.date===date){const idx=base.findIndex(x=>x.id===ch.sourceSlotId);if(idx>=0)base.splice(idx,1);}
-  if(ch.action==='MAIN_EDIT_ONCE'&&String(ch.moveDate||'')===date){
+  if(['MAIN_EDIT_ONCE','MAIN_REPLACE_ONCE'].includes(ch.action)&&String(ch.moveDate||'')===date){
    const sourceVersion=activeVersion(state,ch.date);
    const source=(state.slots||[]).find(x=>x.versionId===sourceVersion?.id&&x.id===ch.sourceSlotId);
-   if(source)base.push({...source,id:source.id,date,day,shift:ch.moveShift,period:Number(ch.movePeriod),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',changeId:ch.id,status:'PLANNED',oneTimeMain:true,scope:'one'});
+   if(source)base.push({...source,id:ch.action==='MAIN_REPLACE_ONCE'?ch.id:source.id,date,day,shift:ch.moveShift,period:Number(ch.movePeriod),classId:ch.classId,subject:ch.subject,stream:ch.stream||'',changeId:ch.id,status:'PLANNED',oneTimeMain:true,scope:'one',originalSlotId:ch.action==='MAIN_REPLACE_ONCE'?'':source.id});
   }
  }
  // A MOVE selects an exact original slot id, not an arbitrary occupant of a conflicting cell.
@@ -189,7 +189,7 @@ export function applyStreamAssignments(state,weekEvents){
   const expected=mathStreamPattern(dsCount,hhCount,events.length);
   const rulePattern=parseStreamPattern(rule?.pattern);
   const validRule=rulePattern.length===events.length&&rulePattern.filter(x=>x==='ĐS').length===expected.filter(x=>x==='ĐS').length&&rulePattern.filter(x=>x==='HH').length===expected.filter(x=>x==='HH').length;
-  const pattern=validRule?rulePattern:expected;
+  const pattern=rulePattern.length===events.length?rulePattern:expected; // teacher-selected 2Đ–2H or 3Đ–1H overrides automatic PPCT distribution
   // Preserve explicit stream overrides on individual lessons; assign only blank entries.
   const remaining={'ĐS':pattern.filter(x=>x==='ĐS').length,'HH':pattern.filter(x=>x==='HH').length};
   for(const e of events)if(e.stream==='ĐS'||e.stream==='HH')remaining[e.stream]=Math.max(0,remaining[e.stream]-1);
@@ -295,16 +295,19 @@ export function progressAt(state,classId,subject,stream,throughDate){
  const baseline=(state.baselines||[]).find(b=>b.classId===classId&&b.subject===subject&&b.stream===stream);
  const identity={classId,subject,stream,planned:plan.planned,planningPrecision:plan.precision,
   weeklyQuota:plan.weeklyQuota??null,weeklySlots:plan.weeklySlots??null};
- if(!baseline||!baseline.confirmed||throughDate<baseline.fromDate){
-  return {...identity,status:'unconfirmed',actual:null,delta:null,next:null,reason:'Chưa xác nhận số tiết đã dạy trước ngày bắt đầu theo dõi.'};
- }
- const actual=actualForProgress(state,classId,subject,stream,throughDate,baseline,seq);
- const complete=actual.pending===0&&actual.unlinked===0&&plan.precision!=='unallocated'&&plan.precision!=='estimated-date';
- return {...identity,status:complete?'ready':'partial',actual:actual.actual,delta:complete?actual.actual-plan.planned:null,
-  knownDelta:actual.actual-plan.planned,pending:actual.pending,off:actual.off,unlinked:actual.unlinked,
-  next:seq.find(p=>!actual.completedIds.has(p.id))||null,baselineDate:baseline.fromDate,
+ // Never erase already confirmed PPCT. Missing/unconfirmed baselines default to zero,
+ // but the resulting pace is PROVISIONAL (planned is not the same as taught).
+ const verifiedBaseline=baseline?.confirmed===true&&throughDate>=baseline.fromDate;
+ const tracking=verifiedBaseline?baseline:{fromDate:'2026-09-07',nextIndex:0};
+ const actual=actualForProgress(state,classId,subject,stream,throughDate,tracking,seq);
+ const complete=verifiedBaseline&&actual.pending===0&&actual.unlinked===0&&plan.precision!=='unallocated'&&plan.precision!=='estimated-date';
+ const delta=actual.actual-plan.planned;
+ return {...identity,status:complete?'ready':verifiedBaseline?'partial':'unconfirmed',actual:actual.actual,delta,
+  knownDelta:delta,pending:actual.pending,off:actual.off,unlinked:actual.unlinked,
+  next:seq.find(p=>!actual.completedIds.has(p.id))||null,baselineDate:tracking.fromDate,
+  provisional:!complete,baselineMissing:!verifiedBaseline,
   reason:complete?'Đã có đủ xác nhận đến ngày thống kê.':
-   `Cần xác nhận ${actual.pending} tiết chưa đánh dấu đã dạy/nghỉ${actual.unlinked?`; ${actual.unlinked} tiết đã dạy chưa có mã PPCT`:''}${plan.precision==='estimated-date'?'; số tiết xếp lịch trong tuần khác định mức PPCT':''}.`};
+   `${!verifiedBaseline?'Mốc chưa xác nhận (tạm tính từ 0). ':''}${actual.pending} tiết lịch chưa đánh dấu đã dạy/nghỉ${actual.unlinked?`; ${actual.unlinked} tiết đã dạy chưa có mã PPCT`:''}${plan.precision==='estimated-date'?'; lịch tuần khác định mức PPCT':''}.`};
 }
 export function progressSummary(state,throughDate){
  // Display every assigned subject and stream even if a baseline row is missing.
@@ -359,10 +362,10 @@ export function previewMainRevision(state,{action,sourceSlotId='',fromDate,day,s
  if(!version)throw Error('Chưa có phiên bản TKB tại tuần được chọn');
  const originals=(state.slots||[]).filter(x=>x.versionId===version.id);
  const op=action||(!sourceSlotId?'ADD':'EDIT');
- if(!['ADD','EDIT','COPY','DELETE'].includes(op))throw Error('Hành động không hợp lệ');
+ if(!['ADD','EDIT','COPY','DELETE','REPLACE'].includes(op))throw Error('Hành động không hợp lệ');
  const adding=op==='ADD'||op==='COPY';
  const origin=sourceSlotId?originals.find(x=>x.id===sourceSlotId):null;
- if(['EDIT','DELETE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết nguồn trong phiên bản TKB đang dùng');
+ if(['EDIT','DELETE','REPLACE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết nguồn trong phiên bản TKB đang dùng');
  if(adding&&originals.length>=84)throw Error('Thời khóa biểu đã đủ số ô, không thể thêm tiết');
  let changed=null,adjusted=[];
  if(op==='DELETE')adjusted=originals.filter(x=>x.id!==sourceSlotId);
@@ -373,12 +376,12 @@ export function previewMainRevision(state,{action,sourceSlotId='',fromDate,day,s
   if(!cls||!cls.subjects.includes(subject))throw Error('Lớp được chọn chưa được phân công môn này');
   const nextStream=subject==='Tin'?'TIN':String(stream||'');
   if(subject==='Toán'&&!['','ĐS','HH'].includes(nextStream))throw Error('Mạch Toán không hợp lệ');
-  changed=adding?{id:'PREVIEW-NEW-OFFICIAL',versionId:version.id,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream,kind:'MAIN',notes:''}:{...origin,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream};
+  changed=adding||op==='REPLACE'?{id:'PREVIEW-NEW-OFFICIAL',versionId:version.id,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream,kind:'MAIN',notes:''}:{...origin,day:nextDay,shift,period:nextPeriod,classId,subject,stream:nextStream};
   if(op==='EDIT'&&['day','shift','period','classId','subject','stream'].every(k=>String(origin[k]||'')===String(changed[k]||'')))throw Error('Chưa thay đổi thông tin tiết. Muốn xóa tiết, hãy chọn nút Xóa tiết.');
   const occupied=originals.filter(x=>adding||x.id!==sourceSlotId).filter(x=>Number(x.day)===nextDay&&x.shift===shift&&Number(x.period)===nextPeriod);
   const moved=adding||nextDay!==Number(origin.day)||shift!==origin.shift||nextPeriod!==Number(origin.period);
   if(moved&&occupied.length)throw Error('Ô đích đang có tiết chính khóa; hãy chọn ô khác');
-  adjusted=adding?[...originals,changed]:originals.map(x=>x.id===sourceSlotId?changed:{...x});
+  adjusted=adding?[...originals,changed]:op==='REPLACE'?[...originals.filter(x=>x.id!==sourceSlotId),changed]:originals.map(x=>x.id===sourceSlotId?changed:{...x});
  }
  const conflictKeys=new Set(),pos=new Map();
  for(const x of adjusted){const key=scheduleKey(x.day,x.shift,x.period);pos.set(key,(pos.get(key)||0)+1)}
@@ -392,19 +395,30 @@ export function previewMainOnce(state,{action,sourceSlotId='',fromDate,day,shift
  if(!version)throw Error('Chưa có thời khóa biểu');
  const targetDate=addDays(fromDate,Number(day)-2);
  const op=action||(!sourceSlotId?'ADD':'EDIT');
- if(!['ADD','EDIT','COPY','DELETE'].includes(op))throw Error('Hành động không hợp lệ');
- const origin=(state.slots||[]).find(x=>x.versionId===version.id&&x.id===sourceSlotId)||(state.changes||[]).find(x=>x.id===sourceSlotId&&x.action==='MAIN_ADD_ONCE'&&monday(x.date)===fromDate&&!isMainOnceSuperseded(x,version,fromDate));
- if(['EDIT','DELETE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết cần sửa/xóa/sao chép');
+ if(!['ADD','EDIT','COPY','DELETE','REPLACE'].includes(op))throw Error('Hành động không hợp lệ');
+ const origin=(state.slots||[]).find(x=>x.versionId===version.id&&x.id===sourceSlotId)||(state.changes||[]).find(x=>x.id===sourceSlotId&&['MAIN_ADD_ONCE','MAIN_REPLACE_ONCE'].includes(x.action)&&monday(x.date)===fromDate&&!isMainOnceSuperseded(x,version,fromDate));
+ if(['EDIT','DELETE','REPLACE'].includes(op)&&!origin)throw Error('Không tìm thấy tiết cần sửa/xóa/thay thế');
  if(op!=='DELETE'){
   if(!Number.isInteger(Number(day))||day<2||day>8||!['S','C','T'].includes(shift)||!Number.isInteger(Number(period))||period<1||period>(shift==='T'?2:5))throw Error('Ô đích không hợp lệ');
   const cls=classById(state,classId);
   if(!cls||!cls.subjects.includes(subject))throw Error('Lớp không được phân công môn học này');
   const weeklyEvents=eventsForWeek(state,fromDate);
   const existing=weeklyEvents.find(x=>x.kind==='MAIN'&&x.id===sourceSlotId);
-  const stayed=op==='EDIT'&&existing&&existing.date===targetDate&&existing.shift===shift&&Number(existing.period)===Number(period);
-  const target=weeklyEvents.filter(x=>x.kind==='MAIN'&&x.date===targetDate&&x.shift===shift&&Number(x.period)===Number(period)&&!(op==='EDIT'&&(x.id===sourceSlotId||x.originalSlotId===sourceSlotId)));
+  const stayed=['EDIT','REPLACE'].includes(op)&&existing&&existing.date===targetDate&&existing.shift===shift&&Number(existing.period)===Number(period);
+  const target=weeklyEvents.filter(x=>x.kind==='MAIN'&&x.date===targetDate&&x.shift===shift&&Number(x.period)===Number(period)&&!(['EDIT','REPLACE'].includes(op)&&(x.id===sourceSlotId||x.originalSlotId===sourceSlotId)));
   if(target.length&&!stayed)throw Error('Ô đích đã có tiết chính khóa. Hãy chọn ô trống hoặc xóa tiết trùng trước.');
   if(op==='EDIT'&&Number(origin.day||day)===Number(day)&&origin.shift===shift&&Number(origin.period)===Number(period)&&origin.classId===classId&&origin.subject===subject&&String(origin.stream||'')===(subject==='Tin'?'TIN':String(stream||'')))throw Error('Chưa thay đổi thông tin tiết. Hãy sửa trường dữ liệu hoặc dùng nút Xóa tiết.');
  }
  return {version,origin,targetDate,operation:op};
+}
+
+/** PPCT membership: both ordinary timetable lessons and extra official makeup lessons count. */
+export function countsForPPCT(event){return event?.kind!=='EXTRA'&&event?.status!=='OFF';}
+export const EXTRA_CLASSES=Object.freeze(Array.from({length:7},(_,i)=>i+6).flatMap(g=>['A','B','C'].map(letter=>`${g}${letter}`)));
+
+/** Date-range expansion of tutoring recurrences for accurate monthly metrics. */
+export function tutoringForRange(state,fromDate,toDate){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fromDate)||!/^\d{4}-\d{2}-\d{2}$/.test(toDate)||toDate<fromDate)throw Error('Khoảng ngày không hợp lệ');
+ const items=[];for(let wk=monday(fromDate);wk<=toDate;wk=addDays(wk,7))items.push(...tutoringForWeek(state,wk).filter(e=>e.date>=fromDate&&e.date<=toDate));
+ return items;
 }

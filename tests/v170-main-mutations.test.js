@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {normalizeSheetData,eventsForWeek,conflicts,activeVersion,previewMainRevision,previewMainOnce} from '../src/core.js';
 const seed=JSON.parse(fs.readFileSync(new URL('../public/seed.json',import.meta.url),'utf8'));
+// Legacy regression fixture intentionally reproduces the historical Thursday
+// conflict. The production seed/real 2026-11-09 timetable is already corrected.
+{ const slot=seed.slots.find(x=>x.id==='S-9-9'); if(slot){slot.day=5;slot.period=3;} }
 function setup(){
  const tabs={classes:structuredClone(seed.classes),versions:structuredClone(seed.versions),slots:structuredClone(seed.slots),changes:[],audit_log:[]};
  let uid=0;

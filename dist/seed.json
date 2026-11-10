@@ -1,0 +1,3939 @@
+{
+  "school": "THCS Nam Nha Trang - Phân hiệu Vĩnh Trường",
+  "year": "2026-2027",
+  "classes": [
+    {
+      "id": "7F38",
+      "name": "7/2",
+      "grade": 7,
+      "subjects": [
+        "Toán",
+        "Tin"
+      ]
+    },
+    {
+      "id": "7F39",
+      "name": "7/3",
+      "grade": 7,
+      "subjects": [
+        "Tin"
+      ]
+    },
+    {
+      "id": "9F43",
+      "name": "9/1",
+      "grade": 9,
+      "subjects": [
+        "Toán",
+        "Tin"
+      ]
+    },
+    {
+      "id": "9F44",
+      "name": "9/2",
+      "grade": 9,
+      "subjects": [
+        "Tin"
+      ]
+    },
+    {
+      "id": "9F46",
+      "name": "9/4",
+      "grade": 9,
+      "subjects": [
+        "Toán"
+      ]
+    },
+    {
+      "id": "9F47",
+      "name": "9/5",
+      "grade": 9,
+      "subjects": [
+        "Tin"
+      ]
+    },
+    {
+      "id": "9F48",
+      "name": "9/6",
+      "grade": 9,
+      "subjects": [
+        "Tin"
+      ]
+    }
+  ],
+  "versions": [
+    {
+      "id": "v4-2026",
+      "name": "TKB lần 4 (09/11 - 13/12/2026)",
+      "fromDate": "2026-11-09",
+      "toDate": "2026-12-13",
+      "notes": "Nguồn: TKB K7, K9 và TKB Tin sáng/chiều"
+    }
+  ],
+  "slots": [
+    {
+      "id": "S-7-1",
+      "versionId": "v4-2026",
+      "day": 2,
+      "shift": "C",
+      "period": 1,
+      "classId": "7F38",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K7-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-7-2",
+      "versionId": "v4-2026",
+      "day": 4,
+      "shift": "C",
+      "period": 1,
+      "classId": "7F38",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K7-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-7-3",
+      "versionId": "v4-2026",
+      "day": 6,
+      "shift": "C",
+      "period": 1,
+      "classId": "7F38",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K7-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-7-4",
+      "versionId": "v4-2026",
+      "day": 6,
+      "shift": "C",
+      "period": 2,
+      "classId": "7F38",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K7-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-5",
+      "versionId": "v4-2026",
+      "day": 3,
+      "shift": "S",
+      "period": 4,
+      "classId": "9F43",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-6",
+      "versionId": "v4-2026",
+      "day": 3,
+      "shift": "S",
+      "period": 5,
+      "classId": "9F46",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-7",
+      "versionId": "v4-2026",
+      "day": 4,
+      "shift": "S",
+      "period": 4,
+      "classId": "9F46",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-8",
+      "versionId": "v4-2026",
+      "day": 4,
+      "shift": "S",
+      "period": 5,
+      "classId": "9F46",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-9",
+      "versionId": "v4-2026",
+      "day": 6,
+      "shift": "S",
+      "period": 3,
+      "classId": "9F43",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx; Xác nhận giáo viên: Thứ Sáu sáng tiết 3"
+    },
+    {
+      "id": "S-9-10",
+      "versionId": "v4-2026",
+      "day": 5,
+      "shift": "S",
+      "period": 4,
+      "classId": "9F43",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-11",
+      "versionId": "v4-2026",
+      "day": 5,
+      "shift": "S",
+      "period": 5,
+      "classId": "9F46",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-9-12",
+      "versionId": "v4-2026",
+      "day": 6,
+      "shift": "S",
+      "period": 2,
+      "classId": "9F43",
+      "subject": "Toán",
+      "stream": "",
+      "kind": "MAIN",
+      "notes": "Nhập từ 26-27.CT-K9-TKB (Lần 4).xlsx"
+    },
+    {
+      "id": "S-TIN-13",
+      "versionId": "v4-2026",
+      "day": 5,
+      "shift": "S",
+      "period": 2,
+      "classId": "7F38",
+      "subject": "Tin",
+      "stream": "TIN",
+      "kind": "MAIN",
+      "notes": "Nhập từ mau-danh-sach-hoc-sinh.xlsx, ký hiệu GV Đ"
+    },
+    {
+      "id": "S-TIN-14",
+      "versionId": "v4-2026",
+      "day": 5,
+      "shift": "S",
+      "period": 3,
+      "classId": "7F39",
+      "subject": "Tin",
+      "stream": "TIN",
+      "kind": "MAIN",
+      "notes": "Nhập từ mau-danh-sach-hoc-sinh.xlsx, ký hiệu GV Đ"
+    },
+    {
+      "id": "S-TIN-15",
+      "versionId": "v4-2026",
+      "day": 4,
+      "shift": "C",
+      "period": 2,
+      "classId": "9F43",
+      "subject": "Tin",
+      "stream": "TIN",
+      "kind": "MAIN",
+      "notes": "Nhập từ mau-danh-sach-hoc-sinh.xlsx, ký hiệu GV Đ"
+    },
+    {
+      "id": "S-TIN-16",
+      "versionId": "v4-2026",
+      "day": 4,
+      "shift": "C",
+      "period": 3,
+      "classId": "9F44",
+      "subject": "Tin",
+      "stream": "TIN",
+      "kind": "MAIN",
+      "notes": "Nhập từ mau-danh-sach-hoc-sinh.xlsx, ký hiệu GV Đ"
+    },
+    {
+      "id": "S-TIN-17",
+      "versionId": "v4-2026",
+      "day": 6,
+      "shift": "C",
+      "period": 3,
+      "classId": "9F47",
+      "subject": "Tin",
+      "stream": "TIN",
+      "kind": "MAIN",
+      "notes": "Nhập từ mau-danh-sach-hoc-sinh.xlsx, ký hiệu GV Đ"
+    },
+    {
+      "id": "S-TIN-18",
+      "versionId": "v4-2026",
+      "day": 6,
+      "shift": "C",
+      "period": 4,
+      "classId": "9F48",
+      "subject": "Tin",
+      "stream": "TIN",
+      "kind": "MAIN",
+      "notes": "Nhập từ mau-danh-sach-hoc-sinh.xlsx, ký hiệu GV Đ"
+    }
+  ],
+  "ppct": [
+    {
+      "id": "M7-ĐS-1",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 1,
+      "period": 1,
+      "title": "Bài 1: Tập hợp Q các số hữu tỉ (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-1",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 1,
+      "period": 1,
+      "title": "Bài 8: Góc ở vị trí đặc biệt. Tia phân giác của một góc. (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-2",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 1,
+      "period": 2,
+      "title": "Bài 1: Tập hợp Q các số hữu tỉ (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-2",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 1,
+      "period": 2,
+      "title": "Bài 8: Góc ở vị trí đặc biệt. Tia phân giác của một góc. (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-3",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 2,
+      "period": 3,
+      "title": "Bài 2: Cộng, trừ, nhân, chia số hữu tỉ (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-3",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 2,
+      "period": 3,
+      "title": "Bài 9: Hai đường thẳng song song và dấu hiệu nhận biết (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-4",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 2,
+      "period": 4,
+      "title": "Bài 2: Cộng, trừ, nhân, chia số hữu tỉ (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-4",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 2,
+      "period": 4,
+      "title": "Bài 9: Hai đường thẳng song song và dấu hiệu nhận biết (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-5",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 3,
+      "period": 5,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-5",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 3,
+      "period": 5,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-6",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 3,
+      "period": 6,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-6",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 3,
+      "period": 6,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-7",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 4,
+      "period": 7,
+      "title": "Bài 3: Lũy thừa với số mũ tự nhiên của một số hữu tỉ (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-7",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 4,
+      "period": 7,
+      "title": "Bài 10: Tiên đề Euclid. Tính chất hai đường thẳng song song (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-8",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 4,
+      "period": 8,
+      "title": "Bài 3: Lũy thừa với số mũ tự nhiên của một số hữu tỉ (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-8",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 4,
+      "period": 8,
+      "title": "Bài 10: Tiên đề Euclid. Tính chất hai đường thẳng song song (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-9",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 5,
+      "period": 9,
+      "title": "Bài 3: Lũy thừa với số mũ tự nhiên của một số hữu tỉ (tiết 3)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-9",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 5,
+      "period": 9,
+      "title": "Bài 11: Định lí và chứng minh định lí",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-10",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 5,
+      "period": 10,
+      "title": "Bài 4: Thứ tự thực hiện các phép tính. Quy tắc chuyển vế.(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-10",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 5,
+      "period": 10,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-11",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 6,
+      "period": 11,
+      "title": "Bài 4: Thứ tự thực hiện các phép tính. Quy tắc chuyển vế.(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-11",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 6,
+      "period": 11,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-12",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 6,
+      "period": 12,
+      "title": "Luyện tập chung",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-12",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 6,
+      "period": 12,
+      "title": "Bài tập cuối chương III (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-13",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 7,
+      "period": 13,
+      "title": "Bài tập cuối chương I (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-13",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 7,
+      "period": 13,
+      "title": "Bài tập cuối chương III (tiết 2)- KTTX",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-14",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 7,
+      "period": 14,
+      "title": "Bài tập cuối chương I (tiết 2) - KTTX",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-14",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 7,
+      "period": 14,
+      "title": "Bài 12. Tổng các góc trong một tam giác",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-15",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 8,
+      "period": 15,
+      "title": "Ôn tập giữa học kì I",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-15",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 8,
+      "period": 15,
+      "title": "Ôn tập giữa học kì I",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-16",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 8,
+      "period": 16,
+      "title": "Bài 5: Làm quen với số thập phân vô hạn tuần hoàn (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-17",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 8,
+      "period": 17,
+      "title": "Bài 5: Làm quen với số thập phân vô hạn tuần hoàn (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-16",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 9,
+      "period": 16,
+      "title": "Kiểm tra định kì (KTGK1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-17",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 9,
+      "period": 17,
+      "title": "Kiểm tra định kì (KTGK1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-18",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 9,
+      "period": 18,
+      "title": "Bài 6: Số vô tỉ. Căn bậc hai số học (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-19",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 9,
+      "period": 19,
+      "title": "Bài 6: Số vô tỉ. Căn bậc hai số học (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-18",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 10,
+      "period": 18,
+      "title": "Bài 13: Hai tam giác bằng nhau. Trường hợp bằng nhau thứ nhất của tam giác.(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-19",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 10,
+      "period": 19,
+      "title": "Bài 13: Hai tam giác bằng nhau. Trường hợp bằng nhau thứ nhất của tam giác.(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-20",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 10,
+      "period": 20,
+      "title": "Bài 7: Tập hợp các số thực (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-21",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 10,
+      "period": 21,
+      "title": "Bài 7: Tập hợp các số thực (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-20",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 11,
+      "period": 20,
+      "title": "Luyện tập chung",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-21",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 11,
+      "period": 21,
+      "title": "Bài 14: Trường hợp bằng nhau thứ hai và thứ ba của tam giác.(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-22",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 11,
+      "period": 22,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-23",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 11,
+      "period": 23,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-22",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 12,
+      "period": 22,
+      "title": "Bài 14: Trường hợp bằng nhau thứ hai và thứ ba của tam giác.(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-23",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 12,
+      "period": 23,
+      "title": "Luyện tập chung",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-24",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 12,
+      "period": 24,
+      "title": "Bài tập cuối chương II",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-25",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 12,
+      "period": 25,
+      "title": "Bài 17: Thu thập và phân loại dữ liệu (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-24",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 13,
+      "period": 24,
+      "title": "Bài 15: Các trường hợp bằng nhau của tam giác vuông (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-25",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 13,
+      "period": 25,
+      "title": "Bài 15: Các trường hợp bằng nhau của tam giác vuông (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-26",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 13,
+      "period": 26,
+      "title": "Bài 17: Thu thập và phân loại dữ liệu (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-27",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 13,
+      "period": 27,
+      "title": "Bài 18: Biểu đồ hình quạt tròn (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-26",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 14,
+      "period": 26,
+      "title": "Bài 16: Tam giác cân. Đường trung trực của một đoạn thẳng.(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-27",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 14,
+      "period": 27,
+      "title": "Bài 16: Tam giác cân. Đường trung trực của một đoạn thẳng.(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-28",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 14,
+      "period": 28,
+      "title": "Bài 18: Biểu đồ hình quạt tròn (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-29",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 14,
+      "period": 29,
+      "title": "Bài 18: Biểu đồ hình quạt tròn (tiết 3)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-28",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 15,
+      "period": 28,
+      "title": "Luyện tập chung(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-30",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 15,
+      "period": 30,
+      "title": "Bài 19: Biểu đồ đoạn thẳng (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-31",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 15,
+      "period": 31,
+      "title": "Bài 19: Biểu đồ đoạn thẳng (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-32",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 15,
+      "period": 32,
+      "title": "Luyện tập chung",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-29",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 16,
+      "period": 29,
+      "title": "Luyện tập chung(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-33",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 16,
+      "period": 33,
+      "title": "Bài tập cuối chương V",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-34",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 16,
+      "period": 34,
+      "title": "Ôn tập cuối học kì 1 (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-35",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 16,
+      "period": 35,
+      "title": "Ôn tập cuối học kì 1 (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-30",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 17,
+      "period": 30,
+      "title": "Ôn tập cuối học kì I",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-36",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 17,
+      "period": 36,
+      "title": "Kiểm tra định kì (KTCK1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-37",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 17,
+      "period": 37,
+      "title": "Kiểm tra định kì (KTCK1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-38",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 17,
+      "period": 38,
+      "title": "HĐTHTN : Dân số và cơ cấu dân số VN (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-31",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 18,
+      "period": 31,
+      "title": "Bài tập cuối chương IV",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-32",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 18,
+      "period": 32,
+      "title": "HĐTHTN : Vẽ hình đơn giản với phần mềm Geogebra",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-39",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 18,
+      "period": 39,
+      "title": "HĐTHTN : Dân số và cơ cấu dân số VN (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-40",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 18,
+      "period": 40,
+      "title": "Trả bài KTCK1",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-33",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 19,
+      "period": 33,
+      "title": "Bài 31: Quan hệ giữa góc và cạnh đối diện trong một tam giác.(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-34",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 19,
+      "period": 34,
+      "title": "Bài 31: Quan hệ giữa góc và cạnh đối diện trong một tam giác.(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-41",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 19,
+      "period": 41,
+      "title": "Bài 20: Tỉ lệ thức (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-42",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 19,
+      "period": 42,
+      "title": "Bài 20: Tỉ lệ thức (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-35",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 20,
+      "period": 35,
+      "title": "Bài 32. Quan hệ giữa đường vuông góc và đường xiên",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-36",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 20,
+      "period": 36,
+      "title": "Bài 33. Quan hệ giữa ba cạnh của một tam giác.",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-43",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 20,
+      "period": 43,
+      "title": "Bài 21: Tính chất dãy tỉ số bằng nhau",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-44",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 20,
+      "period": 44,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-37",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 21,
+      "period": 37,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-38",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 21,
+      "period": 38,
+      "title": "Luyện tập chung(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-45",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 21,
+      "period": 45,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-46",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 21,
+      "period": 46,
+      "title": "Bài 22: Đại lượng tỉ lệ thuận (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-39",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 22,
+      "period": 39,
+      "title": "Bài 34. Sự đồng quy của ba đường trung tuyến, ba đường phân giác của tam giác (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-40",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 22,
+      "period": 40,
+      "title": "Bài 34. Sự đồng quy của ba đường trung tuyến, ba đường phân giác của tam giác(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-47",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 22,
+      "period": 47,
+      "title": "Bài 22: Đại lượng tỉ lệ thuận (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-48",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 22,
+      "period": 48,
+      "title": "Bài 23: Đại lượng tỉ lệ nghịch (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-41",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 23,
+      "period": 41,
+      "title": "Bài 35. Sự đồng quy của ba đường trung trực, ba đường cao của tam giác (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-42",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 23,
+      "period": 42,
+      "title": "Bài 35. Sự đồng quy của ba đường trung trực, ba đường cao của tam giác (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-49",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 23,
+      "period": 49,
+      "title": "Bài 23: Đại lượng tỉ lệ nghịch (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-50",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 23,
+      "period": 50,
+      "title": "Luyện tập chung",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-43",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 24,
+      "period": 43,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-44",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 24,
+      "period": 44,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-51",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 24,
+      "period": 51,
+      "title": "Bài tập cuối chương VI - KTTX",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-52",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 24,
+      "period": 52,
+      "title": "Bài 24: Biểu thức đại số",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-45",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 25,
+      "period": 45,
+      "title": "Bài tập cuối chương IX - KTTX",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-46",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 25,
+      "period": 46,
+      "title": "Ôn tập giữa học kì II",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-53",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 25,
+      "period": 53,
+      "title": "Ôn tập giữa học kì II",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-54",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 25,
+      "period": 54,
+      "title": "Bài 25: Đa thức một biến (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-47",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 26,
+      "period": 47,
+      "title": "Kiểm tra định kì (KTGK2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-48",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 26,
+      "period": 48,
+      "title": "Kiểm tra định kì (KTGK2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-55",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 26,
+      "period": 55,
+      "title": "Bài 25: Đa thức một biến(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-56",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 26,
+      "period": 56,
+      "title": "Bài 25: Đa thức một biến(tiết 3)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-49",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 27,
+      "period": 49,
+      "title": "Bài 36. Hình hộp chữ nhật và hình lập phương (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-50",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 27,
+      "period": 50,
+      "title": "Bài 36. Hình hộp chữ nhật và hình lập phương (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-57",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 27,
+      "period": 57,
+      "title": "Bài 26: Phép cộng và phép trừ đa thức một biến (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-58",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 27,
+      "period": 58,
+      "title": "Bài 26: Phép cộng và phép trừ đa thức một biến (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-51",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 28,
+      "period": 51,
+      "title": "Bài 36. Hình hộp chữ nhật và hình lập phương (tiết 3)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-52",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 28,
+      "period": 52,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-59",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 28,
+      "period": 59,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-60",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 28,
+      "period": 60,
+      "title": "Luyện tập chung (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-53",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 29,
+      "period": 53,
+      "title": "Bài 37. Hình lăng trụ đứng tam giác và hình lăng trụ đứng tứ giác(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-54",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 29,
+      "period": 54,
+      "title": "Bài 37. Hình lăng trụ đứng tam giác và hình lăng trụ đứng tứ giác(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-61",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 29,
+      "period": 61,
+      "title": "Bài 27: Phép nhân đa thức một biến (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-62",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 29,
+      "period": 62,
+      "title": "Bài 27: Phép nhân đa thức một biến (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-55",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 30,
+      "period": 55,
+      "title": "Bài 37. Hình lăng trụ đứng tam giác và hình lăng trụ đứng tứ giác(tiết 3)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-63",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 30,
+      "period": 63,
+      "title": "Bài 28: Phép chia đa thức một biến (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-64",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 30,
+      "period": 64,
+      "title": "Bài 28: Phép chia đa thức một biến (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-65",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 30,
+      "period": 65,
+      "title": "Luyện tập chung (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-56",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 31,
+      "period": 56,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-66",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 31,
+      "period": 66,
+      "title": "Luyện tập chung(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-67",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 31,
+      "period": 67,
+      "title": "Bài tập cuối chương VII",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-68",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 31,
+      "period": 68,
+      "title": "Bài 29: Làm quen với biến cố(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-57",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 32,
+      "period": 57,
+      "title": "Bài tập cuối chương X",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-69",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 32,
+      "period": 69,
+      "title": "Bài 29: Làm quen với biến cố (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-70",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 32,
+      "period": 70,
+      "title": "Bài 30: Làm quen với xác suất của biến cố (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-71",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 32,
+      "period": 71,
+      "title": "Bài 30: Làm quen với xác suất của biến cố (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-58",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 33,
+      "period": 58,
+      "title": "Ôn tập cuối học kì II",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-72",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 33,
+      "period": 72,
+      "title": "Luyện tập chung",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-73",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 33,
+      "period": 73,
+      "title": "Bài tập cuối chương VIII",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-74",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 33,
+      "period": 74,
+      "title": "Ôn tập cuối học kì II",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-59",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 34,
+      "period": 59,
+      "title": "HĐTHTN : Hộp quà và chân đế lịch để bàn của em.(tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-75",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 34,
+      "period": 75,
+      "title": "Kiểm tra định kì (KTCK2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-76",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 34,
+      "period": 76,
+      "title": "Kiểm tra định kì (KTCK2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-77",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 34,
+      "period": 77,
+      "title": "HĐTHTN : Vòng quay may mắn",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-HH-60",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 35,
+      "period": 60,
+      "title": "HĐTHTN : Hộp quà và chân đế lịch để bàn của em.(tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-78",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 35,
+      "period": 78,
+      "title": "HĐTHTN : Đại lượng tỉ lệ trong đời sống (tiết 1)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-79",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 35,
+      "period": 79,
+      "title": "HĐTHTN : Đại lượng tỉ lệ trong đời sống (tiết 2)",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M7-ĐS-80",
+      "grade": 7,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 35,
+      "period": 80,
+      "title": "Trả bài cuối kì II",
+      "source": "KHDH Toán 7(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-1",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 1,
+      "period": 1,
+      "title": "Khái niệm phương trình và hệ hai phương trình bậc nhất hai ẩn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-1",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 1,
+      "period": 1,
+      "title": "Tỉ số lượng giác của góc nhọn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-2",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 1,
+      "period": 2,
+      "title": "Khái niệm phương trình và hệ hai phương trình bậc nhất hai ẩn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-2",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 1,
+      "period": 2,
+      "title": "Tỉ số lượng giác của góc nhọn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-3",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 2,
+      "period": 3,
+      "title": "Giải hệ hai phương trình bậc nhất hai ẩn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-3",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 2,
+      "period": 3,
+      "title": "Tỉ số lượng giác của góc nhọn (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-4",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 2,
+      "period": 4,
+      "title": "Giải hệ hai phương trình bậc nhất hai ẩn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-5",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 2,
+      "period": 5,
+      "title": "Giải hệ hai phương trình bậc nhất hai ẩn (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-4",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 3,
+      "period": 4,
+      "title": "Một số hệ thức giữa cạnh, góc trong tam giác vuông và ứng dụng (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-6",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 3,
+      "period": 6,
+      "title": "Giải hệ hai phương trình bậc nhất hai ẩn (t4)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-7",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 3,
+      "period": 7,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-8",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 3,
+      "period": 8,
+      "title": "Giải bài toán bằng cách lập hệ phương trình (T1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-5",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 4,
+      "period": 5,
+      "title": "Một số hệ thức giữa cạnh, góc trong tam giác vuông và ứng dụng (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-9",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 4,
+      "period": 9,
+      "title": "Giải bài toán bằng cách lập hệ phương trình (T2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-10",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 4,
+      "period": 10,
+      "title": "Bài tập cuối chương I (T1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-11",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 4,
+      "period": 11,
+      "title": "Bài tập cuối chương I (T2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-6",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 5,
+      "period": 6,
+      "title": "Một số hệ thức giữa cạnh, góc trong tam giác vuông và ứng dụng (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-12",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 5,
+      "period": 12,
+      "title": "Phương trình quy về phương trình bậc nhất một ẩn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-13",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 5,
+      "period": 13,
+      "title": "Phương trình quy về phương trình bậc nhất một ẩn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-14",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 5,
+      "period": 14,
+      "title": "Phương trình quy về phương trình bậc nhất một ẩn (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-7",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 6,
+      "period": 7,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-15",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 6,
+      "period": 15,
+      "title": "Bất đẳng thức và tính chất (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-16",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 6,
+      "period": 16,
+      "title": "Bất đẳng thức và tính chất (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-17",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 6,
+      "period": 17,
+      "title": "Bất đẳng thức và tính chất (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-8",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 7,
+      "period": 8,
+      "title": "Bài tập cuối chương IV",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-18",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 7,
+      "period": 18,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-19",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 7,
+      "period": 19,
+      "title": "Ôn tập giữa kì 1",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-20",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 7,
+      "period": 20,
+      "title": "Ôn tập giữa kì 1",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-9",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 8,
+      "period": 9,
+      "title": "Ôn tập giữa học kì I",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-10",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 8,
+      "period": 10,
+      "title": "Kiểm tra định kỳ (KTGK1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-21",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 8,
+      "period": 21,
+      "title": "Kiểm tra định kì (KTGK1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-22",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 8,
+      "period": 22,
+      "title": "Bất phương trình bậc nhất một ẩn",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-11",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 9,
+      "period": 11,
+      "title": "Hoạt động thực hành trải nghiệm (Tính chiều cao và xác định khoảng cách)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-12",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 9,
+      "period": 12,
+      "title": "Mở đầu về đường tròn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-23",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 9,
+      "period": 23,
+      "title": "Bất phương trình bậc nhất một ẩn",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-24",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 9,
+      "period": 24,
+      "title": "Bất phương trình bậc nhất một ẩn",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-13",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 10,
+      "period": 13,
+      "title": "Mở đầu về đường tròn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-14",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 10,
+      "period": 14,
+      "title": "Cung và dây của một đường tròn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-25",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 10,
+      "period": 25,
+      "title": "Bài tập cuối chương II (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-26",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 10,
+      "period": 26,
+      "title": "Bài tập cuối chương II (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-15",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 11,
+      "period": 15,
+      "title": "Cung và dây của một đường tròn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-16",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 11,
+      "period": 16,
+      "title": "Độ dài của cung tròn. Diện tích hình quạt tròn và hình vành khuyên (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-27",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 11,
+      "period": 27,
+      "title": "Căn bậc hai và căn thức bậc hai (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-28",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 11,
+      "period": 28,
+      "title": "Căn bậc hai và căn thức bậc hai (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-17",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 12,
+      "period": 17,
+      "title": "Độ dài của cung tròn. Diện tích hình quạt tròn và hình vành khuyên (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-18",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 12,
+      "period": 18,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-29",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 12,
+      "period": 29,
+      "title": "Khai căn bậc hai với phép nhân và phép chia (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-30",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 12,
+      "period": 30,
+      "title": "Khai căn bậc hai với phép nhân và phép chia (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-19",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 13,
+      "period": 19,
+      "title": "Vị trí tương đối của đường thẳng và đường tròn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-20",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 13,
+      "period": 20,
+      "title": "Vị trí tương đối của đường thẳng và đường tròn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-31",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 13,
+      "period": 31,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-32",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 13,
+      "period": 32,
+      "title": "Biến đổi đơn giản và rút gọn biểu thức hứa căn thức bậc hai (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-21",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 14,
+      "period": 21,
+      "title": "Vị trí tương đối của đường thẳng và đường tròn (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-33",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 14,
+      "period": 33,
+      "title": "Biến đổi đơn giản và rút gọn biểu thức chứa căn thức bậc hai (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-34",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 14,
+      "period": 34,
+      "title": "Biến đổi đơn giản và rút gọn biểu thức chứa căn thức bậc hai (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-35",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 14,
+      "period": 35,
+      "title": "Căn bậc ba và căn thức bậc ba (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-22",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 15,
+      "period": 22,
+      "title": "Vị trí tương đối của đường thẳng và đường tròn (t4)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-36",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 15,
+      "period": 36,
+      "title": "Căn bậc ba và căn thức bậc ba (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-37",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 15,
+      "period": 37,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-38",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 15,
+      "period": 38,
+      "title": "Ôn tập cuối học kì I (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-23",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 16,
+      "period": 23,
+      "title": "Vị trí tương đối của hai đường tròn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-24",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 16,
+      "period": 24,
+      "title": "Vị trí tương đối của hai đường tròn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-25",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 16,
+      "period": 25,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-39",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 16,
+      "period": 39,
+      "title": "Ôn tập cuối học kì I (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-26",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 17,
+      "period": 26,
+      "title": "Ôn tập học kì I",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-27",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 17,
+      "period": 27,
+      "title": "Kiểm tra định kỳ (KTCK1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-40",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 17,
+      "period": 40,
+      "title": "Ôn tập cuối học kì I (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-41",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 17,
+      "period": 41,
+      "title": "Kiểm tra định kỳ (KTCK1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-28",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 18,
+      "period": 28,
+      "title": "Bài tập cuối chương V",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-29",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 18,
+      "period": 29,
+      "title": "Trả bài kiểm tra cuối kì 1",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-42",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 18,
+      "period": 42,
+      "title": "Bài tập cuối chương III",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-43",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 18,
+      "period": 43,
+      "title": "Trả bài kiểm tra học kì I",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-30",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 19,
+      "period": 30,
+      "title": "Góc nội tiếp (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-31",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 19,
+      "period": 31,
+      "title": "Góc nội tiếp (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-44",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 19,
+      "period": 44,
+      "title": "Hàm số y = ax2 (a ≠ 0) (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-45",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 19,
+      "period": 45,
+      "title": "Hàm số y = ax2 (a ≠ 0) (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-32",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 20,
+      "period": 32,
+      "title": "Đường tròn ngoại tiếp và đường tròn nội tiếp của một tam giác (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-33",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 20,
+      "period": 33,
+      "title": "Đường tròn ngoại tiếp và đường tròn nội tiếp của một tam giác (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-46",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 20,
+      "period": 46,
+      "title": "Phương trình bậc hai một ẩn (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-47",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 20,
+      "period": 47,
+      "title": "Phương trình bậc hai một ẩn (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-34",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 21,
+      "period": 34,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-35",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 21,
+      "period": 35,
+      "title": "Tứ giác nội tiếp (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-48",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 21,
+      "period": 48,
+      "title": "Phương trình bậc hai một ẩn (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-49",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 21,
+      "period": 49,
+      "title": "Phương trình bậc hai một ẩn (t4)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-36",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 22,
+      "period": 36,
+      "title": "Tứ giác nội tiếp (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-37",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 22,
+      "period": 37,
+      "title": "Tứ giác nội tiếp (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-50",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 22,
+      "period": 50,
+      "title": "Luyện tập (KTTX)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-51",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 22,
+      "period": 51,
+      "title": "Định lí Viète và ứng dụng",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-38",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 23,
+      "period": 38,
+      "title": "Đa giác đều",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-39",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 23,
+      "period": 39,
+      "title": "Đa giác đều (KTTX)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-52",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 23,
+      "period": 52,
+      "title": "Định lí Viète và ứng dụng",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-53",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 23,
+      "period": 53,
+      "title": "Định lí Viète và ứng dụng",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-40",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 24,
+      "period": 40,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-41",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 24,
+      "period": 41,
+      "title": "Bài tập cuối chương IX (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-54",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 24,
+      "period": 54,
+      "title": "Giải bài toán bằng cách lập phương trình (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-55",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 24,
+      "period": 55,
+      "title": "Giải bài toán bằng cách lập phương trình (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-42",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 25,
+      "period": 42,
+      "title": "Bài tập cuối chương IX (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-43",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 25,
+      "period": 43,
+      "title": "Ôn tập giữa học kì II",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-56",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 25,
+      "period": 56,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-57",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 25,
+      "period": 57,
+      "title": "Ôn tập giữa học kì II (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-44",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 26,
+      "period": 44,
+      "title": "Kiểm tra định kì (CTGK2",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-45",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 26,
+      "period": 45,
+      "title": "Hình trụ và hình nón (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-58",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 26,
+      "period": 58,
+      "title": "Ôn tập giữa học kì II (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-59",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 26,
+      "period": 59,
+      "title": "Kiểm tra định kì (KTGK2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-46",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 27,
+      "period": 46,
+      "title": "Hình trụ và hình nón (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-47",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 27,
+      "period": 47,
+      "title": "Hình trụ và hình nón (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-60",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 27,
+      "period": 60,
+      "title": "Bài tập cuối chương VI",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-61",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 27,
+      "period": 61,
+      "title": "Bảng tần số và biểu đồ tần số (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-48",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 28,
+      "period": 48,
+      "title": "Hình trụ và hình nón (t4)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-49",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 28,
+      "period": 49,
+      "title": "Hình cầu (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-62",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 28,
+      "period": 62,
+      "title": "Bảng tần số và biểu đồ tần số (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-63",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 28,
+      "period": 63,
+      "title": "Bảng tần số tương đối và biểu đồ tần số tương đối (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-50",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 29,
+      "period": 50,
+      "title": "Hình cầu (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-51",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 29,
+      "period": 51,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-64",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 29,
+      "period": 64,
+      "title": "Bảng tần số tương đối và biểu đồ tần số tương đối (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-65",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 29,
+      "period": 65,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-52",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 30,
+      "period": 52,
+      "title": "Hoạt động thực hành trải nghiệm (Vẽ hình đơn giản với phân mềm GeoGebra) (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-53",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 30,
+      "period": 53,
+      "title": "Hoạt động thực hành trải nghiệm (Vẽ hình đơn giản với phân mềm GeoGebra) (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-66",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 30,
+      "period": 66,
+      "title": "Bảng tần số, tần số tương đối ghép nhóm và biểu đồ (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-67",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 30,
+      "period": 67,
+      "title": "Bảng tần số, tần số tương đối ghép nhóm và biểu đồ (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-54",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 31,
+      "period": 54,
+      "title": "Bài tập cuối chương X",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-68",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 31,
+      "period": 68,
+      "title": "Bảng tần số, tần số tương đối ghép nhóm và biểu đồ (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-69",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 31,
+      "period": 69,
+      "title": "Bài tập cuối chương VII (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-70",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 31,
+      "period": 70,
+      "title": "Bài tập cuối chương VII (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-55",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 32,
+      "period": 55,
+      "title": "Ôn tập cuối học kì II (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-71",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 32,
+      "period": 71,
+      "title": "Phép thử ngẫu nhiên và không gian mẫu",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-72",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 32,
+      "period": 72,
+      "title": "Xác suất của biến cố liên quan tới phép thử (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-73",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 32,
+      "period": 73,
+      "title": "Xác suất của biến cố liên quan tới phép thử (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-56",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 33,
+      "period": 56,
+      "title": "Ôn tập cuối học kì II (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-74",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 33,
+      "period": 74,
+      "title": "Luyện tập",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-75",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 33,
+      "period": 75,
+      "title": "Hoạt động thực hành trải nghiệm (Gene trội trong các thế hệ lai)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-76",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 33,
+      "period": 76,
+      "title": "Ôn tập cuối học kì II (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-57",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 34,
+      "period": 57,
+      "title": "Kiểm tra định kì (KTCK2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-77",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 34,
+      "period": 77,
+      "title": "Ôn tập cuối học kì II (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-78",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 34,
+      "period": 78,
+      "title": "Ôn tập cuối học kì II (t3)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-79",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 34,
+      "period": 79,
+      "title": "Kiểm tra định kỳ (KTCK2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-HH-58",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "HH",
+      "week": 35,
+      "period": 58,
+      "title": "Trả bài kiểm tra học kì II",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-80",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 35,
+      "period": 80,
+      "title": "Bài tập cuối chương VIII (t1)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-81",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 35,
+      "period": 81,
+      "title": "Bài tập cuối chương VIII (t2)",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "M9-ĐS-82",
+      "grade": 9,
+      "subject": "Toán",
+      "stream": "ĐS",
+      "week": 35,
+      "period": 82,
+      "title": "Trả bài kiểm tra cuối kì 2",
+      "source": "KHDH Toán 9(26-27)-chia theo tuần.pdf"
+    },
+    {
+      "id": "T7-1",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 1,
+      "period": 1,
+      "title": "Bài 1. Thiết bị vào ra (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-2",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 2,
+      "period": 2,
+      "title": "Bài 1. Thiết bị vào ra (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-3",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 3,
+      "period": 3,
+      "title": "Bài 2. Phần mềm máy tính",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-4",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 4,
+      "period": 4,
+      "title": "Bài 3. Quản lý dữ liệu trong máy tính (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-5",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 5,
+      "period": 5,
+      "title": "Bài 3. Quản lý dữ liệu trong máy tính (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-6",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 6,
+      "period": 6,
+      "title": "Bài 4. Mạng xã hội và một số kênh trao đổi thông tin trên Internet",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-7",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 7,
+      "period": 7,
+      "title": "Ôn tập giữa học kì I",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-8",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 8,
+      "period": 8,
+      "title": "KIỂM TRA GIỮA HỌC KÌ I",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-9",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 9,
+      "period": 9,
+      "title": "Bài 5. Ứng xử trên mạng (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-10",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 10,
+      "period": 10,
+      "title": "Bài 5. Ứng xử trên mạng (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-11",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 11,
+      "period": 11,
+      "title": "Bài 6. Làm quen với phần mềm bảng tính (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-12",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 12,
+      "period": 12,
+      "title": "Bài 6. Làm quen với phần mềm bảng tính (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-13",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 13,
+      "period": 13,
+      "title": "Bài 7. Tính toán tự động trên bảng tính (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-14",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 14,
+      "period": 14,
+      "title": "Bài 7. Tính toán tự động trên bảng tính (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-15",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 15,
+      "period": 15,
+      "title": "Ôn tập học kì I",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-16",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 16,
+      "period": 16,
+      "title": "KIỂM TRA CUỐI HỌC KÌ I",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-17",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 17,
+      "period": 17,
+      "title": "Bài 8. Công cụ hỗ trợ tính toán (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-18",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 18,
+      "period": 18,
+      "title": "Bài 8. Công cụ hỗ trợ tính toán (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-19",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 19,
+      "period": 19,
+      "title": "Bài 9. Trình bày bảng tính (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-20",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 20,
+      "period": 20,
+      "title": "Bài 9. Trình bày bảng tính (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-21",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 21,
+      "period": 21,
+      "title": "Bài 10. Hoàn thiện bảng tính (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-22",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 22,
+      "period": 22,
+      "title": "Bài 10. Hoàn thiện bảng tính (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-23",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 23,
+      "period": 23,
+      "title": "Bài 11. Tạo bài trình chiếu (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-24",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 24,
+      "period": 24,
+      "title": "Ôn tập giữa Học kỳ 2",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-25",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 25,
+      "period": 25,
+      "title": "KIỂM TRA GIỮA HỌC KỲ 2",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-26",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 26,
+      "period": 26,
+      "title": "Bài 11. Tạo bài trình chiếu (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-27",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 27,
+      "period": 27,
+      "title": "Bài 12. Định dạng đối tượng trên trang chiếu (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-28",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 28,
+      "period": 28,
+      "title": "Bài 12. Định dạng đối tượng trên trang chiếu (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-29",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 29,
+      "period": 29,
+      "title": "Bài 13. Thực hành tổng hợp: Hoàn thiện bài trình chiếu",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-30",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 30,
+      "period": 30,
+      "title": "Bài 14. Thuật toán tìm kiếm tuần tự",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-31",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 31,
+      "period": 31,
+      "title": "Ôn tập Học kỳ 2",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-32",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 32,
+      "period": 32,
+      "title": "KIỂM TRA CUỐI HỌC KỲ 2",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-33",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 33,
+      "period": 33,
+      "title": "Bài 15. Thuật toán tìm kiếm nhị phân",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-34",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 34,
+      "period": 34,
+      "title": "Bài 16. Thuật toán sắp xếp (t1)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T7-35",
+      "grade": 7,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 35,
+      "period": 35,
+      "title": "Bài 16. Thuật toán sắp xếp (t2)",
+      "source": "KHDH Tin 7(26-27)-chia theo tuần.docx"
+    },
+    {
+      "id": "T9-1-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 1,
+      "period": 1,
+      "title": "Bài 1. Thế giới kỹ thuật số",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-2-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 2,
+      "period": 2,
+      "title": "Bài 1. Thế giới kỹ thuật số",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-3-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 3,
+      "period": 3,
+      "title": "Bài 2. Thông tin trong giải quyết vấn đề",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-4-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 4,
+      "period": 4,
+      "title": "Bài 2. Thông tin trong giải quyết vấn đề",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-5",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 5,
+      "period": 5,
+      "title": "Bài 3. Thực hành: Đánh giá chất lượng thông tin",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-6-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 6,
+      "period": 6,
+      "title": "Bài 4. Một số vấn đề pháp lý về sử dụng dịch vụ Internet",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": "Kiểm tra thường xuyên"
+    },
+    {
+      "id": "T9-9-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 9,
+      "period": 9,
+      "title": "Bài 4. Một số vấn đề pháp lý về sử dụng dịch vụ Internet",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": "Kiểm tra thường xuyên"
+    },
+    {
+      "id": "T9-7",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 7,
+      "period": 7,
+      "title": "Ôn tập giữa kỳ I",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-8",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 8,
+      "period": 8,
+      "title": "Kiểm tra giữa học kỳ I",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-10",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 10,
+      "period": 10,
+      "title": "Bài 5. Tìm hiểu phần mềm mô phỏng",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-11-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 11,
+      "period": 11,
+      "title": "Bài 6. Thực hành: Khai thác phần mềm mô phỏng",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-12-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 12,
+      "period": 12,
+      "title": "Bài 6. Thực hành: Khai thác phần mềm mô phỏng",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-13-3",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 13,
+      "period": 13,
+      "title": "Bài 6. Thực hành: Khai thác phần mềm mô phỏng",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-14",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 14,
+      "period": 14,
+      "title": "Bài 7. Trình bày thông tin trong trao đổi và hợp tác",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-15",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 15,
+      "period": 15,
+      "title": "Ôn tập cuối kì I",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-16",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 16,
+      "period": 16,
+      "title": "Kiểm tra cuối học kỳ I",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-17-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 17,
+      "period": 17,
+      "title": "Bài 8. Thực hành: Sử dụng công cụ trực quan trình bày thông tin trong trao đổi và hợp tác.",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-18-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 18,
+      "period": 18,
+      "title": "Bài 8. Thực hành: Sử dụng công cụ trực quan trình bày thông tin trong trao đổi và hợp tác.",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-19-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 19,
+      "period": 19,
+      "title": "Bài 9a. Sử dụng công cụ xác thực dữ liệu",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-20-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 20,
+      "period": 20,
+      "title": "Bài 9a. Sử dụng công cụ xác thực dữ liệu",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-21",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 21,
+      "period": 21,
+      "title": "Bài 10a. Sử dụng hàm COUNTIF()",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-22",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 22,
+      "period": 22,
+      "title": "Bài 11a. Sử dụng hàm SUMIF()",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": "Kiểm tra thường xuyên"
+    },
+    {
+      "id": "T9-23",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 23,
+      "period": 23,
+      "title": "Bài 12a. Sử dụng hàm IF()",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-25",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 24,
+      "period": 25,
+      "title": "Ôn tập giữa kỳ II",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-26",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 25,
+      "period": 26,
+      "title": "Kiểm tra giữa học kỳ II",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-24",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 26,
+      "period": 24,
+      "title": "Bài 13a. Hoàn thiện bảng tính quản lí tài chính gia đình",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-27-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 27,
+      "period": 27,
+      "title": "Bài 14. Giải quyết vấn đề",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-28-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 28,
+      "period": 28,
+      "title": "Bài 14. Giải quyết vấn đề",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-29-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 29,
+      "period": 29,
+      "title": "Bài 15. Bài toán tin học",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-30-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 30,
+      "period": 30,
+      "title": "Bài 15. Bài toán tin học",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-31",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 31,
+      "period": 31,
+      "title": "Ôn tập cuối kì II",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-32",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 32,
+      "period": 32,
+      "title": "Kiểm tra cuối kì II",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-33-1",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 33,
+      "period": 33,
+      "title": "Bài 16. Thực hành: Lập chương trình máy tính",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-34-2",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 34,
+      "period": 34,
+      "title": "Bài 16. Thực hành: Lập chương trình máy tính",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    },
+    {
+      "id": "T9-35",
+      "grade": 9,
+      "subject": "Tin",
+      "stream": "TIN",
+      "week": 35,
+      "period": 35,
+      "title": "Bài 17. Tin học và thế giới nghề nghiệp",
+      "source": "KHDH Tin 9(26-27)-cá nhân.docx",
+      "note": ""
+    }
+  ],
+  "baselines": [
+    {
+      "id": "B-7F38-Toán-ĐS",
+      "classId": "7F38",
+      "subject": "Toán",
+      "stream": "ĐS",
+      "fromDate": "2026-11-09",
+      "nextIndex": 19,
+      "confirmed": false
+    },
+    {
+      "id": "B-7F38-Toán-HH",
+      "classId": "7F38",
+      "subject": "Toán",
+      "stream": "HH",
+      "fromDate": "2026-11-09",
+      "nextIndex": 17,
+      "confirmed": false
+    },
+    {
+      "id": "B-7F38-Tin-TIN",
+      "classId": "7F38",
+      "subject": "Tin",
+      "stream": "TIN",
+      "fromDate": "2026-11-09",
+      "nextIndex": 9,
+      "confirmed": false
+    },
+    {
+      "id": "B-7F39-Tin-TIN",
+      "classId": "7F39",
+      "subject": "Tin",
+      "stream": "TIN",
+      "fromDate": "2026-11-09",
+      "nextIndex": 9,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F43-Toán-ĐS",
+      "classId": "9F43",
+      "subject": "Toán",
+      "stream": "ĐS",
+      "fromDate": "2026-11-09",
+      "nextIndex": 24,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F43-Toán-HH",
+      "classId": "9F43",
+      "subject": "Toán",
+      "stream": "HH",
+      "fromDate": "2026-11-09",
+      "nextIndex": 12,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F43-Tin-TIN",
+      "classId": "9F43",
+      "subject": "Tin",
+      "stream": "TIN",
+      "fromDate": "2026-11-09",
+      "nextIndex": 9,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F44-Tin-TIN",
+      "classId": "9F44",
+      "subject": "Tin",
+      "stream": "TIN",
+      "fromDate": "2026-11-09",
+      "nextIndex": 9,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F46-Toán-ĐS",
+      "classId": "9F46",
+      "subject": "Toán",
+      "stream": "ĐS",
+      "fromDate": "2026-11-09",
+      "nextIndex": 24,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F46-Toán-HH",
+      "classId": "9F46",
+      "subject": "Toán",
+      "stream": "HH",
+      "fromDate": "2026-11-09",
+      "nextIndex": 12,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F47-Tin-TIN",
+      "classId": "9F47",
+      "subject": "Tin",
+      "stream": "TIN",
+      "fromDate": "2026-11-09",
+      "nextIndex": 9,
+      "confirmed": false
+    },
+    {
+      "id": "B-9F48-Tin-TIN",
+      "classId": "9F48",
+      "subject": "Tin",
+      "stream": "TIN",
+      "fromDate": "2026-11-09",
+      "nextIndex": 9,
+      "confirmed": false
+    }
+  ],
+  "changes": []
+}

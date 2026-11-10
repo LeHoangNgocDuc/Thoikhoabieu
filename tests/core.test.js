@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {monday,addDays,schoolWeek,activeVersion,eventsForWeek,conflicts,ppctSequence,project,normalizeSheetData} from '../src/core.js';
 const seed=JSON.parse(fs.readFileSync(new URL('../public/seed.json',import.meta.url),'utf8'));
+// Legacy regression fixture intentionally reproduces the historical Thursday
+// conflict. The production seed/real 2026-11-09 timetable is already corrected.
+{ const slot=seed.slots.find(x=>x.id==='S-9-9'); if(slot){slot.day=5;slot.period=3;} }
 test('week starts Monday, full seven days',()=>{assert.equal(monday('2026-11-15'),'2026-11-09');assert.equal(addDays('2026-11-09',6),'2026-11-15');assert.equal(schoolWeek('2026-11-09'),10);assert.equal(schoolWeek('2027-01-18'),19);assert.equal(schoolWeek('2027-02-15'),22);assert.equal(schoolWeek('2027-02-08'),0);});
 test('seed has correct courses and 350 PPCT',()=>{assert.equal(seed.classes.length,7);assert.equal(seed.slots.length,18);assert.equal(seed.ppct.length,350);assert.equal(ppctSequence(seed,7,'Toán','ĐS').length,80);assert.equal(ppctSequence(seed,7,'Toán','HH').length,60);assert.equal(ppctSequence(seed,9,'Toán','ĐS').length,82);assert.equal(ppctSequence(seed,9,'Toán','HH').length,58);});
 test('slot only valid for currently active version',()=>{assert.equal(activeVersion(seed,'2026-11-09').id,'v4-2026');assert.equal(activeVersion(seed,'2027-01-01').id,'v4-2026');});

@@ -2,7 +2,7 @@
  * Script properties: SMART_TKB_API_KEY (must match GAS_API_KEY in Vercel).
  * Deploy > New deployment > Web app > Execute as me > Anyone.
  */
-const SMART_TKB_SERVER_VERSION='1.7.0';
+const SMART_TKB_SERVER_VERSION='1.8.0';
 const EXTRA_OPS=['CREATE','EDIT_ONCE','EDIT_FUTURE','EDIT_ALL','CONVERT_ONCE','CANCEL_ONCE','STOP_FUTURE','DELETE_SERIES','DELETE_ONE'];
 const TABLES={
   classes:['id','name','grade','subjects'],
@@ -11,8 +11,8 @@ const TABLES={
   ppct:['id','grade','subject','stream','week','period','title','note','source'],
   baselines:['id','classId','subject','stream','fromDate','nextIndex','confirmed'],
   changes:['id','date','shift','period','action','classId','subject','stream','kind','notes','ppctId','completed','updatedAt','scope','titleOverride','sourceSlotId','moveDate','moveShift','movePeriod'],
-  extra_sessions:['id','date','shift','period','subject','groups','notes','completed','updatedAt','patternId','action','lessonNumber','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId'],
-  extra_patterns:['id','day','shift','period','subject','groups','notes','fromDate','toDate','startLesson','active','updatedAt','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId'],
+  extra_sessions:['id','date','shift','period','subject','groups','notes','completed','updatedAt','patternId','action','lessonNumber','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId','teachingStatus'],
+  extra_patterns:['id','day','shift','period','subject','groups','notes','fromDate','toDate','startLesson','active','updatedAt','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId','teachingStatus'],
   extra_requests:['id','action','entityId','createdAt','resultJson','payloadHash'],
   ppct_overrides:['id','classId','subject','fromDate','toDate','pattern','notes','updatedAt'],
   audit_log:['id','at','actor','action','entityType','entityId','oldValue','newValue','reason']
@@ -31,11 +31,11 @@ function doPost(e){
    initSheets_();
    if(body.op==='load')return json_({ok:true,data:readAll_(),apiVersion:SMART_TKB_SERVER_VERSION});
    if(body.op==='probeExtra')return json_({ok:true,apiVersion:SMART_TKB_SERVER_VERSION,extraWrites:true,
-    supportedActions:EXTRA_OPS,verifiedMainWrites:true,supportedMainActions:['ADD','EDIT','COPY','DELETE'],mainScopes:['one','future'], tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},
+    supportedActions:EXTRA_OPS,verifiedMainWrites:true,supportedMainActions:['ADD','EDIT','COPY','DELETE','REPLACE'],mainScopes:['one','future'], tables:{extraPatterns:read_('extra_patterns').length,extraSessions:read_('extra_sessions').length,extraRequests:read_('extra_requests').length},
     sourceSheetName:SpreadsheetApp.getActiveSpreadsheet().getName(),
     sourceSheetIdTail:SpreadsheetApp.getActiveSpreadsheet().getId().slice(-6),
     capability:'mutateExtra:verified-readback:v1',
-    message:'Apps Script V1.7.0 có xác minh dữ liệu và lịch lặp',verifiedWrites:true});
+    message:'Apps Script V1.8.0 có xác minh dữ liệu và lịch lặp',verifiedWrites:true});
    if(body.op==='mutateExtra')return json_(mutateExtra_(body));
    if(body.op==='extraStatus')return json_(extraStatus_(body.requestId));
    if(body.op==='listExtra')return json_(extraList_(body.week));
@@ -48,7 +48,7 @@ function doPost(e){
    if(body.op==='endExtraPattern')return json_(endExtraPattern_(body.id,body.fromDate));
    if(body.op==='saveOfficialChange')return json_(saveOfficialChange_(body));
    if(body.op==='reviseMainSchedule')return json_(reviseMainSchedule_(body));
-   if(body.op==='mutateMainSchedule')return json_(mutateMainSchedule_(body));
+   if(body.op==='mutateMainSchedule'||body.op==='replaceSlot')return json_(mutateMainSchedule_(body.op==='replaceSlot'?Object.assign({},body,{action:'REPLACE'}):body));
    if(body.op==='undoOfficialChange')return json_(undoOfficialChange_(body));
    throw Error('UNSUPPORTED_ACTION: '+String(body.op||'không rõ'));
   }finally{lock.releaseLock();}
@@ -124,12 +124,45 @@ function delete_(table,id){
  assert_(idx>=0,'Không tìm thấy suất dạy thêm');s.deleteRow(idx+2);
  return {ok:true,message:'Đã xóa suất dạy thêm'};
 }
+/** Protected, verifiable import: writes only a new timetable version + its slots.
+ * No PPCT, baselines, confirmed lessons, extra sessions or historic versions are erased.
+ * Distinct classes at the same physical time are retained and flagged for resolution.
+ */
 function replaceVersion_(version,slots){
- validateBatch_('versions',[version]);assert_(Array.isArray(slots)&&slots.length>0,'Chưa có tiết học');validateBatch_('slots',slots);
- const existing=read_('versions');assert_(!existing.some(v=>v.id===version.id),'Mã phiên bản đã tồn tại');
- const uniq=new Set();for(const s of slots){assert_(s.versionId===version.id,'Tiết không thuộc phiên bản mới');const key=[s.day,s.shift,s.period].join('|');assert_(!uniq.has(key),'Trùng tiết trong bản TKB mới: '+key);uniq.add(key);}
- appendBatch_('versions',[version]);appendBatch_('slots',slots);
- return {ok:true,message:'Đã nhập phiên bản TKB mới',count:slots.length};
+ validateBatch_('versions',[version]);
+ assert_(Array.isArray(slots)&&slots.length>0&&slots.length<=84,'TKB mới phải chứa 1-84 tiết');
+ validateBatch_('slots',slots);
+ assert_(!read_('versions').some(v=>v.id===version.id),'Mã phiên bản đã tồn tại. Hãy đồng bộ lại trước khi nhập.');
+ const keys=new Set(),physical=new Map(),warnings=[];
+ for(const row of slots){
+  assert_(row.versionId===version.id,'Tiết không thuộc phiên bản mới');
+  const unique=[row.day,row.shift,row.period,row.classId,row.subject].join('|');
+  assert_(!keys.has(unique),'Excel chứa tiết giống hệt nhau hai lần: '+unique);keys.add(unique);
+  const position=[row.day,row.shift,row.period].join('|');
+  if(physical.has(position))warnings.push('Trùng thời điểm '+position+': '+physical.get(position)+' và '+row.classId+' '+row.subject);
+  else physical.set(position,row.classId+' '+row.subject);
+ }
+ const ss=SpreadsheetApp.getActiveSpreadsheet(),sl=ss.getSheetByName('slots'),vr=ss.getSheetByName('versions');
+ const beforeSlots=sl.getLastRow(),beforeVersions=vr.getLastRow();let savedSlots=false,savedVersion=false;
+ try{
+  // The version is committed last, so readers cannot see a partially written version.
+  appendBatch_('slots',slots);savedSlots=true;
+  appendBatch_('versions',[version]);savedVersion=true;
+  SpreadsheetApp.flush();
+  const listed=read_('versions').find(v=>v.id===version.id);
+  const stored=read_('slots').filter(v=>v.versionId===version.id);
+  const expected=new Map(slots.map(v=>[v.id,v]));
+  assert_(listed&&stored.length===slots.length&&stored.every(r=>{
+   const x=expected.get(r.id);return x&&x.classId===r.classId&&x.subject===r.subject&&Number(x.day)===Number(r.day)&&x.shift===r.shift&&Number(x.period)===Number(r.period);
+  }),'Không xác minh được số tiết sau khi nhập Google Sheets');
+  audit_({action:'IMPORT_TKB_VERIFIED',entityType:'versions',entityId:version.id,
+   oldValue:'Không xóa TKB/PPCT cũ',newValue:JSON.stringify({version,lessons:slots.length,warnings}),reason:'Nhập TKB từ Excel và đối chiếu sau ghi'});
+  return {ok:true,verified:true,versionId:version.id,count:stored.length,warnings,message:'Đã ghi và đọc lại TKB mới, bảo lưu toàn bộ dữ liệu PPCT'};
+ }catch(err){
+  if(savedVersion&&vr.getLastRow()===beforeVersions+1)vr.deleteRow(beforeVersions+1);
+  if(savedSlots&&sl.getLastRow()===beforeSlots+slots.length)sl.deleteRows(beforeSlots+1,slots.length);
+  throw err;
+ }
 }
 
 // Edit a recurring schedule from the chosen week onward without rewriting past weeks.
@@ -273,7 +306,7 @@ function extraRow_(row){
  assert_(Number.isInteger(lessonNumber)&&lessonNumber>=1&&lessonNumber<=9999,'Số buổi không hợp lệ');
  return {date:row.date,shift:row.shift,period:Number(row.period),subject:row.subject,groups,classIds,customGroups,
   notes:String(row.notes||'').slice(0,2000),lessonTitle:String(row.lessonTitle||'').slice(0,350),
-  startTime,endTime,lessonNumber,completed:row.completed===true,updatedAt:new Date().toISOString()};
+  startTime,endTime,lessonNumber,teachingStatus:['PLANNED','DONE','OFF','MAKEUP'].includes(String(row.teachingStatus||''))?row.teachingStatus:(row.completed?'DONE':'PLANNED'),completed:row.teachingStatus==='DONE'||(!row.teachingStatus&&row.completed===true),updatedAt:new Date().toISOString()};
 }
 function extraUpsert_(table,row){
  const records=read_(table),idx=records.findIndex(x=>x.id===row.id);
@@ -307,8 +340,8 @@ function extraCompare_(table,stored,expected){
  if(!stored||stored.id!==expected.id||String(stored.subject||'')!==String(expected.subject||''))return false;
  if(String(stored.shift||'')!==String(expected.shift||'')||Number(stored.period)!==Number(expected.period))return false;
  if(JSON.stringify(extraGroups_(stored.groups))!==JSON.stringify(extraGroups_(expected.groups)))return false;
- const fields=table==='extra_patterns'?['day','fromDate','toDate','active','repeatRule','revision','requestId','startLesson','lessonTitle','startTime','endTime']:
-  ['date','patternId','action','repeatRule','revision','requestId','lessonNumber','lessonTitle','startTime','endTime','completed'];
+ const fields=table==='extra_patterns'?['day','fromDate','toDate','active','repeatRule','revision','requestId','startLesson','lessonTitle','startTime','endTime','teachingStatus']:
+  ['date','patternId','action','repeatRule','revision','requestId','lessonNumber','lessonTitle','startTime','endTime','completed','teachingStatus'];
  return fields.every(k=>{
   const a=stored[k]??'',b=expected[k]??'';
   if(k==='active'||k==='completed')return String(a).toLowerCase()===String(b).toLowerCase();
@@ -510,10 +543,11 @@ function reviseMainSchedule_(body){
  }
  const {from,active,base}=mainVersion_(body);
  const sourceId=String(body.sourceSlotId||''),op=String(body.action||(!sourceId?'ADD':'EDIT')).toUpperCase();
- assert_(['EDIT','ADD','DELETE','COPY'].includes(op),'Thao tác chính khóa không hợp lệ');
+ assert_(['EDIT','ADD','DELETE','COPY','REPLACE'].includes(op),'Thao tác chính khóa không hợp lệ');
  const source=sourceId?base.find(x=>x.id===sourceId):null;
  assert_(base.length&&(['ADD','COPY'].includes(op)||source),'Không tìm thấy tiết chính khóa trong phiên bản đang dùng');
  const adding=op==='ADD'||op==='COPY';
+ assert_(op!=='REPLACE'||source,'Tiết thay thế không có tiết nguồn');
  assert_(base.length+(adding?1:op==='DELETE'?-1:0)<=84,'Phiên bản TKB vượt quá 84 vị trí');
  const patch=op==='DELETE'?null:mainPatch_(body.patch);
  if(op==='EDIT')assert_(!['day','shift','period','classId','subject','stream'].every(k=>String(source[k]||'')===String(patch[k]||'')),'Chưa thay đổi thông tin tiết; dùng Xóa tiết để bỏ tiết này');
@@ -521,15 +555,15 @@ function reviseMainSchedule_(body){
   const moved=adding||Number(source.day)!==patch.day||source.shift!==patch.shift||Number(source.period)!==patch.period;
   if(moved)assert_(!base.some(x=>x.id!==sourceId&&Number(x.day)===patch.day&&x.shift===patch.shift&&Number(x.period)===patch.period),'Ô đến đang có tiết chính khóa');
  }
- if(['DELETE','EDIT'].includes(op)){
+ if(['DELETE','EDIT','REPLACE'].includes(op)){
   const done=read_('changes').some(c=>c.classId===source.classId&&c.date===extraIsoForDay_(from,Number(source.day))&&c.shift===source.shift&&Number(c.period)===Number(source.period)&&c.completed===true);
   assert_(!done,'Tiết này đã hoàn thành trong tuần áp dụng. Chọn tuần sau để giữ lịch sử');
  }
- const newId=adding?'MANUAL-'+from+'-'+Utilities.getUuid().slice(0,12):sourceId;
+ const newId=adding||op==='REPLACE'?'MANUAL-'+from+'-'+Utilities.getUuid().slice(0,12):sourceId;
  const stamp=String(Date.now()).padStart(13,'0'),verId='zzzz-TKB-'+from+'-'+stamp+'-'+Utilities.getUuid().slice(0,8);
- const version={...active,id:verId,name:'Điều chỉnh TKB '+from,fromDate:from,toDate:'',notes:op+' từ phiên bản '+active.id+'; '+String(body.reason||'').slice(0,125)+(requestId?' [request:'+requestId+']':'')+(adding?' [slot:'+newId+']':'')};
- const slots=base.filter(x=>op!=='DELETE'||x.id!==sourceId).map(x=>({...x,versionId:verId,...(op==='EDIT'&&x.id===sourceId?patch:{})}));
- if(adding)slots.push({...(source||{id:newId,kind:'MAIN',notes:''}),...patch,id:newId,versionId:verId,kind:'MAIN'});
+ const version={...active,id:verId,name:'Điều chỉnh TKB '+from,fromDate:from,toDate:'',notes:op+' từ phiên bản '+active.id+'; '+String(body.reason||'').slice(0,125)+(requestId?' [request:'+requestId+']':'')+((adding||op==='REPLACE')?' [slot:'+newId+']':'')};
+ const slots=base.filter(x=>!['DELETE','REPLACE'].includes(op)||x.id!==sourceId).map(x=>({...x,versionId:verId,...(op==='EDIT'&&x.id===sourceId?patch:{})}));
+ if(adding||op==='REPLACE')slots.push({...(source||{id:newId,kind:'MAIN',notes:''}),...patch,id:newId,versionId:verId,kind:'MAIN'});
  validateBatch_('versions',[version]);validateBatch_('slots',slots);
  const shSlots=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('slots'),shVersions=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('versions');
  const slotBefore=shSlots.getLastRow(),verBefore=shVersions.getLastRow();let slotAdded=false,verAdded=false;
@@ -537,8 +571,8 @@ function reviseMainSchedule_(body){
   if(slots.length){appendBatch_('slots',slots);slotAdded=true;}
   appendBatch_('versions',[version]);verAdded=true;SpreadsheetApp.flush();
   const persisted=read_('slots').filter(x=>x.versionId===verId),listed=read_('versions').find(x=>x.id===verId),saved=op==='DELETE'?null:persisted.find(x=>x.id===newId);
-  assert_(listed&&persisted.length===slots.length&&(op==='DELETE'?!persisted.some(x=>x.id===sourceId):saved&&saved.classId===patch.classId&&saved.subject===patch.subject&&Number(saved.day)===patch.day&&saved.shift===patch.shift&&Number(saved.period)===patch.period&&String(saved.stream||'')===patch.stream),'Không xác minh được thay đổi TKB trên Google Sheets');
-  audit_({action:op==='ADD'?'ADD_WEEKLY_SLOT':op==='COPY'?'COPY_WEEKLY_SLOT':op==='DELETE'?'DELETE_WEEKLY_SLOT':'SAVE_VERSION',entityType:'versions',entityId:verId,oldValue:JSON.stringify({sourceVersionId:active.id,slot:source||null}),newValue:JSON.stringify({newVersionId:verId,slot:saved,fromDate:from,operation:op}),reason:String(body.reason||'').slice(0,2000)});
+  assert_(listed&&persisted.length===slots.length&&(op==='DELETE'?!persisted.some(x=>x.id===sourceId):saved&&(op!=='REPLACE'||!persisted.some(x=>x.id===sourceId))&&saved.classId===patch.classId&&saved.subject===patch.subject&&Number(saved.day)===patch.day&&saved.shift===patch.shift&&Number(saved.period)===patch.period&&String(saved.stream||'')===patch.stream),'Không xác minh được thay đổi TKB trên Google Sheets');
+  audit_({action:op==='ADD'?'ADD_WEEKLY_SLOT':op==='COPY'?'COPY_WEEKLY_SLOT':op==='DELETE'?'DELETE_WEEKLY_SLOT':op==='REPLACE'?'REPLACE_WEEKLY_SLOT':'SAVE_VERSION',entityType:'versions',entityId:verId,oldValue:JSON.stringify({sourceVersionId:active.id,slot:source||null}),newValue:JSON.stringify({newVersionId:verId,slot:saved,fromDate:from,operation:op}),reason:String(body.reason||'').slice(0,2000)});
   return {ok:true,verified:true,versionId:verId,previousVersionId:active.id,fromDate:from,sourceSlotId:newId,operation:op,slotCount:persisted.length,message:'Đã ghi và đọc lại phiên bản TKB trên Google Sheets'};
  }catch(error){
   if(verAdded&&shVersions.getLastRow()===verBefore+1)shVersions.deleteRow(verBefore+1);
@@ -547,15 +581,19 @@ function reviseMainSchedule_(body){
  }
 }
 /** Effective positions for the selected week, including prior one-week overrides. */
-function mainOncePositions_(base,changes,from){
+function mainOncePositions_(base,changes,from,active){
  const map=new Map();
  for(const s of base)map.set(s.id,{id:s.id,date:extraIsoForDay_(from,Number(s.day)),shift:s.shift,period:Number(s.period),classId:s.classId,subject:s.subject});
  for(const c of changes){
+  const verStamp=Number(String(active?.id||'').match(/\d{13}/)?.[0]||0);
+  if(verStamp&&String(active.fromDate)===from&&c.scope==='one'&&String(c.action||'').startsWith('MAIN_')&&Date.parse(String(c.updatedAt||''))<verStamp)continue;
   if(c.action==='MOVE'&&c.date>=from&&c.date<=extraIsoForDay_(from,8)){
    const val=map.get(c.sourceSlotId);if(val)map.set(c.sourceSlotId,{...val,date:c.moveDate,shift:c.moveShift,period:Number(c.movePeriod)});
   }
   if(c.scope!=='one'||!String(c.action||'').startsWith('MAIN_')||c.date<from||c.date>extraIsoForDay_(from,8))continue;
-  if(c.action==='MAIN_EDIT_ONCE'&&map.has(c.sourceSlotId)){
+  if(c.action==='MAIN_REPLACE_ONCE'){
+   map.delete(c.sourceSlotId);map.set(c.id,{id:c.id,date:c.moveDate||c.date,shift:c.moveShift||c.shift,period:Number(c.movePeriod||c.period),classId:c.classId,subject:c.subject});
+  }else if(c.action==='MAIN_EDIT_ONCE'&&map.has(c.sourceSlotId)){
    map.set(c.sourceSlotId,{id:c.sourceSlotId,date:c.moveDate,shift:c.moveShift,period:Number(c.movePeriod),classId:c.classId,subject:c.subject});
   }else if(c.action==='MAIN_DELETE_ONCE')map.delete(c.sourceSlotId);
   else if(c.action==='MAIN_ADD_ONCE')map.set(c.id,{id:c.id,date:c.date,shift:c.shift,period:Number(c.period),classId:c.classId,subject:c.subject});
@@ -567,41 +605,41 @@ function mainOncePositions_(base,changes,from){
 function mutateMainOnce_(body){
  const {from,active,base}=mainVersion_(body);
  const op=String(body.action||(!body.sourceSlotId?'ADD':'EDIT')).toUpperCase();
- assert_(['EDIT','ADD','DELETE','COPY'].includes(op),'Thao tác chính khóa không hợp lệ');
+ assert_(['EDIT','ADD','DELETE','COPY','REPLACE'].includes(op),'Thao tác chính khóa không hợp lệ');
  const sourceId=String(body.sourceSlotId||'');
  const changes=read_('changes');
  const original=base.find(x=>x.id===sourceId);
- const sourceOnce=changes.find(x=>x.id===sourceId&&x.action==='MAIN_ADD_ONCE'&&x.date>=from&&x.date<=extraIsoForDay_(from,8));
+ const sourceOnce=changes.find(x=>x.id===sourceId&&['MAIN_ADD_ONCE','MAIN_REPLACE_ONCE'].includes(x.action)&&x.date>=from&&x.date<=extraIsoForDay_(from,8));
  const source=original||sourceOnce;
  assert_(['ADD','COPY'].includes(op)||source,'Không tìm thấy đúng tiết cần sửa hoặc xóa');
  const patch=op==='DELETE'?null:mainPatch_(body.patch);
  const previousId=original?'MAIN1-'+from+'-'+sourceId:(sourceOnce?sourceOnce.id:'');
  const reqId=String(body.requestId||'').replace(/[^a-zA-Z0-9-]/g,'').slice(0,70);
- assert_(!['ADD','COPY'].includes(op)||reqId.length>=8,'Thiếu mã yêu cầu duy nhất để tránh ghi trùng');
- const id=['ADD','COPY'].includes(op)?'MAINADD-'+reqId:previousId;
+ assert_(!['ADD','COPY','REPLACE'].includes(op)||reqId.length>=8,'Thiếu mã yêu cầu duy nhất để tránh ghi trùng');
+ const id=['ADD','COPY'].includes(op)?'MAINADD-'+reqId:op==='REPLACE'?'MAINREPLACE-'+reqId:previousId;
  assert_(id&&id.length<160,'Mã điều chỉnh không hợp lệ');
  const prev=changes.find(x=>x.id===id),index=changes.findIndex(x=>x.id===id);
  const targetDate=patch?extraIsoForDay_(from,patch.day):'';
- if(['ADD','COPY'].includes(op)&&prev){
-  assert_(prev.action==='MAIN_ADD_ONCE'&&prev.date===targetDate&&prev.classId===patch.classId&&prev.shift===patch.shift&&Number(prev.period)===patch.period,'Mã yêu cầu đã được dùng cho một thay đổi khác');
+ if(['ADD','COPY','REPLACE'].includes(op)&&prev){
+  assert_((prev.action==='MAIN_ADD_ONCE'||prev.action==='MAIN_REPLACE_ONCE')&&prev.classId===patch.classId&&prev.shift===patch.shift&&Number(prev.period)===patch.period,'Mã yêu cầu đã được dùng cho một thay đổi khác');
   return {ok:true,verified:true,operation:op,scope:'one',changeId:id,fromDate:from,targetDate,alreadySaved:true};
  }
- const positions=mainOncePositions_(base,changes,from);
+ const positions=mainOncePositions_(base,changes,from,active);
  const existing=positions.find(x=>x.id===sourceId);
- if(['EDIT','DELETE'].includes(op))assert_(existing,'Tiết này đã bị xóa trong tuần đang chọn; hãy đồng bộ lại');
+ if(['EDIT','DELETE','REPLACE'].includes(op))assert_(existing,'Tiết này đã bị xóa trong tuần đang chọn; hãy đồng bộ lại');
  if(patch){
-  const occupied=positions.filter(x=>x.id!==((op==='EDIT')?sourceId:'')).some(x=>x.date===targetDate&&x.shift===patch.shift&&Number(x.period)===patch.period);
-  const stayed=op==='EDIT'&&existing&&existing.date===targetDate&&existing.shift===patch.shift&&Number(existing.period)===patch.period;
+  const occupied=positions.filter(x=>x.id!==((op==='EDIT'||op==='REPLACE')?sourceId:'')).some(x=>x.date===targetDate&&x.shift===patch.shift&&Number(x.period)===patch.period);
+  const stayed=['EDIT','REPLACE'].includes(op)&&existing&&existing.date===targetDate&&existing.shift===patch.shift&&Number(existing.period)===patch.period;
   assert_(!occupied||stayed,'Ô đích đã có tiết chính khóa. Hãy chọn ô trống hoặc xóa đúng tiết trùng trước');
   if(op==='EDIT')assert_(!(existing.date===targetDate&&existing.shift===patch.shift&&Number(existing.period)===patch.period&&existing.classId===patch.classId&&existing.subject===patch.subject&&String(source.stream||'')===patch.stream),'Chưa thay đổi thông tin tiết');
  }
- if(original&&['EDIT','DELETE'].includes(op)){
+ if(original&&['EDIT','DELETE','REPLACE'].includes(op)){
   assert_(!changes.some(c=>c.completed===true&&c.date===extraIsoForDay_(from,Number(original.day))&&c.shift===original.shift&&Number(c.period)===Number(original.period)&&c.classId===original.classId),'Tiết đã xác nhận hoàn thành, không thể xóa/sửa');
  }
  const stamp=new Date().toISOString();
- const action=op==='DELETE'?(sourceOnce?'MAIN_VOID_ONCE':'MAIN_DELETE_ONCE'):(sourceOnce&&op==='EDIT'?'MAIN_ADD_ONCE':(['ADD','COPY'].includes(op)?'MAIN_ADD_ONCE':'MAIN_EDIT_ONCE'));
+ const action=op==='DELETE'?(sourceOnce?.action==='MAIN_REPLACE_ONCE'?'MAIN_DELETE_ONCE':sourceOnce?'MAIN_VOID_ONCE':'MAIN_DELETE_ONCE'):(op==='REPLACE'?'MAIN_REPLACE_ONCE':sourceOnce&&op==='EDIT'?(sourceOnce.action==='MAIN_REPLACE_ONCE'?'MAIN_REPLACE_ONCE':'MAIN_ADD_ONCE'):(['ADD','COPY'].includes(op)?'MAIN_ADD_ONCE':'MAIN_EDIT_ONCE'));
  const oldDate=original?extraIsoForDay_(from,Number(original.day)):(sourceOnce?.date||targetDate);
- const row={id,date:action==='MAIN_ADD_ONCE'?targetDate:oldDate,shift:action==='MAIN_ADD_ONCE'?patch.shift:source.shift,period:action==='MAIN_ADD_ONCE'?patch.period:Number(source.period),action,classId:patch?.classId||source.classId,subject:patch?.subject||source.subject,stream:patch?patch.stream:(source?.stream||''),kind:'MAIN',notes:String(body.reason||'').slice(0,220),ppctId:'',completed:false,updatedAt:stamp,scope:'one',titleOverride:'',sourceSlotId:original?original.id:'',moveDate:patch?targetDate:'',moveShift:patch?.shift||'',movePeriod:patch?.period||0};
+ const row={id,date:action==='MAIN_ADD_ONCE'?targetDate:oldDate,shift:action==='MAIN_ADD_ONCE'?patch.shift:source.shift,period:action==='MAIN_ADD_ONCE'?patch.period:Number(source.period),action,classId:patch?.classId||source.classId,subject:patch?.subject||source.subject,stream:patch?patch.stream:(source?.stream||''),kind:'MAIN',notes:String(body.reason||'').slice(0,220),ppctId:'',completed:false,updatedAt:stamp,scope:'one',titleOverride:'',sourceSlotId:original?original.id:(sourceOnce?.sourceSlotId||sourceOnce?.id||''),moveDate:patch?targetDate:'',moveShift:patch?.shift||'',movePeriod:patch?.period||0};
  validateBatch_('changes',[row]);
  const sheet=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('changes');
  try{

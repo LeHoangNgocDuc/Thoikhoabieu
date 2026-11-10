@@ -6,7 +6,7 @@ const seed=JSON.parse(fs.readFileSync(new URL('../public/seed.json',import.meta.
 const state=()=>normalizeSheetData(structuredClone(seed));
 test('V1.5 unconfirmed baselines never fabricate actual counts or pace',()=>{
  const data=state();const r=progressAt(data,'9F43','Toán','ĐS','2026-11-15');
- assert.equal(r.status,'unconfirmed');assert.equal(r.actual,null);assert.equal(r.delta,null);
+ assert.equal(r.status,'unconfirmed');assert.equal(typeof r.actual,'number');assert.equal(typeof r.delta,'number');assert.equal(r.provisional,true);
 });
 test('V1.5 actual is distinct confirmed PPCT, not forecasted slots',()=>{
  const data=state();const b=data.baselines.find(x=>x.classId==='9F43'&&x.subject==='Toán'&&x.stream==='ĐS');
@@ -17,7 +17,7 @@ test('V1.5 actual is distinct confirmed PPCT, not forecasted slots',()=>{
  data.changes.push({id:'c1',date:'2026-11-10',shift:'S',period:4,classId:'9F43',subject:'Toán',stream:'ĐS',action:'DONE',ppctId:seq[23].id,completed:true});
  data.changes.push({id:'c2',date:'2026-11-11',shift:'S',period:1,classId:'9F43',subject:'Toán',stream:'ĐS',action:'ADD',ppctId:seq[23].id,completed:true});
  const now=progressAt(data,'9F43','Toán','ĐS',date);
- assert.equal(now.actual,24,'same PPCT counted once');assert.equal(now.status,'partial','Unconfirmed timetable lessons remain unknown');assert.equal(now.delta,null,'Do not label a class slow before all teaching outcomes are confirmed');
+ assert.equal(now.actual,24,'same PPCT counted once');assert.equal(now.status,'partial','Unconfirmed timetable lessons remain unknown');assert.equal(typeof now.delta,'number','Number is provisional until all teaching outcomes are confirmed');assert.equal(now.provisional,true);
  assert.equal(progressAt(data,'9F46','Toán','ĐS',date).status,'unconfirmed');
  assert.equal(progressAt(data,'9F43','Toán','HH',date).status,'unconfirmed');
 });

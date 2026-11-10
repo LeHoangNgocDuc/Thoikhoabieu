@@ -30,7 +30,7 @@ async function proxyCall(reply){
 }
 test('V1.6.1 Apps Script declares probe and supports all recurring tutoring mutations',()=>{
  const r=appsScriptProbe();assert.equal(r.ok,true);assert.equal(r.extraWrites,true);
- assert.equal(r.apiVersion,'1.7.0');assert.ok(r.supportedActions.includes('EDIT_FUTURE'));
+ assert.equal(r.apiVersion,'1.8.0');assert.ok(r.supportedActions.includes('EDIT_FUTURE'));
  assert.ok(r.supportedActions.includes('CREATE'));
 });
 test('Vercel proxy identifies outdated Apps Script rather than generic unsupported action',async()=>{

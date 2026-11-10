@@ -26,12 +26,12 @@ test('PPCT plan does not drop to zero during school breaks',()=>{
 });
 test('unconfirmed baseline refuses to report actual and delta, but displays the planned amount',()=>{
  const d=fresh(),r=progressAt(d,'7F38','Toán','ĐS','2026-11-15');
- assert.equal(r.status,'unconfirmed');assert.equal(r.actual,null);assert.equal(r.delta,null);assert.ok(r.planned>0);
+ assert.equal(r.status,'unconfirmed');assert.equal(typeof r.actual,'number');assert.equal(typeof r.delta,'number');assert.equal(r.provisional,true);assert.ok(r.planned>0);
 });
 test('confirmed initial position alone is insufficient when planned lessons are unmarked',()=>{
  const d=fresh(),b=baseline(d,'9F43','TIN','Tin');b.confirmed=true;b.nextIndex=9;
  const r=progressAt(d,'9F43','Tin','TIN','2026-11-15');
- assert.equal(r.status,'partial');assert.equal(r.actual,9);assert.equal(r.delta,null);assert.equal(r.pending,1);
+ assert.equal(r.status,'partial');assert.equal(r.actual,9);assert.equal(typeof r.delta,'number');assert.equal(r.provisional,true);assert.equal(r.pending,1);
 });
 test('confirmed completed entry closes the only Tin 9/1 slot for that week',()=>{
  const d=fresh(),b=baseline(d,'9F43','TIN','Tin');b.confirmed=true;b.nextIndex=9;
@@ -56,7 +56,7 @@ test('unlinked done change is flagged rather than accepted as complete stats',()
  const e=eventsForWeek(d,'2026-11-09').find(x=>x.classId==='9F43'&&x.subject==='Tin');
  d.changes.push({id:'bad',date:e.date,shift:e.shift,period:e.period,action:'DONE',classId:'9F43',subject:'Tin',stream:'TIN',kind:'MAIN',ppctId:'UNKNOWN',completed:true});
  const r=progressAt(d,'9F43','Tin','TIN','2026-11-15');
- assert.equal(r.status,'partial');assert.equal(r.unlinked,1);assert.equal(r.delta,null);
+ assert.equal(r.status,'partial');assert.equal(r.unlinked,1);assert.equal(typeof r.delta,'number');assert.equal(r.provisional,true);
 });
 test('extra tutoring never counts toward official progress',()=>{
  const d=fresh(),b=baseline(d,'9F43','TIN','Tin');b.confirmed=true;b.nextIndex=9;

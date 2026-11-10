@@ -55,35 +55,133 @@ async function loadWorkbook(file){
  }
  return sheets;
 }
-export async function extractTeacherSchedule(file){
- if(!file.name.toLowerCase().endsWith('.xlsx'))throw Error('Chỉ hỗ trợ định dạng Excel .xlsx');
- const sheets=await loadWorkbook(file),result=[],warnings=[];
- for(const sheet of sheets){
-  if(!sheet.name.toUpperCase().includes('DỮ LIỆU 150 TIẾT'))continue;
-  const match=file.name.match(/K(7|9)-TKB/i),grade=match?Number(match[1]):0;
-  if(!grade){warnings.push('Không xác định được khối từ tên file (cần có K7-TKB hoặc K9-TKB)');continue;}
-  for(const row of sheet.rows.slice(2)){
-   if(!row)continue;
-   const v=x=>asString(row[x]);const d=/\d+/.exec(v(1));const cls=v(3),subject=v(5);
-   if(!d||!mapping[cls]||v(4).toLowerCase()!=='đức'||!['Toán','Tin'].includes(subject))continue;
-   result.push({day:Number(d[0]),shift:grade===7?'C':'S',period:Number(v(2)),classId:mapping[cls],subject,stream:subject==='Tin'?'TIN':'',kind:'MAIN',notes:`Nhập từ ${file.name}`});
+
+/** Official source files are recognized by CONTENT, never by filename. */
+const TEACHER=/^(?:Đức|Lê Hoàng Ngọc Đức|Le Hoang Ngoc Duc)$/iu;
+const digits=(value)=>String(value??'').match(/\d+/)?.[0]||'';
+const teacher=(value)=>TEACHER.test(asString(value));
+function sourceDate(sheets){
+ for(const sheet of sheets)for(const row of sheet.rows.slice(0,8)){
+  if(!row)continue;
+  for(const value of Object.values(row)){
+   const m=String(value??'').match(/áp\s*dụng\s*từ\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*(20\d{2})/iu);
+   if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
   }
  }
- if(result.length)return {slots:result,warnings,type:'school'};
- const sheet=sheets[0];
- if(sheet&&asString(sheet.rows[1]?.[1]).includes('THỜI KHÓA BIỂU TIN HỌC')){
-  for(const [shift,first,last] of [['S',6,10],['C',17,20]])for(let r=first;r<=last;r++){
-   const row=sheet.rows[r]||{},period=Number(row[1]);if(!period)continue;
-   for(const [day,col] of [[2,4],[3,8],[4,12],[5,16],[6,20]]){
-    const v=asString(row[col]);for(const part of v.split(/[\n;]/)){
-     const m=part.match(/\b([79])[.\/]([1-9])\s*\(\s*Đ\s*\)/i);if(!m)continue;
-     const classId=mapping[`${m[1]}/${m[2]}`];if(!classId)continue;
-     result.push({day,shift,period,classId,subject:'Tin',stream:'TIN',kind:'MAIN',notes:`Nhập từ ${file.name}`});
+ return '';
+}
+function slot(day,shift,period,className,subject,source){
+ const normalized=String(className||'').trim().replace(/[.]/g,'/');
+ const classId=mapping[normalized];
+ if(!classId)return null;
+ return {day:Number(day),shift,period:Number(period),classId,subject,stream:subject==='Tin'?'TIN':'',kind:'MAIN',notes:`Nguồn Excel: ${source}`};
+}
+function timetableGrade(sheet){
+ const h=sheet.rows[4]||{};
+ const m=Object.values(h).join(' ').match(/LỚP\s*(7|9)\s*[\/\.]/iu);
+ if(m)return Number(m[1]);
+ const sh=sheet.name.match(/KHỐI\s*(7|9)/iu);
+ return sh?Number(sh[1]):0;
+}
+function officialSheet(sheets,source,warnings){
+ const data=sheets.find(s=>/DỮ\s*LIỆU\s*150\s*TIẾT/iu.test(s.name));
+ const grid=sheets.find(s=>/TKB\s*KHỐI\s*[79]/iu.test(s.name));
+ const grade=timetableGrade(grid||data||{name:'',rows:[]});
+ if(!grade)return [];
+ const result=[];
+ if(data){
+  for(const row of data.rows.slice(2)){
+   if(!row||!teacher(row[4])||asString(row[5])!=='Toán')continue;
+   const t=slot(digits(row[1]),grade===7?'C':'S',row[2],row[3],'Toán',source);
+   if(t&&t.day>=2&&t.day<=8&&t.period>=1&&t.period<=5)result.push(t);
+  }
+ }
+ if(grid){
+  // Read the school timetable grid directly, including workbook exports without
+  // the optional 'DỮ LIỆU 150 TIẾT' sheet.
+  const classes={};for(const [key,val] of Object.entries(grid.rows[4]||{})){
+   const match=asString(val).match(/LỚP\s*(\d{1,2}\s*[/.]\s*\d{1,2})/iu);
+   if(match)classes[Number(key)]=match[1].replace(/\s/g,'').replace('.','/');
+  }
+  const fromGrid=[];let day=0;
+  for(const row of grid.rows.slice(6)){
+   if(!row)continue;
+   if(/^THỨ\s*[2-7]/iu.test(asString(row[1])))day=Number(digits(row[1]));
+   const period=Number(row[2]);if(!day||!period||period>5)continue;
+   for(const [column,className] of Object.entries(classes)){
+    const c=Number(column);
+    if(teacher(row[c])&&asString(row[c+1])==='Toán'){
+     const item=slot(day,grade===7?'C':'S',period,className,'Toán',source);
+     if(item)fromGrid.push(item);
     }
    }
   }
-  return {slots:result,warnings,type:'ict'};
+  if(!data)result.push(...fromGrid);
+  else{
+   const keys=a=>new Set(a.map(x=>[x.day,x.shift,x.period,x.classId,x.subject].join('|')));
+   const list=keys(result),matrix=keys(fromGrid);
+   if(list.size!==matrix.size||[...list].some(k=>!matrix.has(k)))warnings.push(`${source}: dữ liệu 150 tiết và lưới TKB không khớp; ưu tiên bảng dữ liệu 150 tiết.`);
+  }
  }
- warnings.push('Không nhận diện được mẫu Excel. Chỉ có 2 mẫu nguồn khối 7/9 và mẫu TKB Tin được hỗ trợ.');
- return {slots:[],warnings,type:'unknown'};
+ return result;
+}
+function ictSheet(sheets,source,warnings){
+ const sheet=sheets.find(s=>Object.values(s.rows[1]||{}).some(v=>/THỜI\s*KHÓA\s*BIỂU\s*TIN\s*HỌC/iu.test(asString(v))));
+ if(!sheet)return [];
+ const result=[];let shift='',dayColumns={},header=false;
+ for(let r=1;r<sheet.rows.length;r++){
+  const row=sheet.rows[r]||{};const title=Object.values(row).map(asString).join(' ');
+  if(/THỜI\s*KHÓA\s*BIỂU\s*TIN\s*HỌC/iu.test(title)){
+   if(/BUỔI\s*SÁNG/iu.test(title))shift='S';
+   else if(/BUỔI\s*CHIỀU/iu.test(title))shift='C';
+   header=false;dayColumns={};continue;
+  }
+  const dayHeaders=Object.entries(row).filter(([,v])=>/^THỨ\s*[2-7]$/iu.test(asString(v)));
+  if(dayHeaders.length>=3){
+   dayColumns={};for(const [col,value] of dayHeaders)dayColumns[Number(col)+2]=Number(digits(value));
+   header=false;continue;
+  }
+  if(Object.values(row).some(v=>asString(v).toUpperCase()==='TH')){header=true;continue;}
+  const period=Number(row[1]);if(!header||!shift||!(period>=1&&period<=5))continue;
+  for(const [column,day] of Object.entries(dayColumns)){
+   const value=asString(row[Number(column)]);
+   const expr=/(\d{1,2})\s*[./]\s*(\d{1,2})\s*\(\s*Đ\s*\)/giu;
+   for(const match of value.matchAll(expr)){
+    const item=slot(day,shift,period,`${match[1]}/${match[2]}`,'Tin',source);
+    if(item)result.push(item);
+    else warnings.push(`${source}: không có lớp Tin ${match[1]}/${match[2]} trong danh mục.`);
+   }
+  }
+ }
+ return result;
+}
+/** A pure entrypoint that also enables repeatable regression tests from real Excel samples. */
+export function extractTeacherScheduleFromSheets(sheets,source='Excel'){
+ const warnings=[],fromDate=sourceDate(sheets);
+ const official=officialSheet(sheets,source,warnings),ict=ictSheet(sheets,source,warnings);
+ const slots=[...official,...ict];
+ // Verified teacher correction for the school timetable effective 09/11/2026.
+ // The uploaded K9 workbook itself places Toan 9/1 on Thursday P3; the
+ // teacher confirmed the intended position is FRIDAY morning P3 instead.
+ // Restrict this exception to this exact schedule signature. Do not carry it
+ // forward automatically to a future/new school timetable.
+ if(fromDate==='2026-11-09' && official.length){
+  const maths91=slots.filter(s=>s.classId==='9F43'&&s.subject==='Toán'&&s.shift==='S');
+  const has=(day,period)=>maths91.some(s=>s.day===day&&s.period===period);
+  if(maths91.length===4&&has(3,4)&&has(5,3)&&has(5,4)&&has(6,2)&&!has(6,3)){
+   const corrected=maths91.find(s=>s.day===5&&s.period===3);
+   corrected.day=6;corrected.period=3;
+   corrected.notes+='; Hiệu chỉnh theo xác nhận giáo viên: Thứ Sáu sáng tiết 3';
+   warnings.push(`${source}: Toán 9/1 được hiệu chỉnh từ Thứ Năm sáng tiết 3 sang Thứ Sáu sáng tiết 3 theo xác nhận của giáo viên; file gốc giữ nguyên.`);
+  }
+ }
+ const uniq=new Set(),deduped=[];
+ for(const s of slots){const key=[s.day,s.shift,s.period,s.classId,s.subject].join('|');if(!uniq.has(key)){uniq.add(key);deduped.push(s);}}
+ if(!fromDate)warnings.push(`${source}: không tìm thấy ngày áp dụng trên tiêu đề; cần nhập thủ công.`);
+ if(!deduped.length)warnings.push(`${source}: không có tiết của thầy Đức theo mẫu hỗ trợ.`);
+ return {slots:deduped,warnings,fromDate,type:official.length?'school':ict.length?'ict':'unknown',source};
+}
+export async function extractTeacherSchedule(file){
+ if(!/\.xlsx$/i.test(file.name))throw Error('Chỉ hỗ trợ Excel .xlsx');
+ return extractTeacherScheduleFromSheets(await loadWorkbook(file),file.name);
 }

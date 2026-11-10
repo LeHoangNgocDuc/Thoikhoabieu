@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeSheetData,eventsForWeek,tutoringForWeek,conflicts} from '../src/core.js';
 const seed=JSON.parse(fs.readFileSync(new URL('../public/seed.json',import.meta.url),'utf8'));
+// Legacy regression fixture intentionally reproduces the historical Thursday
+// conflict. The production seed/real 2026-11-09 timetable is already corrected.
+{ const slot=seed.slots.find(x=>x.id==='S-9-9'); if(slot){slot.day=5;slot.period=3;} }
 const pattern={id:'EXP1',day:8,shift:'T',period:1,subject:'Toán',groups:['7F38','7F39','Nhóm bồi dưỡng'],notes:'Ôn tập',fromDate:'2026-11-15',toDate:'',startLesson:4,active:true};
 const make=(patterns=[pattern],sessions=[])=>normalizeSheetData({...structuredClone(seed),extra_patterns:patterns,extra_sessions:sessions});
 test('V1.4 default weekly tutoring survives following weeks and class lists are preserved',()=>{

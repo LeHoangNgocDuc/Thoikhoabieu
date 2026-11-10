@@ -1,13 +1,14 @@
 {
   "name": "smart-tkb-nam-nha-trang",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "node scripts/build.mjs",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "build:vite": "vite build"
   },
   "dependencies": {},
   "devDependencies": {
