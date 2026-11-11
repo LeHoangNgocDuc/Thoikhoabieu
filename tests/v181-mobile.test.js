@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {collapseTutorDisplay} from '../src/mobileDisplay.js';
-const event=(period,groups=['9A_NC'],extra={})=>({id:'e'+period,kind:'EXTRA',date:'2026-11-09',shift:'T',period,groups,subject:'Toán',lessonNumber:1,lessonTitle:'Phương trình',status:'PLANNED',...extra});
+const event=(period,groups=['9A_NC'],extra={})=>({id:'e'+period,kind:'EXTRA',date:'2026-11-09',shift:'S',period,groups,subject:'Toán',lessonNumber:1,lessonTitle:'Phương trình',status:'PLANNED',...extra});
 test('two consecutive representations of the same class collapse into a single display block',()=>{
  const rows=[event(1),event(2)],old=JSON.stringify(rows);
  const display=collapseTutorDisplay(rows);

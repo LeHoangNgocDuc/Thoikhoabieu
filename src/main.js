@@ -3,17 +3,17 @@ import {DAYS,SHIFTS,addDays,monday,dayNumber,schoolWeek,classById,activeVersion,
 import {extractTeacherSchedule} from './importExcel.js';
 import {SNAPSHOT_KEY,validateSnapshot,snapshotText} from './cache.js';
 import {moveCollision,validateOfficialScope} from './core.js';
-import {collapseTutorDisplay} from './mobileDisplay.js';
+import {collapseTutorDisplay,MOBILE_PERIODS,planMobileWeekCells} from './mobileDisplay.js';
 
 const $=s=>document.querySelector(s);
 const newRequestId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FRONTEND_VERSION='1.8.1';
+const FRONTEND_VERSION='1.8.2';
 const COMPATIBLE_API_VERSION='1.8.0';
 const PENDING_EXTRA_KEY='smart-tkb-extra-pending-v162';
 const getSnapshot=()=>{try{return validateSnapshot(localStorage.getItem(SNAPSHOT_KEY));}catch{return null;}};
 function writeSnapshot(data){try{localStorage.setItem(SNAPSHOT_KEY,snapshotText(data));}catch(e){console.warn('Không lưu được bộ nhớ đệm, ứng dụng vẫn dùng dữ liệu trực tuyến.');}}
-const $state={data:null,mode:'checking',view:'overview',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:typeof window!=='undefined'&&window.matchMedia?.('(max-width:760px)').matches?'day':'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',extraGrade:'all',extraLetter:'all',extraPeriod:'week',extraPickerGrade:9,syncDiagnostics:null,extraPending:null,extraDay:'all',extraShift:'all',refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false,clipboardMain:null,mainServerReady:false};
+const $state={data:null,mode:'checking',view:'overview',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',extraGrade:'all',extraLetter:'all',extraPeriod:'week',extraPickerGrade:9,syncDiagnostics:null,extraPending:null,extraDay:'all',extraShift:'all',refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false,clipboardMain:null,mainServerReady:false};
 const shiftLabel=s=>({S:'Sáng',C:'Chiều',T:'Tối'})[s]||s;
 const dayLabel=n=>DAYS.find(d=>d.n===n)?.label||n;
 const className=id=>classById($state.data,id)?.name||id;
@@ -207,7 +207,7 @@ function showTop(){
  const combined=conflicts(all);
  const err=['extra','overview'].includes($state.view)?combined:conflicts(official);
  const events=['extra','overview'].includes($state.view)?all:official;
- return `<header class="topbar"><div class="mobile-topline"><button class="mobile-menu" data-action="toggle-drawer" aria-label="Mở menu chức năng" aria-expanded="${$state.drawerOpen?'true':'false'}" aria-controls="side-menu">☰</button><button class="mobile-week-arrow" data-action="prev-week" aria-label="Tuần trước">‹</button><strong class="mobile-week-title">Tuần ${schoolWeek($state.week)} · ${fmt($state.week)} – ${fmt(weekEnd())}</strong><button class="mobile-week-arrow" data-action="next-week" aria-label="Tuần sau">›</button></div><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':$state.syncState==='login-required'?'🔒 Bản lưu · cần đăng nhập':$state.syncState==='error'?'⚠ Bản lưu · lỗi đồng bộ':'◌ Bản lưu · đang đồng bộ Sheet...'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
+ return `<header class="topbar"><div class="mobile-topline"><button class="mobile-menu" data-action="toggle-drawer" aria-label="Mở menu chức năng" aria-expanded="${$state.drawerOpen?'true':'false'}" aria-controls="side-menu">☰</button><button class="mobile-week-arrow" data-action="prev-week" aria-label="Tuần trước">‹</button><strong class="mobile-week-title">Tuần ${schoolWeek($state.week)} · ${fmt($state.week)} – ${fmt(weekEnd())}</strong><button class="mobile-week-arrow" data-action="next-week" aria-label="Tuần sau">›</button><button class="mobile-view-toggle" data-action="cycle-calendar-view" aria-label="Chuyển nhanh Chính khóa, Dạy thêm, Tổng hợp" title="${$state.view==='overview'?'Tổng hợp':$state.view==='calendar'?'Chính khóa':$state.view==='extra'?'Dạy thêm':'Về Thời khóa biểu'}">${$state.view==='calendar'?'CK':$state.view==='extra'?'DT':'▦'}</button></div><button class="top-menu-toggle" data-action="toggle-drawer" aria-label="Mở thanh menu">☰</button><div class="brandmark">TK</div><div class="brandtext"><h1>Smart TKB<span>·</span> Lê Hoàng Ngọc Đức</h1><p>THCS Nam Nha Trang – Phân hiệu Vĩnh Trường</p></div><div class="topright"><span class="pill ${$state.mode==='google'?'good':'muted'}">${$state.mode==='google'?'● Google Sheets':$state.syncState==='login-required'?'🔒 Bản lưu · cần đăng nhập':$state.syncState==='error'?'⚠ Bản lưu · lỗi đồng bộ':'◌ Bản lưu · đang đồng bộ Sheet...'}</span>${$state.updateAvailable?'<button class="btn soft" data-action="refresh-app">Cập nhật ứng dụng</button>':''}<button class="btn ghost" data-action="refresh-google">↻ Tải lại Google Sheets</button><button class="btn ghost" data-action="open-settings">${$state.mode==='google'?'Đã kết nối':'Kết nối Google'}</button></div></header>
  <div class="shell">${$state.drawerOpen?'<button class="drawer-scrim" data-action="close-drawer" aria-label="Đóng bộ lọc"></button>':''}<aside class="sidebar ${$state.drawerOpen?'drawer-open':''}" id="side-menu"><div class="side-mobilehead"><strong>☰ Lê Hoàng Ngọc Đức</strong><button class="icon-btn" data-action="close-drawer">×</button></div><div class="navtitle">QUẢN LÝ GIẢNG DẠY</div>
  ${[['overview','▦','Thời khóa biểu 7 ngày'],['calendar','◫','Dạy chính thức & Tăng vượt'],['extra','◈','Dạy thêm · Ngoài PPCT'],['extraList','☷','Danh sách dạy thêm'],['overview','◫','TKB đầy đủ'],['statistics','▥','Thống kê tiến độ'],['progress','◷','PPCT & tiến độ'],['versions','⇄','Phiên bản TKB'],['settings','⚙','Cấu hình & dữ liệu']].map(([k,icon,label])=>`<button class="navitem ${$state.view===k?'selected':''}" data-view="${k}"><span class="navicon">${icon}</span>${label}</button>`).join('')}
  ${drawerTools()}${sideFilters()}<div class="sidefooter"><div class="stat-label">Năm học 2026 – 2027</div><div class="stat-desc">7 lớp chính khóa · 7 ngày/tuần<br>Sáng 5 tiết · Chiều 5 tiết · Tối 2 suất</div></div></aside><main class="content">${$state.notice?`<div class="notice">${esc($state.notice)}<button data-action="clear-notice">×</button></div>`:''}
@@ -235,6 +235,29 @@ function dayBoard(events,conflictKeys,page){
   }).join(''):'<span class="day-empty">+ Chưa có lịch · Chạm để thêm</span>'}</span></button>`;
  }).filter(Boolean).join('');
  return `<div class="day-board"><div class="day-switch"><button data-action="prev-day" aria-label="Ngày trước">‹</button><strong>${dayLabel(day)} · ${fmt(date)}</strong><button data-action="next-day" aria-label="Ngày sau">›</button></div><div class="day-chips">${DAYS.map(d=>`<button type="button" data-action="select-day" data-day="${d.n}" class="${d.n===day?'selected':''}">${d.n===8?'CN':`T${d.n}`}<small>${fmt(addDays($state.week,d.n-2))}</small></button>`).join('')}</div><div class="day-events">${cards}</div></div>`;
+}
+
+/** Fixed full-week phone board: 8 columns x 13 rows, presentation only. */
+function mobileWeekBoard(rawEvents,conflictKeys,page,allOfficial,allExtras){
+ const dates=DAYS.map(d=>addDays($state.week,d.n-2));
+ const cells=planMobileWeekCells(rawEvents,dates);
+ const headers=DAYS.map((d,i)=>`<div class="mw-day" role="columnheader" style="grid-column:${i+2};grid-row:1">${d.n===8?'CN':`T${d.n}`}<small>${fmt(dates[i])}</small></div>`).join('');
+ const labels=MOBILE_PERIODS.map((s,i)=>`<div class="mw-period ${i===5||i===10?'mw-shift-break':''}" role="rowheader" style="grid-column:1;grid-row:${i+2}">${s.label}</div>`).join('');
+ const slots=cells.map(cell=>{
+  const {date,shift,period,events:shown,span,col,row}=cell;
+  const main=allOfficial.some(e=>e.date===date&&e.shift===shift&&Number(e.period)===period);
+  const ex=allExtras.some(e=>e.date===date&&e.shift===shift&&Number(e.period)===period);
+  const editor=page==='extra'?'extra':page==='calendar'?'official':main?'official':ex?'extra':'choose';
+  const conflict=conflictKeys.has(`${date}|${shift}|${period}`)||shown.length>1;
+  const aria=shown.length?shown.map(e=>e.kind==='EXTRA'?`Dạy thêm ${parseGroups(e.groups).map(className).join(', ')}`:`${e.subject} ${className(e.classId)} ${e.stream||''} tiết PPCT ${e.ppct?.period||''}`).join('; '):'Chưa có lịch';
+  const body=shown.map(e=>{
+   const names=e.kind==='EXTRA'?parseGroups(e.groups).map(className).join(' + '):className(e.classId);
+   const detail=e.kind==='EXTRA'?'':`${e.subject==='Toán'?e.stream||'Toán':'TIN'}${e.ppct?.period?'·T'+e.ppct.period:''}`;
+   return `<span class="mw-lesson ${e.kind==='EXTRA'?'mw-tutor':'mw-official'}" style="${styleFor(e.kind==='EXTRA'?(parseGroups(e.groups)[0]||'extra'):e.classId)}"><b>${esc(names||'Dạy thêm')}</b>${detail?`<small>${esc(detail)}</small>`:''}</span>`;
+  }).join('');
+  return `<button type="button" class="mw-slot ${shown.length?'mw-filled':''} ${conflict?'mw-conflict':''} ${span===2?'mw-spanned':''} ${row===7||row===12?'mw-shift-break':''}" style="grid-column:${col};grid-row:${row} / span ${span}" role="gridcell" data-action="open-cell" data-editor="${editor}" data-date="${date}" data-shift="${shift}" data-period="${period}" aria-label="${esc(date+' '+shift+period+': '+aria)}" title="${esc(aria)}">${body}</button>`;
+ }).join('');
+ return `<div class="mobile-week-board" role="grid" aria-label="Thời khóa biểu đủ bảy ngày, năm tiết sáng, năm tiết chiều và hai ca tối"><div class="mw-corner" style="grid-column:1;grid-row:1">Ca</div>${headers}${labels}${slots}</div>`;
 }
 
 function calendarPage(events,error){
@@ -284,6 +307,7 @@ function calendarPage(events,error){
  ${$state.clipboardMain&&page!=='extra'?`<div class="main-clipboard"><strong>📋 Đã sao chép: ${esc($state.clipboardMain.subject)} ${esc(className($state.clipboardMain.classId))}</strong><span>Chạm ô đích, chọn “Dán tiết đã sao chép”.</span><button class="btn soft" data-action="cancel-copy-main">Hủy sao chép</button></div>`:''}
  ${error.length?`<details class="warning compact-warning"><summary>⚠ Có ${error.length} vị trí trùng lịch (chọn đúng tiết để sửa, xóa hoặc sao chép)</summary>
  ${error.map(c=>{const e=c.items[0];return `<div class="conflict-resolve"><strong>${fmt(e.date)} ${shiftLabel(e.shift)} tiết ${e.period}</strong><div class="conflict-options">${c.items.map(x=>`<div>${esc(x.kind==='EXTRA'?'Dạy thêm '+parseGroups(x.groups).join(', '):x.subject+' '+className(x.classId)+' '+(x.stream||''))} ${x.kind==='MAIN'?`<button class="btn soft" data-action="start-move" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Sửa</button> <button class="btn danger" data-action="start-delete-main" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Xóa</button> <button class="btn soft" data-action="copy-main" data-id="${esc(x.id)}" data-date="${esc(x.date)}">Sao chép</button>`:'<span class="caption">Sửa trong Dạy thêm</span>'}</div>`).join('')}</div></div>`}).join('')}</details>`:''}
+ ${mobileWeekBoard(filtered,conflictKeys,page,allOfficial,allExtras)}
  ${$state.calendarLayout==='day'?dayBoard(displayEvents,conflictKeys,page):`<div class="table-scroller week-scroller"><table class="timetable"><thead><tr><th class="sidecol">Ca</th>${DAYS.map(d=>`<th><span class="day-long">${d.label}</span><span class="day-short">${d.n===8?'CN':`T${d.n}`}</span><small>${fmt(addDays($state.week,d.n-2))}</small></th>`).join('')}</tr></thead><tbody>
  ${activeShifts.map(sh=>Array.from({length:sh.count},(_,i)=>`<tr><th class="period-label"><span>${sh.label}</span><strong>${sh.id==='T'?'Suất':'Tiết'} ${i+1}</strong></th>${DAYS.map(d=>renderCell(d.n,sh.id,i+1)).join('')}</tr>`).join('')).join('')}
  </tbody></table></div>`}<div class="legend"><span>Mỗi lớp một màu · Chọn ô để xem chi tiết</span><span><i class="dot red"></i> Trùng thời điểm</span><span>↻ Dạy thêm lặp hàng tuần</span></div></section>`;
@@ -569,7 +593,7 @@ function fitWeekTable(){
  const focus=$state.fitWeek&&['calendar','extra','overview'].includes($state.view);document.body.classList.toggle('week-focus',focus);
  const scroller=$('.week-scroller');if(!scroller)return;
  scroller.style.height='';document.documentElement.style.removeProperty('--tkb-row-height');
- if(!focus||$state.calendarLayout==='day')return;
+ if(window.matchMedia('(max-width:760px)').matches||!focus||$state.calendarLayout==='day')return;
  // Calculate the actual available height after toolbar/filters. Never crop the week.
  const top=scroller.getBoundingClientRect().top;
  const available=Math.max(210,window.innerHeight-top-7);
@@ -588,6 +612,7 @@ function updateMainFormUI(changed=''){
  if(periodSelect&&shiftSelect){const count=shiftSelect.value==='T'?2:5;const current=Math.min(Number(periodSelect.value)||1,count);if(periodSelect.options.length!==count)periodSelect.innerHTML=options(Array.from({length:count},(_,i)=>[i+1,String(i+1)]),current);}
 }
 function render(){
+ document.body.classList.toggle('mobile-week-locked',['calendar','extra','overview'].includes($state.view)&&$state.calendarLayout==='week'&&['google','cached'].includes($state.mode));
  document.body.classList.toggle('drawer-active',$state.drawerOpen);
  if(!['google','cached'].includes($state.mode)){document.body.classList.remove('week-focus');$('#app').innerHTML=connectionPage();return;}
  if(!$state.data)return;
@@ -838,6 +863,7 @@ async function doAction(target){const a=target.dataset.action;if(!a)return;
  if(a==='reset-filters'){$state.filterClass='all';$state.filterShift='all';$state.filterSubject='all';$state.filterStream='all';$state.drawerOpen=false;return render();}
  if(a==='fit-week'){$state.fitWeek=!$state.fitWeek;localStorage.setItem('smart-tkb-focus-v14',$state.fitWeek?'on':'off');return render();}
  if(a==='fullscreen-week'){if(!document.fullscreenElement){await document.documentElement.requestFullscreen?.();try{await screen.orientation?.lock?.('landscape')}catch{}}else{await document.exitFullscreen?.();}return fitWeekTable();}
+ if(a==='cycle-calendar-view'){$state.view=$state.view==='overview'?'calendar':$state.view==='calendar'?'extra':'overview';$state.drawerOpen=false;$state.calendarLayout='week';return render();}
  if(a==='layout-week'){$state.calendarLayout='week';$state.drawerOpen=false;return render();}
  if(a==='layout-day'){$state.calendarLayout='day';$state.drawerOpen=false;return render();}
  if(a==='select-day'){$state.dayIndex=Number(target.dataset.day);return render();}

@@ -1,13 +1,13 @@
-# Smart TKB – Trường THCS Nam Nha Trang
+# Smart TKB 1.8.2 — Mobile 7-Day Zero-Scroll
 
-**Web v1.8.1 (giao diện Mobile UI), tương thích Vercel API & Google Apps Script v1.8.0.**
+Bản nâng cấp giao diện điện thoại trên nền Smart TKB 1.8.1. Vercel API và Google Apps Script giữ bản 1.8.0.
 
-- [Thay đổi, sử dụng và kiểm thử Web v1.8.1](./README_V1_8_1.md)
-- [Hướng dẫn cấu hình backend và nhập ba file Excel v1.8.0](./README_V1_8_0.md)
-- `src/`: giao diện và logic thời khóa biểu / Excel / PPCT / Dạy thêm.
-- `api/`: Vercel API và xác thực phiên (giữ nguyên v1.8.0).
-- `gas/Code.gs` hoặc `Code.gs`: cùng một bản Apps Script v1.8.0; chỉ dán một bản khi cần triển khai lại backend.
-- `public/`: dữ liệu mẫu thời khóa biểu và tệp xác minh phiên bản web.
-- `tests/`: bộ kiểm thử Node và dữ liệu test.
+- **Toàn tuần (điện thoại):** 8 cột × 13 hàng, cố định một viewport `100dvh`, không cuộn.
+- **S/C:** gộp ca dạy thêm thực sự kéo dài 2 tiết, chỉ ở tầng hiển thị.
+- **Tối:** T1 và T2 là hai ô độc lập, không gộp.
+- **Công cụ:** trong Drawer trái; tiêu đề 36px có chuyển tuần và đổi chế độ nhanh.
+- **Ngày/Thống kê/biểu mẫu:** vẫn có thể cuộn khi người dùng chọn chế độ này.
 
-Chạy kiểm thử: `npm test`. Build Vercel: `npm run build`.
+Xem `HUONG_DAN_NANG_CAP_V1_8_2.md` và `BAO_CAO_KIEM_THU_V1_8_2.md` để cập nhật và nghiệm thu.
+
+Build: `npm run build`  |  Test: `npm test`

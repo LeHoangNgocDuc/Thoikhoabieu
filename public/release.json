@@ -1,7 +1,7 @@
 {
-  "release": "1.8.1",
+  "release": "1.8.2",
   "application": "Smart TKB Nam Nha Trang",
-  "frontend": "1.8.1",
+  "frontend": "1.8.2",
   "note": "Kiểm tra URL này trên cùng tên miền Production để xác nhận bản mới.",
-  "version": "1.8.1"
+  "version": "1.8.2"
 }
