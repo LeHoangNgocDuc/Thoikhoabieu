@@ -711,3 +711,26 @@ body.week-focus .compact-full-toggle{display:none!important}
  body:not(.mobile-week-locked) .mobile-topline{grid-template-columns:42px 30px minmax(0,1fr) 30px 38px!important;gap:3px!important}
  body:not(.mobile-week-locked) .mobile-topline .mobile-view-toggle{font-size:11px!important;font-weight:800!important;background:#0b6f6c}
 }
+
+/* v1.8.3: per-class starting PPCT lesson editor. */
+.baseline-item{display:flex;flex-direction:column;gap:9px;min-width:0}
+.baseline-item label{font-size:11px;font-weight:700;color:#406177}
+.baseline-item select{min-width:0;max-width:100%;white-space:normal;font-size:12px}
+.baseline-item textarea{width:100%;max-width:100%;min-height:74px;resize:vertical;border:1px solid #d7e5eb;border-radius:9px;background:#fff;padding:10px 11px;color:#183d51;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.baseline-item textarea:focus{outline:2px solid #0ca88d;outline-offset:1px}
+.baseline-original,.baseline-forecast{display:block;color:#738895;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+.baseline-forecast{background:#eff9f5;color:#1d735f;padding:9px;border-radius:7px}
+.baseline-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px}
+.baseline-actions small{font-size:10px;color:#708c9b;line-height:1.4;flex:1 1 135px}
+@media(max-width:760px){.baseline-item{padding:14px}.baseline-item textarea{font-size:14px}.baseline-item select{font-size:13px}.baseline-actions .btn{min-height:40px}}
+
+.baseline-error{background:#fff0f0;color:#a52332;border:1px solid #efc0c5;border-radius:8px;padding:10px;font-size:11px;line-height:1.5}
+
+/* 1.8.4: read-only PPCT lesson description and week-specific start controls */
+.baseline-item .baseline-week{width:100%;min-height:42px;padding:10px;border:1px solid #dfe9ef;border-radius:8px;background:#f8fbfd;color:#2b4960;font-size:12px}
+.baseline-item label{display:block;margin:10px 0 6px;font-weight:700;font-size:11px;color:#486576}
+.baseline-readonly{margin-top:12px;padding:11px 12px;background:#eaf8f4;border:1px solid #c9e8df;border-radius:10px;line-height:1.55;overflow-wrap:anywhere}
+.baseline-readonly small{display:block;color:#5b8277;font-size:10px}
+.baseline-readonly strong{display:block;margin-top:5px;color:#155646;font-size:12px}
+.baseline-progress-ref,.baseline-help{display:block;margin-top:8px;color:#647f8e;font-size:10px;line-height:1.55}
+.baseline-error{margin-top:8px;color:#a93131;font-weight:600;font-size:11px}

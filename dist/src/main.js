@@ -1,5 +1,5 @@
 
-import {DAYS,SHIFTS,addDays,monday,dayNumber,schoolWeek,classById,activeVersion,eventsForWeek,conflicts,ppctSequence,parseDate,normalizeSheetData,tutoringForWeek,parseGroups,extraSlotOverlap,parseStreamPattern,progressAt,progressSummary,mathStreamPattern,applyStreamAssignments,recurringDateInWeek,previewMainRevision,previewMainOnce,compareVersions,tutoringForRange,EXTRA_CLASSES} from './core.js';
+import {DAYS,SHIFTS,addDays,monday,dayNumber,schoolWeek,classById,activeVersion,eventsForWeek,conflicts,ppctSequence,effectiveBaseline,parseDate,normalizeSheetData,tutoringForWeek,parseGroups,extraSlotOverlap,parseStreamPattern,progressAt,progressSummary,mathStreamPattern,applyStreamAssignments,recurringDateInWeek,previewMainRevision,previewMainOnce,compareVersions,tutoringForRange,EXTRA_CLASSES} from './core.js';
 import {extractTeacherSchedule} from './importExcel.js';
 import {SNAPSHOT_KEY,validateSnapshot,snapshotText} from './cache.js';
 import {moveCollision,validateOfficialScope} from './core.js';
@@ -8,12 +8,12 @@ import {collapseTutorDisplay,MOBILE_PERIODS,planMobileWeekCells} from './mobileD
 const $=s=>document.querySelector(s);
 const newRequestId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FRONTEND_VERSION='1.8.2';
-const COMPATIBLE_API_VERSION='1.8.0';
+const FRONTEND_VERSION='1.8.4';
+const COMPATIBLE_API_VERSION='1.8.4';
 const PENDING_EXTRA_KEY='smart-tkb-extra-pending-v162';
 const getSnapshot=()=>{try{return validateSnapshot(localStorage.getItem(SNAPSHOT_KEY));}catch{return null;}};
 function writeSnapshot(data){try{localStorage.setItem(SNAPSHOT_KEY,snapshotText(data));}catch(e){console.warn('Không lưu được bộ nhớ đệm, ứng dụng vẫn dùng dữ liệu trực tuyến.');}}
-const $state={data:null,mode:'checking',view:'overview',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',extraGrade:'all',extraLetter:'all',extraPeriod:'week',extraPickerGrade:9,syncDiagnostics:null,extraPending:null,extraDay:'all',extraShift:'all',refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false,clipboardMain:null,mainServerReady:false};
+const $state={data:null,mode:'checking',view:'overview',week:monday('2026-11-09'),filterClass:'all',filterShift:'all',filterSubject:'all',filterKind:'all',filterStream:'all',notice:'',edit:null,pendingImport:null,ppctGrade:'7',ppctSubject:'Toán',ppctStream:'all',ppctQuery:'',loggedIn:false,fitWeek:localStorage.getItem('smart-tkb-focus-v14')!=='off',calendarLayout:'week',dayIndex:2,backendConfigured:false,extraServerReady:null,extraServerVersion:'',extraSourceSheet:'',extraSourceTail:'',extraServerError:'',remoteError:'',savingExtra:false,drawerOpen:false,onlyExtra:false,statsClass:'all',statsSubject:'all',statsStream:'all',statsDate:'',statsPeriod:'today',extraList:null,extraListLoading:false,extraListQuery:'',extraGrade:'all',extraLetter:'all',extraPeriod:'week',extraPickerGrade:9,syncDiagnostics:null,extraPending:null,extraDay:'all',extraShift:'all',refreshing:false,sessionStatus:'checking',sessionCode:'',apiVersion:'',authError:'',lastHttpStatus:0,lastApiError:'',lastSyncedAt:'',updateAvailable:false,syncState:'idle',snapshotAt:'',cacheLoginRequired:false,clipboardMain:null,mainServerReady:false,baselineSavingId:''};
 const shiftLabel=s=>({S:'Sáng',C:'Chiều',T:'Tối'})[s]||s;
 const dayLabel=n=>DAYS.find(d=>d.n===n)?.label||n;
 const className=id=>classById($state.data,id)?.name||id;
@@ -359,7 +359,29 @@ function extraListPage(){
 function progressPage(){const d=$state.data;const list=(d.ppct||[]).filter(e=>String(e.grade)===$state.ppctGrade&&e.subject===$state.ppctSubject&&($state.ppctStream==='all'||e.stream===$state.ppctStream)&&e.title.toLowerCase().includes($state.ppctQuery.toLowerCase())).sort((a,b)=>a.week-b.week||a.period-b.period);
  const bs=(d.baselines||[]).filter(b=>{const c=classById(d,b.classId);return String(c?.grade)===$state.ppctGrade&&b.subject===$state.ppctSubject;});
  return `<div class="pagehead"><div><div class="eyebrow">PHÂN PHỐI CHƯƠNG TRÌNH</div><h2>PPCT & tiến độ lớp học</h2><p>Toán chia thành Đại số và Hình học; Tin học dùng chuỗi bài riêng. Dữ liệu trích từ 4 file gốc.</p></div></div>
- <section class="panel"><div class="panelheading"><h3>Thiết lập điểm bắt đầu theo từng lớp</h3><p>Vì ứng dụng bắt đầu từ tuần 10, phải xác nhận tiết PPCT tiếp theo thực tế của từng lớp trước khi tự động dồn bài.</p></div><div class="baseline-grid">${bs.map(b=>{const c=classById(d,b.classId);const seq=ppctSequence(d,c.grade,b.subject,b.stream);return `<div class="baseline-item"><div class="base-header"><strong>${esc(c.name)} · ${esc(b.stream)}</strong><span class="state ${b.confirmed?'ok':'pending'}">${b.confirmed?'Đã xác nhận':'Cần xác nhận'}</span></div><select id="base-${esc(b.id)}">${seq.map((p,i)=>`<option value="${i}" ${i===Number(b.nextIndex)?'selected':''}>Tiết ${p.period} · ${esc(p.title).slice(0,65)}</option>`).join('')}</select><button class="btn small" data-action="save-baseline" data-id="${esc(b.id)}">Lưu & xác nhận</button></div>`;}).join('')}</div></section>
+ <section class="panel baseline-panel"><div class="panelheading"><h3>Điểm bắt đầu PPCT – áp dụng từ tuần chọn</h3><p>Chọn tuần bắt đầu rồi chọn tiết PPCT theo danh mục và tiến độ. Tên bài chỉ để xem, không được chỉnh trong mục này. Chỉ nhấn Lưu mới ghi mốc mới; các tuần trước giữ nguyên.</p></div><div class="baseline-grid">${bs.map(b=>{
+  const c=classById(d,b.classId);if(!c)return '';
+  const seq=ppctSequence(d,c.grade,b.subject,b.stream,b.classId);
+  const active=effectiveBaseline(d,b.classId,b.subject,b.stream,$state.week);
+  const revision=(d.baseline_revisions||[]).find(x=>x.baselineId===b.id&&x.fromDate===$state.week);
+  const planned=eventsForWeek(d,$state.week).find(e=>e.kind!=='EXTRA'&&e.classId===b.classId&&e.subject===b.subject&&e.stream===b.stream&&e.ppct);
+  const plannedIndex=planned?seq.findIndex(x=>x.id===planned.ppct.id):-1;
+  const currentIndex=revision?Number(revision.nextIndex):plannedIndex>=0?plannedIndex:Number(active?.nextIndex??b.nextIndex);
+  const index=Math.max(0,Math.min(seq.length-1,currentIndex));const chosen=seq[index];
+  const fromWeek=$state.week;
+  const afterDate=addDays(fromWeek,-1),prior=progressAt(d,b.classId,b.subject,b.stream,afterDate);
+  const prevLesson=fromWeek<=b.fromDate?seq[Math.max(0,Number(b.nextIndex)||0)]:prior.next;
+  return `<div class="baseline-item" data-baseline-id="${esc(b.id)}"><div class="base-header"><strong>${esc(c.name)} · ${esc(b.subject)} ${esc(b.stream)}</strong><span class="state ${revision?'ok':'pending'}">${revision?'Đã lưu mốc tuần này':'Chưa đổi mốc tuần này'}</span></div>
+   <label for="base-week-${esc(b.id)}">Áp dụng từ tuần (Thứ Hai)</label>
+   <input id="base-week-${esc(b.id)}" class="baseline-week" type="date" min="${esc(monday(b.fromDate))}" value="${esc(fromWeek)}" />
+   <small class="baseline-help">Các tuần trước ${esc(fmt(fromWeek))} không bị thay đổi.</small>
+   <label for="base-${esc(b.id)}">Chọn tiết trong danh mục PPCT</label>
+   <select id="base-${esc(b.id)}" aria-label="Chọn bài PPCT cho ${esc(c.name)}" ${!seq.length?'disabled':''}>${seq.map((lesson,i)=>`<option value="${i}" ${i===index?'selected':''}>Tiết ${esc(lesson.period)} · ${esc(lesson.title)}</option>`).join('')}</select>
+   <div class="baseline-readonly" role="status"><small>Nội dung bài từ PPCT & tiến độ (chỉ xem)</small><strong id="base-preview-${esc(b.id)}">${esc(chosen?`Tiết ${chosen.period} – ${chosen.title}`:'Chưa có dữ liệu PPCT')}</strong></div>
+   <small class="baseline-forecast" id="base-forecast-${esc(b.id)}">Tiếp theo: ${esc(seq.slice(index+1,index+3).map(x=>`T${x.period}: ${x.title}`).join(' → ')||'Đã hết chuỗi PPCT')}</small>
+   <small class="baseline-progress-ref" id="base-progress-ref-${esc(b.id)}">Theo tiến độ trước tuần này: ${esc(prevLesson?`T${prevLesson.period}: ${prevLesson.title}`:'Chưa có bài kế tiếp')}</small>
+   <div class="baseline-actions"><button class="btn primary small" data-action="save-baseline" data-id="${esc(b.id)}" ${!seq.length||$state.baselineSavingId===b.id?'disabled':''}>${$state.baselineSavingId===b.id?'Đang lưu...':'Lưu áp dụng từ tuần này'}</button><small>Chọn tiết chỉ xem trước; không lưu và không sửa tên bài tự động.</small></div></div>`;
+ }).join('')}</div></section>
  <section class="panel"><div class="panelheading"><h3>Danh mục PPCT đã nhập</h3><p>Có thể tìm theo tên bài hoặc lọc theo mạch ĐS / HH.</p></div><div class="filters ppct-filters"><div><label>Khối</label><select id="ppct-grade">${options([['7','Khối 7'],['9','Khối 9']],$state.ppctGrade)}</select></div><div><label>Môn</label><select id="ppct-subject">${options([['Toán','Toán'],['Tin','Tin']],$state.ppctSubject)}</select></div><div><label>Mạch</label><select id="ppct-stream">${options([['all','Tất cả'],['ĐS','Đại số'],['HH','Hình học'],['TIN','Tin học']],$state.ppctStream)}</select></div><div class="searchfield"><label>Tìm bài học</label><input id="ppct-query" placeholder="Ví dụ: căn bậc hai" value="${esc($state.ppctQuery)}"/></div></div>
  <div class="table-scroller"><table class="data-table"><thead><tr><th>Tuần</th><th>Mạch</th><th>Tiết PPCT</th><th>Tên bài học / chủ đề</th></tr></thead><tbody>${list.slice(0,350).map(e=>`<tr><td>${esc(e.week)}</td><td><span class="tag">${esc(e.stream)}</span></td><td>${esc(e.period)}</td><td>${esc(e.title)}</td></tr>`).join('')}</tbody></table></div><p class="caption">Hiển thị ${list.length} mục. Thầy cần kiểm tra kết quả đọc PDF/Word, đặc biệt các mốc kiểm tra và PPCT Tin 9 không tuần tự.</p></section>`;
 }
@@ -570,7 +592,7 @@ function officialModal(){
  const e=events[0],ch=($state.data.changes||[]).find(x=>x.kind!=='EXTRA'&&x.date===date&&x.shift===shift&&x.period===Number(period));
  const action=ch?.action||(!e?'ADD':e.kind!=='MAIN'?'ADD':'EDIT');
  const classId=ch?.classId||e?.classId||'7F38',subject=ch?.subject||e?.subject||'Toán',stream=ch?.stream||e?.stream||'ĐS';
- const lessons=ppctSequence($state.data,classById($state.data,classId)?.grade||7,subject,subject==='Tin'?'TIN':stream);
+ const lessons=ppctSequence($state.data,classById($state.data,classId)?.grade||7,subject,subject==='Tin'?'TIN':stream,classId);
  return `<div class="backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true"><div class="modalhead"><div><div class="eyebrow">CHÍNH KHÓA / DẠY BÙ</div><h3>${fmt(date)} · ${shiftLabel(shift)} · ${shift==='T'?'Suất':'Tiết'} ${period}</h3></div><button class="icon-btn" data-action="close-modal">×</button></div>
  ${e?`<div class="current-lesson"><strong>${esc(e.subject)} ${esc(className(e.classId))} ${esc(e.stream||'')}</strong><span>${esc(e.ppct?.title||'Chưa có nội dung PPCT')}</span><small>${e.kind==='MAIN'?'Chính khóa':'Dạy bù'}</small></div>`:'<div class="current-lesson">Ô trống: thêm tiết dạy bù chính khóa. Dạy thêm được nhập ở tab riêng.</div>'}
  <div class="row-buttons manual-main-action"><button type="button" class="btn soft" data-action="${e&&e.kind==='MAIN'?'start-move':'start-main-add'}" ${e&&e.kind==='MAIN'?`data-id="${esc(e.id)}"`:''} data-date="${esc(date)}" data-shift="${esc(shift)}" data-period="${period}">${e&&e.kind==='MAIN'?'✎ Sửa tiết cố định cho các tuần sau':'＋ Thêm tiết chính khóa cố định hàng tuần'}</button></div>
@@ -657,7 +679,70 @@ async function confirmDraft(){const p=$state.pendingImport;if(!p?.slots.length)t
  if($state.mode==='google'){const result=await callApi({op:'replaceVersion',version,slots:p.slots});if(!result.verified||result.count!==p.slots.length)throw Error('Google Sheets chưa xác nhận nhập đủ số tiết');await pullGoogle();const stored=$state.data.slots.filter(x=>x.versionId===version.id);if(stored.length!==p.slots.length||activeVersion($state.data,p.fromDate)?.id!==version.id)throw Error('Đã ghi nhưng kiểm tra lại phiên bản TKB chưa khớp');}else{$state.data.versions.push(version);$state.data.slots.push(...p.slots);cacheDemo();}
  $state.week=monday(p.fromDate);$state.pendingImport=null;$state.view='calendar';notify('Đã lưu phiên bản TKB mới. Tiến độ PPCT tiếp tục độc lập với phiên bản lịch.');
 }
-async function saveBaseline(id){const old=$state.data.baselines.find(b=>b.id===id);if(!old)return;const nextIndex=Number(document.getElementById(`base-${id}`)?.value);const updated={...old,nextIndex,confirmed:true};await persist('baselines',updated);notify(`Đã xác nhận mốc PPCT cho ${className(old.classId)} – ${old.subject} ${old.stream}.`);}
+/** A selection only changes read-only preview. Explicit save creates a week-scoped revision. */
+async function saveBaseline(id){
+ const old=$state.data.baselines.find(b=>b.id===id);if(!old||$state.baselineSavingId)return;
+ const cls=classById($state.data,old.classId);if(!cls)throw Error('Không tìm thấy lớp.');
+ const seq=ppctSequence($state.data,cls.grade,old.subject,old.stream,old.classId);
+ const nextIndex=Number(document.getElementById(`base-${id}`)?.value);
+ const fromDate=document.getElementById(`base-week-${id}`)?.value||'';
+ if(!Number.isInteger(nextIndex)||nextIndex<0||nextIndex>=seq.length)throw Error('Hãy chọn tiết PPCT hợp lệ.');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fromDate)||monday(fromDate)!==fromDate)throw Error('Ngày áp dụng phải là Thứ Hai đầu tuần.');
+ if(fromDate<old.fromDate)throw Error('Không được chọn trước tuần bắt đầu theo dõi.');
+ const lesson=seq[nextIndex];
+ if($state.mode!=='google')throw Error('Cần kết nối Google Sheets để lưu mốc PPCT.');
+ if(!window.confirm(`Lưu ${className(old.classId)} · ${old.subject} ${old.stream} bắt đầu Tiết ${lesson.period} từ tuần ${fmt(fromDate)}?\nCác tuần trước sẽ giữ nguyên. Tên bài lấy từ PPCT, không chỉnh sửa.`))return;
+ const existing=($state.data.baseline_revisions||[]).find(r=>r.baselineId===id&&r.fromDate===fromDate);
+ const btn=document.querySelector(`[data-action="save-baseline"][data-id="${CSS.escape(id)}"]`);
+ $state.baselineSavingId=id;if(btn){btn.disabled=true;btn.textContent='Đang lưu & xác minh...';}
+ try{
+  const saved=await callApi({op:'saveBaselineRevision',baselineId:id,fromDate,nextIndex,ppctId:lesson.id,
+   expectedBaselineIndex:Number(old.nextIndex),expectedUpdatedAt:existing?.updatedAt||''});
+  if(saved.verified!==true)throw Error('Google Sheets chưa xác nhận lưu mốc theo tuần.');
+  try{await pullGoogle();}catch(err){throw Error('Đã ghi nhưng chưa đọc lại được: '+err.message);}
+  const row=($state.data.baseline_revisions||[]).find(r=>r.baselineId===id&&r.fromDate===fromDate);
+  if(!row||Number(row.nextIndex)!==nextIndex||row.ppctId!==lesson.id)throw Error('Dữ liệu tải lại chưa khớp; cần kiểm tra Sheet baseline_revisions.');
+  notify(`Đã lưu ${className(old.classId)} – ${old.subject} ${old.stream}, từ tuần ${fmt(fromDate)} bắt đầu T${lesson.period}. Các tuần trước giữ nguyên.`);
+ }catch(err){
+  const field=document.querySelector(`[data-baseline-id="${CSS.escape(id)}"]`);
+  if(field){let error=field.querySelector('.baseline-error');if(!error){error=document.createElement('p');error.className='baseline-error';error.setAttribute('role','alert');field.appendChild(error);}
+   error.textContent='Chưa lưu: '+err.message+' Lựa chọn đang hiển thị vẫn được giữ.';}
+  console.error('BASELINE_WEEK_SAVE_FAILED',err);
+ }finally{$state.baselineSavingId='';const button=document.querySelector(`[data-action="save-baseline"][data-id="${CSS.escape(id)}"]`);if(button){button.disabled=false;button.textContent='Lưu áp dụng từ tuần này';}}
+}
+function updateBaselineEditor(id){
+ const b=$state.data.baselines.find(x=>x.id===id),c=classById($state.data,b?.classId);if(!b||!c)return;
+ const seq=ppctSequence($state.data,c.grade,b.subject,b.stream,b.classId),n=Number(document.getElementById(`base-${id}`)?.value);
+ const selected=seq[n];
+ const preview=document.getElementById(`base-preview-${id}`);
+ if(preview)preview.textContent=selected?`Tiết ${selected.period} – ${selected.title}`:'Không tìm thấy bài PPCT';
+ const forecast=document.getElementById(`base-forecast-${id}`);
+ if(forecast)forecast.textContent='Tiếp theo: '+(seq.slice(n+1,n+3).map(x=>`T${x.period}: ${x.title}`).join(' → ')||'Đã hết chuỗi PPCT');
+ // Never change $state.data, PPCT catalog, baseline or Google Sheets on select.
+}
+function updateBaselineWeek(id){
+ const b=$state.data.baselines.find(x=>x.id===id),c=classById($state.data,b?.classId);
+ if(!b||!c)return;
+ const week=document.getElementById(`base-week-${id}`)?.value;
+ const field=document.querySelector(`[data-baseline-id="${CSS.escape(id)}"]`);
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(week||'')||monday(week)!==week||week<b.fromDate){
+  if(field){let error=field.querySelector('.baseline-error');if(!error){error=document.createElement('p');error.className='baseline-error';field.appendChild(error);}error.textContent='Hãy chọn Thứ Hai không trước ngày bắt đầu theo dõi.';}
+  return;
+ }
+ field?.querySelector('.baseline-error')?.remove();
+ const seq=ppctSequence($state.data,c.grade,b.subject,b.stream,b.classId);
+ const rev=($state.data.baseline_revisions||[]).find(x=>x.baselineId===id&&x.fromDate===week);
+ const event=eventsForWeek($state.data,week).find(e=>e.kind!=='EXTRA'&&e.classId===b.classId&&e.subject===b.subject&&e.stream===b.stream&&e.ppct);
+ const candidate=rev?Number(rev.nextIndex):event?seq.findIndex(x=>x.id===event.ppct.id):Number(effectiveBaseline($state.data,b.classId,b.subject,b.stream,week)?.nextIndex??b.nextIndex);
+ const select=document.getElementById(`base-${id}`);
+ if(select)select.value=String(Math.max(0,Math.min(seq.length-1,candidate)));
+ updateBaselineEditor(id);
+ const reference=week<=b.fromDate?seq[Math.max(0,Number(b.nextIndex)||0)]:progressAt($state.data,b.classId,b.subject,b.stream,addDays(week,-1)).next;
+ const help=document.getElementById(`base-progress-ref-${id}`);
+ if(help)help.textContent='Theo tiến độ trước tuần này: '+(reference?`T${reference.period}: ${reference.title}`:'Chưa có bài kế tiếp');
+ const weekHelp=field?.querySelector('.baseline-help');if(weekHelp)weekHelp.textContent=`Các tuần trước ${fmt(week)} không bị thay đổi.`;
+}
+
 async function writeOfficial(row,existing,rule=null,reason=''){
  if($state.mode==='google'){
   await callApi({op:'saveOfficialChange',row,expectedUpdatedAt:existing?.updatedAt||'',rule,reason});await pullGoogle();
@@ -684,7 +769,7 @@ async function saveEdit(){
  const ppctId=get('edit-ppct')||before[0]?.ppct?.id||'';
  const completed=action==='DONE'||(action==='ADD'&&Boolean($('#edit-completed')?.checked))||(action==='EDIT'&&Boolean($('#edit-completed')?.checked));
  if(completed&&!ppctId)throw Error('Tiết đã dạy phải chọn số tiết PPCT để thống kê chính xác');
- const seq=ppctSequence($state.data,cls.grade,subject,stream),chosen=seq.find(p=>p.id===ppctId);
+ const seq=ppctSequence($state.data,cls.grade,subject,stream,classId),chosen=seq.find(p=>p.id===ppctId);
  if(ppctId&&!chosen)throw Error('Số tiết PPCT không thuộc môn/mạch/lớp đã chọn');
  const row={id:existing?.id||`C-${date}-${shift}${period}`,date,shift,period:Number(period),action,classId,subject,stream,kind:action==='ADD'?'MAKEUP':'MAIN',notes:get('edit-notes')||'',ppctId:action==='OFF'?'':ppctId,completed:action==='OFF'?false:completed,updatedAt:existing?.updatedAt||'',scope,titleOverride:get('edit-title')||''};
  const reason=get('edit-reason')||'';
@@ -986,6 +1071,8 @@ document.addEventListener('touchend',e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$state.drawerOpen){$state.drawerOpen=false;render();}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='login-pass'){e.preventDefault();loginAndSync().catch(err=>{$state.authError=err.message;$state.lastApiError=err.code||'';render();});}});
 document.addEventListener('change',e=>{
+ if(e.target.id?.startsWith('base-week-')){updateBaselineWeek(e.target.id.slice(10));return;}
+ if(e.target.id?.startsWith('base-')){updateBaselineEditor(e.target.id.slice(5));return;}
  const table={'f-class':'filterClass','f-shift':'filterShift','f-subject':'filterSubject','f-kind':'filterKind','f-stream':'filterStream','ppct-grade':'ppctGrade','ppct-subject':'ppctSubject','ppct-stream':'ppctStream','stats-class':'statsClass','stats-subject':'statsSubject','stats-stream':'statsStream','stats-date':'statsDate','stats-period':'statsPeriod'};
  if(table[e.target.id]){$state[table[e.target.id]]=e.target.value;if(e.target.id.startsWith('f-'))$state.drawerOpen=false;render();}
  const drawerStats={'drawer-stats-period':'statsPeriod','drawer-stats-date':'statsDate','drawer-stats-class':'statsClass','drawer-stats-subject':'statsSubject','drawer-stats-stream':'statsStream'};
@@ -1002,7 +1089,7 @@ document.addEventListener('change',e=>{
  if(e.target.id==='edit-class'||e.target.id==='edit-subject'||e.target.id==='edit-stream'){
   // The next render refreshes PPCT choices for the selected class/subject/stream; preserve edited selections.
   const classId=$('#edit-class').value,subject=$('#edit-subject').value,stream=subject==='Tin'?'TIN':$('#edit-stream').value;
-  const cls=classById($state.data,classId),seq=ppctSequence($state.data,cls?.grade,subject,stream);
+  const cls=classById($state.data,classId),seq=ppctSequence($state.data,cls?.grade,subject,stream,classId);
   const dropdown=$('#edit-ppct');dropdown.innerHTML='<option value="">Tự đề xuất theo tiến độ</option>'+seq.map(p=>`<option value="${esc(p.id)}">Tiết ${p.period}: ${esc(p.title)}</option>`).join('');
  }
 });

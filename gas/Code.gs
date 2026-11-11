@@ -2,7 +2,7 @@
  * Script properties: SMART_TKB_API_KEY (must match GAS_API_KEY in Vercel).
  * Deploy > New deployment > Web app > Execute as me > Anyone.
  */
-const SMART_TKB_SERVER_VERSION='1.8.0';
+const SMART_TKB_SERVER_VERSION='1.8.4';
 const EXTRA_OPS=['CREATE','EDIT_ONCE','EDIT_FUTURE','EDIT_ALL','CONVERT_ONCE','CANCEL_ONCE','STOP_FUTURE','DELETE_SERIES','DELETE_ONE'];
 const TABLES={
   classes:['id','name','grade','subjects'],
@@ -10,6 +10,8 @@ const TABLES={
   slots:['id','versionId','day','shift','period','classId','subject','stream','kind','notes'],
   ppct:['id','grade','subject','stream','week','period','title','note','source'],
   baselines:['id','classId','subject','stream','fromDate','nextIndex','confirmed'],
+  baseline_revisions:['id','baselineId','classId','subject','stream','fromDate','nextIndex','ppctId','updatedAt'],
+  lesson_edits:['id','classId','subject','stream','ppctId','title','fromDate','updatedAt'],
   changes:['id','date','shift','period','action','classId','subject','stream','kind','notes','ppctId','completed','updatedAt','scope','titleOverride','sourceSlotId','moveDate','moveShift','movePeriod'],
   extra_sessions:['id','date','shift','period','subject','groups','notes','completed','updatedAt','patternId','action','lessonNumber','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId','teachingStatus'],
   extra_patterns:['id','day','shift','period','subject','groups','notes','fromDate','toDate','startLesson','active','updatedAt','classIds','customGroups','lessonTitle','startTime','endTime','repeatRule','revision','requestId','teachingStatus'],
@@ -17,7 +19,7 @@ const TABLES={
   ppct_overrides:['id','classId','subject','fromDate','toDate','pattern','notes','updatedAt'],
   audit_log:['id','at','actor','action','entityType','entityId','oldValue','newValue','reason']
 };
-const NUMERIC={classes:['grade'],slots:['day','period'],ppct:['grade','week','period'],baselines:['nextIndex'],changes:['period','movePeriod'],extra_sessions:['period','lessonNumber'],extra_patterns:['day','period','startLesson']};
+const NUMERIC={classes:['grade'],slots:['day','period'],ppct:['grade','week','period'],baselines:['nextIndex'],baseline_revisions:['nextIndex'],changes:['period','movePeriod'],extra_sessions:['period','lessonNumber'],extra_patterns:['day','period','startLesson']};
 function doGet(){return json_({ok:true,message:'Smart TKB Apps Script đã triển khai. Dùng API qua Vercel.',apiVersion:SMART_TKB_SERVER_VERSION});}
 function doPost(e){
  try{
@@ -41,6 +43,8 @@ function doPost(e){
    if(body.op==='listExtra')return json_(extraList_(body.week));
    if(body.op==='diagnoseExtra')return json_({ok:true,patternCount:read_('extra_patterns').length,sessionCount:read_('extra_sessions').length,requestCount:read_('extra_requests').length,lastSaved:read_('extra_requests').slice(-1).map(x=>({at:x.createdAt,action:x.action,entityId:x.entityId}))});
    if(body.op==='bootstrap')return json_(bootstrap_(body.seed));
+   if(body.op==='saveBaselineLesson')return json_(saveBaselineLesson_(body));
+   if(body.op==='saveBaselineRevision')return json_(saveBaselineRevision_(body));
    if(body.op==='save')return json_(save_(body.table,body.row));
    if(body.op==='delete')return json_(delete_(body.table,body.id));
    if(body.op==='replaceVersion')return json_(replaceVersion_(body.version,body.slots));
@@ -98,7 +102,7 @@ function validateBatch_(table,records){assert_(TABLES[table], 'Bảng không h�
     assert_(!r.action||['EDIT','CANCEL'].includes(r.action),'Hành động dạy thêm không hợp lệ');
    }
   }});}
-function save_(table,row){assert_(TABLES[table]&&table!=='ppct','Không cho sửa bảng PPCT bằng API này');validateBatch_(table,[row]);const s=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(table);const records=read_(table);const idx=records.findIndex(r=>r.id===row.id);
+function save_(table,row){assert_(TABLES[table]&&!['ppct','baselines','baseline_revisions','lesson_edits'].includes(table),'Mốc PPCT và tên bài phải được lưu bằng saveBaselineLesson; không cho sửa trực tiếp');validateBatch_(table,[row]);const s=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(table);const records=read_(table);const idx=records.findIndex(r=>r.id===row.id);
  if(table==='extra_patterns'){
    const peers=records.filter(r=>r.id!==row.id&&r.active!==false&&r.day===row.day&&r.shift===row.shift&&r.period===row.period);
    const from=row.fromDate,to=row.toDate||'9999-12-31';
@@ -115,6 +119,115 @@ function save_(table,row){assert_(TABLES[table]&&table!=='ppct','Không cho sử
  }
  if(idx<0)appendBatch_(table,[row]);else s.getRange(idx+2,1,1,TABLES[table].length).setValues([encode_(table,row)]);
  return {ok:true,message:'Đã lưu thành công'};
+}
+/**
+ * Transaction under doPost's script lock: update baseline and the selected
+ * class-specific title together, read both back, restore old rows on failure.
+ * Shared PPCT and confirmed change rows are never rewritten.
+ */
+function saveBaselineLesson_(body){
+ const id=String(body.baselineId||'');const all=read_('baselines'),at=all.findIndex(b=>b.id===id);
+ assert_(at>=0,'Không tìm thấy mốc PPCT; hãy đồng bộ lại');const before=all[at];
+ const classes=read_('classes'),cls=classes.find(c=>c.id===before.classId);
+ assert_(cls,'Không tìm thấy lớp trong cơ sở dữ liệu');
+ const seq=read_('ppct').filter(p=>Number(p.grade)===Number(cls.grade)&&p.subject===before.subject&&p.stream===before.stream).sort((a,b)=>(Number(a.week)||99)-(Number(b.week)||99)||Number(a.period)-Number(b.period));
+ const nextIndex=Number(body.nextIndex),confirmed=before.confirmed===true;
+ assert_(Number.isInteger(nextIndex)&&nextIndex>=0&&nextIndex<seq.length,'Bài PPCT bắt đầu không hợp lệ');
+ const lesson=seq[nextIndex];assert_(lesson.id===String(body.ppctId||''),'Danh sách PPCT đã thay đổi; tải lại rồi chọn bài');
+ const title=String(body.title||'').trim();assert_(title.length>=1&&title.length<=350,'Tên bài phải có từ 1 đến 350 ký tự');
+ const edits=read_('lesson_edits');const rowId='LE-'+before.classId+'-'+lesson.id;
+ assert_(rowId.length<160,'Mã bài PPCT quá dài');
+ const editIndex=edits.findIndex(x=>x.id===rowId),oldEdit=editIndex<0?null:edits[editIndex];
+ const oldTitle=String(oldEdit?.title||'');
+ // Retry after a timeout may have already been committed; be idempotent.
+ if(Number(before.nextIndex)===nextIndex&&confirmed&&((title===String(lesson.title)&&!oldTitle)||(title===oldTitle))){
+  return {ok:true,verified:true,alreadySaved:true,baselineId:id,nextIndex,ppctId:lesson.id,title};
+ }
+ assert_(Number(before.nextIndex)===Number(body.expectedNextIndex)&&confirmed===(body.expectedConfirmed===true),'Mốc vừa được cập nhật trên thiết bị khác. Hãy tải lại.');
+ assert_(oldTitle===String(body.expectedEditTitle||''),'Tên bài vừa được cập nhật trên thiết bị khác. Hãy tải lại.');
+ // Changing the PPCT pointer after marking lessons completed could alter historical totals.
+ const completed=read_('changes').filter(x=>x.classId===before.classId&&x.subject===before.subject&&x.stream===before.stream&&x.completed===true&&x.date>=before.fromDate&&x.action!=='OFF'&&x.action!=='CLEAR'&&x.kind!=='EXTRA');
+ assert_(nextIndex===Number(before.nextIndex)||completed.length===0,'Lớp đã có '+completed.length+' tiết được xác nhận từ ngày bắt đầu. Không được đổi mốc và làm sai tiến độ; chỉ có thể sửa tên bài.');
+ const anyLessonDone=completed.some(c=>c.ppctId===lesson.id);
+ assert_(!anyLessonDone||title===String(lesson.title)||title===oldTitle,'Bài đã xác nhận giảng dạy; không thể đổi tên bài trong lịch sử.');
+ const setTitle=title===String(lesson.title)?'':title;const now=new Date().toISOString();
+ const newBase={...before,nextIndex,confirmed:true};
+ const newEdit={id:rowId,classId:before.classId,subject:before.subject,stream:before.stream,ppctId:lesson.id,title:setTitle,fromDate:before.fromDate,updatedAt:now};
+ const sheetBase=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('baselines');
+ const sheetEdit=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('lesson_edits');
+ const countBefore=sheetEdit.getLastRow();let touchedBase=false,touchedEdit=false;
+ try{
+  if(editIndex>=0){sheetEdit.getRange(editIndex+2,1,1,TABLES.lesson_edits.length).setValues([encode_('lesson_edits',newEdit)]);touchedEdit=true;}
+  else if(setTitle){appendBatch_('lesson_edits',[newEdit]);touchedEdit=true;}
+  sheetBase.getRange(at+2,1,1,TABLES.baselines.length).setValues([encode_('baselines',newBase)]);touchedBase=true;
+  SpreadsheetApp.flush();
+  const savedBase=read_('baselines').find(x=>x.id===id),savedEdit=read_('lesson_edits').find(x=>x.id===rowId);
+  assert_(savedBase&&savedBase.confirmed===true&&Number(savedBase.nextIndex)===nextIndex,'Không đọc lại được mốc PPCT vừa lưu');
+  assert_((savedEdit?.title||'')===setTitle,'Không đọc lại được tên bài PPCT vừa lưu');
+  audit_({action:'SAVE_BASELINE_LESSON',entityType:'baselines',entityId:id,
+   oldValue:JSON.stringify({baseline:before,lessonEdit:oldEdit}),newValue:JSON.stringify({baseline:newBase,lessonEdit:setTitle?newEdit:null}),
+   reason:'Giáo viên chọn bài bắt đầu và chỉnh sửa tên bài theo lớp; không sửa PPCT gốc'});
+  return {ok:true,verified:true,baselineId:id,nextIndex,ppctId:lesson.id,title,fromDate:before.fromDate};
+ }catch(err){
+  if(touchedBase)sheetBase.getRange(at+2,1,1,TABLES.baselines.length).setValues([encode_('baselines',before)]);
+  if(touchedEdit){if(oldEdit)sheetEdit.getRange(editIndex+2,1,1,TABLES.lesson_edits.length).setValues([encode_('lesson_edits',oldEdit)]);
+    else if(sheetEdit.getLastRow()===countBefore+1)sheetEdit.deleteRow(countBefore+1);}
+  SpreadsheetApp.flush();throw err;
+ }
+}
+/** Week-effective PPCT anchor. Selection on the frontend is preview-only;
+ * an explicit save adds/updates one date-scoped row under doPost's script lock.
+ * Existing baselines, completed lessons, shared PPCT and earlier revisions survive.
+ */
+function saveBaselineRevision_(body){
+ const baselineId=String(body.baselineId||''),fromDate=String(body.fromDate||'');
+ assert_(/^\d{4}-\d{2}-\d{2}$/.test(fromDate),'Ngày bắt đầu không hợp lệ');
+ const day=new Date(fromDate+'T12:00:00Z');
+ assert_(!Number.isNaN(day.getTime())&&day.toISOString().slice(0,10)===fromDate&&day.getUTCDay()===1,'Ngày áp dụng phải là Thứ Hai đầu tuần');
+ const baseline=read_('baselines').find(b=>b.id===baselineId);
+ assert_(baseline,'Không tìm thấy mốc PPCT; hãy tải lại');
+ assert_(fromDate>=baseline.fromDate,'Không được áp dụng trước ngày bắt đầu theo dõi '+baseline.fromDate);
+ const cls=read_('classes').find(c=>c.id===baseline.classId);
+ assert_(cls,'Lớp không còn tồn tại');
+ const seq=read_('ppct').filter(p=>Number(p.grade)===Number(cls.grade)&&p.subject===baseline.subject&&p.stream===baseline.stream)
+   .sort((a,b)=>(Number(a.week)||99)-(Number(b.week)||99)||Number(a.period)-Number(b.period));
+ const nextIndex=Number(body.nextIndex);
+ assert_(Number.isInteger(nextIndex)&&nextIndex>=0&&nextIndex<seq.length,'Tiết PPCT không hợp lệ');
+ const lesson=seq[nextIndex];
+ assert_(lesson.id===String(body.ppctId||''),'Bài PPCT đã thay đổi, hãy tải lại trước khi lưu');
+ // The lesson title comes only from the verified PPCT catalog; no editable title is accepted here.
+ const revisions=read_('baseline_revisions');
+ const id='BR-'+baselineId+'-'+fromDate;
+ assert_(id.length<160,'Mã mốc quá dài');
+ const ix=revisions.findIndex(r=>r.id===id),old=ix>=0?revisions[ix]:null;
+ if(old&&Number(old.nextIndex)===nextIndex&&old.ppctId===lesson.id)
+  return {ok:true,verified:true,alreadySaved:true,baselineId,id,fromDate,nextIndex,ppctId:lesson.id,title:lesson.title};
+ assert_(String(body.expectedUpdatedAt||'')===String(old?.updatedAt||''),'Mốc của tuần này vừa được thay đổi trên thiết bị khác; hãy đồng bộ lại');
+ assert_(Number(body.expectedBaselineIndex)===Number(baseline.nextIndex),'Mốc gốc vừa thay đổi; hãy đồng bộ lại');
+ const nextRevisionDate=revisions.filter(r=>r.baselineId===baselineId&&r.fromDate>fromDate)
+    .sort((a,b)=>a.fromDate.localeCompare(b.fromDate))[0]?.fromDate||'9999-12-31';
+ const completed=read_('changes').filter(ch=>ch.classId===baseline.classId&&ch.subject===baseline.subject&&ch.stream===baseline.stream&&
+    ch.date>=fromDate&&ch.date<nextRevisionDate&&(ch.completed===true||ch.action==='DONE')&&ch.kind!=='EXTRA'&&ch.action!=='OFF'&&ch.action!=='CLEAR');
+ assert_(!completed.length,'Đã có '+completed.length+' tiết xác nhận trong khoảng áp dụng. Không thể đổi mốc làm sai lịch sử; hãy chọn tuần chưa dạy hoặc chỉnh từng tiết.');
+ const now=new Date().toISOString();
+ const row={id,baselineId,classId:baseline.classId,subject:baseline.subject,stream:baseline.stream,fromDate,nextIndex,ppctId:lesson.id,updatedAt:now};
+ const sh=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('baseline_revisions');
+ const lastRow=sh.getLastRow();let written=false;
+ try{
+  if(ix>=0)sh.getRange(ix+2,1,1,TABLES.baseline_revisions.length).setValues([encode_('baseline_revisions',row)]);
+  else appendBatch_('baseline_revisions',[row]);
+  written=true;SpreadsheetApp.flush();
+  const saved=read_('baseline_revisions').find(r=>r.id===id);
+  assert_(saved&&saved.fromDate===fromDate&&Number(saved.nextIndex)===nextIndex&&saved.ppctId===lesson.id,'Không đọc lại được mốc vừa lưu từ Google Sheets');
+  audit_({action:'SAVE_BASELINE_REVISION',entityType:'baseline_revisions',entityId:id,
+    oldValue:JSON.stringify(old),newValue:JSON.stringify(row),reason:'Áp dụng từ tuần '+fromDate+'; giữ nguyên các tuần trước; tên bài lấy từ PPCT và tiến độ'});
+  return {ok:true,verified:true,baselineId,id,fromDate,nextIndex,ppctId:lesson.id,title:lesson.title};
+ }catch(err){
+  if(written){if(old)sh.getRange(ix+2,1,1,TABLES.baseline_revisions.length).setValues([encode_('baseline_revisions',old)]);
+   else if(sh.getLastRow()===lastRow+1)sh.deleteRow(lastRow+1);
+   SpreadsheetApp.flush();}
+  throw err;
+ }
 }
 function delete_(table,id){
  assert_(table==='extra_sessions','Chỉ cho phép xóa riêng lịch dạy thêm');

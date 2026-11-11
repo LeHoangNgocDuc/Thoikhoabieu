@@ -12,4 +12,4 @@ await copyFile(path.join(root,'index.html'),path.join(dist,'index.html'));
 await cp(path.join(root,'src'),path.join(dist,'src'),{recursive:true});
 await cp(path.join(root,'public'),dist,{recursive:true});
 for(const name of ['index.html','src/main.js','src/core.js','src/importExcel.js','src/style.css','seed.json','release.json'])await stat(path.join(dist,name));
-console.log(`Smart TKB 1.8.2: built dist/ without external bundler. Files are ready for Vercel.`);
+console.log(`Smart TKB 1.8.4: built dist/ without external bundler. Files are ready for Vercel.`);

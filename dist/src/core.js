@@ -19,7 +19,7 @@ export function classById(state,id){return (state.classes||[]).find(c=>c.id===id
 // Google Sheets/App Script can serialize date and numeric cells differently from seed.json.
 // Normalize at the data boundary AND tolerate old deployments that return numeric fields as strings.
 export function normalizeSheetData(raw){
- const out={};for(const k of ['classes','versions','slots','ppct','baselines','changes','extra_sessions','extra_patterns','ppct_overrides','audit_log'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
+ const out={};for(const k of ['classes','versions','slots','ppct','baselines','baseline_revisions','changes','extra_sessions','extra_patterns','ppct_overrides','lesson_edits','audit_log'])out[k]=Array.isArray(raw?.[k])?raw[k].map(x=>({...x})):[];
  const toIso=v=>{
   if(!v)return '';
   const str=String(v).trim();
@@ -46,8 +46,10 @@ export function normalizeSheetData(raw){
  out.slots.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.versionId=String(x.versionId||'').trim();x.stream=String(x.stream||'');});
  out.ppct.forEach(x=>{x.grade=Number(x.grade);x.week=Number(x.week);x.period=Number(x.period);});
  out.baselines.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.confirmed=x.confirmed===true||String(x.confirmed).toLowerCase()==='true';});
+ out.baseline_revisions.forEach(x=>{x.fromDate=toIso(x.fromDate);x.nextIndex=Number(x.nextIndex);x.classId=String(x.classId||'');x.subject=String(x.subject||'');x.stream=String(x.stream||'');});
  out.changes.forEach(x=>{x.date=toIso(x.date);x.moveDate=toIso(x.moveDate);x.movePeriod=x.movePeriod?Number(x.movePeriod):0;x.period=Number(x.period);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.scope=String(x.scope||'one');x.titleOverride=String(x.titleOverride||'');});
  out.ppct_overrides.forEach(x=>{x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.pattern=parseStreamPattern(x.pattern);});
+ out.lesson_edits.forEach(x=>{x.classId=String(x.classId||'');x.subject=String(x.subject||'');x.stream=String(x.stream||'');x.ppctId=String(x.ppctId||'');x.title=String(x.title||'');x.fromDate=toIso(x.fromDate);});
  out.extra_sessions.forEach(x=>{x.date=toIso(x.date);x.period=Number(x.period);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.completed=x.completed===true||String(x.completed).toLowerCase()==='true';x.lessonNumber=Number(x.lessonNumber)||0;x.patternId=String(x.patternId||'');x.action=String(x.action||'EDIT');x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'once';x.teachingStatus=x.teachingStatus|| (x.completed?'DONE':'PLANNED');x.revision=Number(x.revision)||0;});
  out.extra_patterns.forEach(x=>{x.day=Number(x.day);x.period=Number(x.period);x.fromDate=toIso(x.fromDate);x.toDate=toIso(x.toDate);x.shift=String(x.shift||'').trim().toUpperCase();x.groups=parseGroups(x.groups);x.startLesson=Number(x.startLesson)||1;x.active=x.active===true||String(x.active).toLowerCase()==='true';x.classIds=parseGroups(x.classIds);x.customGroups=parseGroups(x.customGroups);x.repeatRule=x.repeatRule||'weekly';x.teachingStatus=x.teachingStatus||'PLANNED';x.revision=Number(x.revision)||0;});
  return out;
@@ -150,7 +152,21 @@ export function scheduleForDate(state,date){
  return base.sort((a,b)=>'SCT'.indexOf(a.shift)-'SCT'.indexOf(b.shift)||a.period-b.period);
 }
 export function conflicts(events){const map=new Map();for(const e of events){const k=scheduleKey(e.date,e.shift,e.period);if(e.status==='OFF')continue;map.set(k,[...(map.get(k)||[]),e]);}return [...map].filter(([,list])=>list.length>1).map(([key,items])=>({key,items}));}
-export function ppctSequence(state,grade,subject,stream){return (state.ppct||[]).filter(p=>p.grade===grade&&p.subject===subject&&p.stream===stream).sort((a,b)=>(a.week||99)-(b.week||99)||a.period-b.period)}
+/** Lesson-title corrections are per class, never edits of the shared PPCT source. */
+export function ppctSequence(state,grade,subject,stream,classId=''){
+ const seq=(state.ppct||[]).filter(p=>p.grade===Number(grade)&&p.subject===subject&&p.stream===stream).sort((a,b)=>(a.week||99)-(b.week||99)||a.period-b.period);
+ if(!classId)return seq;
+ const edits=new Map((state.lesson_edits||[]).filter(e=>e.classId===classId&&e.subject===subject&&e.stream===stream).map(e=>[e.ppctId,e]));
+ return seq.map(p=>{const edit=edits.get(p.id);return edit?.title?.trim()?{...p,title:edit.title,teacherEdited:true,originalTitle:p.title}:p;});
+}
+/** The last saved teaching start effective at a date. An older week's baseline never moves. */
+export function effectiveBaseline(state,classId,subject,stream,asOfDate){
+ const old=(state.baselines||[]).find(b=>b.classId===classId&&b.subject===subject&&b.stream===stream);
+ if(!old||!asOfDate||asOfDate<old.fromDate)return old||null;
+ const changes=(state.baseline_revisions||[]).filter(r=>r.classId===classId&&r.subject===subject&&r.stream===stream&&r.fromDate<=asOfDate&&r.fromDate>=old.fromDate)
+  .sort((a,b)=>b.fromDate.localeCompare(a.fromDate)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+ return changes.length?{...old,...changes[0],confirmed:true,originalBaselineId:old.id}:old;
+}
 // Distribute math streams in lesson order, not by placing all Algebra before Geometry.
 // School plan: 3 Algebra + 1 Geometry = Algebra, Algebra, Geometry, Algebra.
 export function mathStreamPattern(algebraCount,geometryCount,total=algebraCount+geometryCount){
@@ -209,13 +225,24 @@ export function project(state,untilDate){
   applyStreamAssignments(state,events);all.push(...events);
  }
  const pointer=new Map();for(const b of baselines)pointer.set(`${b.classId}|${b.subject}|${b.stream}`,Number(b.nextIndex)||0);
+ const revisionApplied=new Map();
+ const revisionsByKey=new Map();
+ for(const r of state.baseline_revisions||[]){
+  const key=`${r.classId}|${r.subject}|${r.stream}`;
+  if(!revisionsByKey.has(key))revisionsByKey.set(key,[]);
+  revisionsByKey.get(key).push(r);
+ }
+ for(const revs of revisionsByKey.values())revs.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
  for(const e of all){
   // Extra tutoring groups are not official curriculum lessons, even if a name matches a formal class.
   if(e.kind==='EXTRA'){e.ppct=null;continue;}
   if(e.date<(baselines.find(b=>b.classId===e.classId&&b.subject===e.subject&&b.stream===e.stream)?.fromDate||'9999'))continue;
   const cls=classById(state,e.classId);if(!cls)continue;
   const key=`${e.classId}|${e.subject}|${e.stream}`;
-  const seq=ppctSequence(state,cls.grade,e.subject,e.stream);
+  // Apply each revision once at its effective week. Never rewind previous dates.
+  const active=(revisionsByKey.get(key)||[]).filter(r=>r.fromDate<=e.date).at(-1);
+  if(active&&revisionApplied.get(key)!==active.id){pointer.set(key,Math.max(0,Number(active.nextIndex)||0));revisionApplied.set(key,active.id);}
+  const seq=ppctSequence(state,cls.grade,e.subject,e.stream,e.classId);
   let i=pointer.get(key);
   if(i===undefined){continue;}
   const initial=i;const match=e.ppctId?seq.findIndex(x=>x.id===e.ppctId):-1;
@@ -290,9 +317,9 @@ function actualForProgress(state,classId,subject,stream,throughDate,baseline,seq
 export function progressAt(state,classId,subject,stream,throughDate){
  const cls=classById(state,classId);
  if(!cls)return {status:'missing-class',classId,subject,stream};
- const seq=ppctSequence(state,cls.grade,subject,stream);
+ const seq=ppctSequence(state,cls.grade,subject,stream,classId);
  const plan=weekPlanAt(state,classId,subject,stream,throughDate,seq);
- const baseline=(state.baselines||[]).find(b=>b.classId===classId&&b.subject===subject&&b.stream===stream);
+ const baseline=effectiveBaseline(state,classId,subject,stream,throughDate);
  const identity={classId,subject,stream,planned:plan.planned,planningPrecision:plan.precision,
   weeklyQuota:plan.weeklyQuota??null,weeklySlots:plan.weeklySlots??null};
  // Never erase already confirmed PPCT. Missing/unconfirmed baselines default to zero,

@@ -1,7 +1,7 @@
 // Read-only last-known-good snapshot. NEVER store passwords, API tokens or sessions.
 export const SNAPSHOT_KEY = 'smart-tkb-live-snapshot-v164';
 export const SNAPSHOT_VERSION = 1;
-const KEYS = ['classes','versions','slots','ppct','baselines','changes','ppct_overrides','extra_patterns','extra_sessions'];
+const KEYS = ['classes','versions','slots','ppct','baselines','baseline_revisions','changes','ppct_overrides','lesson_edits','extra_patterns','extra_sessions'];
 export function createSnapshot(data, savedAt = new Date().toISOString()) {
   if (!data || !Array.isArray(data.classes) || !Array.isArray(data.slots) || !Array.isArray(data.extra_patterns)) throw Error('Không phải dữ liệu Google Sheets hợp lệ');
   return {schema:SNAPSHOT_VERSION, source:'verified-google-sheets', savedAt,
@@ -11,7 +11,9 @@ export function validateSnapshot(raw) {
   try {
     const x=typeof raw==='string'?JSON.parse(raw):raw;
     if(x?.schema!==SNAPSHOT_VERSION||x?.source!=='verified-google-sheets'||!Number.isFinite(Date.parse(x.savedAt))) return null;
-    if(!x.data||!KEYS.every(k=>Array.isArray(x.data[k]))) return null;
+    if(!x.data||!KEYS.filter(k=>!['lesson_edits','baseline_revisions'].includes(k)).every(k=>Array.isArray(x.data[k]))) return null;
+    if(!Array.isArray(x.data.lesson_edits))x.data.lesson_edits=[]; // Old valid snapshots still work offline.
+    if(!Array.isArray(x.data.baseline_revisions))x.data.baseline_revisions=[]; // Week-based anchors were added in 1.8.4.
     return x;
   } catch { return null; }
 }
